@@ -1,0 +1,280 @@
+
+
+@use '../../../shared/styles/mixins' as mixins;
+@use '../../../shared/styles/colors' as colors;
+
+.login-container {
+  display: flex;
+  min-height: 100vh;
+
+}
+
+.login-box {
+  @include mixins.flex-column;
+  justify-content: center;
+  width: 50%;
+  max-width: 400px;
+  background-color: colors.$primary-900; // Use our base color
+  @include mixins.elevation-3;
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease-out forwards;
+
+  @include mixins.respond-to(sm) {
+    max-width: 420px;
+  }
+
+  @include mixins.respond-to(xs) {
+    max-width: 100%;
+  }
+}
+
+.login-box-2 {
+  width: 50%;
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+    border-radius: 50%;
+    @include mixins.elevation-1;
+  }
+}
+
+.logo {
+  color: white;
+  display: flex;
+  justify-content: end;
+  gap: 0.5rem;
+
+  .logo-image {
+    max-width: 200px;
+    height: auto;
+  }
+  .logo-text {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  text-align: end;
+}
+}
+
+.form-container {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 50%;
+
+
+  h2 {
+    text-align: center;
+    color: colors.$primary-900;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    font-weight: 500;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background-color: colors.$secondary-900;
+      border-radius: 3px;
+    }
+  }
+}
+
+.login-form {
+  .form-field {
+    margin-bottom: 1.5rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: colors.$text-on-secondary;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid colors.$border-color;
+      border-radius: 4px;
+      font-size: 1rem;
+      @include mixins.transition(border-color, box-shadow);
+      background-color: rgba(245, 245, 245, 0.8);
+
+      &:focus {
+        border-color: colors.$secondary-900;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
+        background-color: white;
+      }
+
+      &.is-invalid {
+        border-color: colors.$error;
+        box-shadow: 0 0 0 1px rgba(colors.$error, 0.2);
+      }
+    }
+  }
+
+  .password-field {
+    .password-input-container {
+      position: relative;
+
+      input {
+        padding-right: 3rem;
+      }
+
+      .toggle-password {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #666;
+
+        &:focus {
+          outline: none;
+          color: colors.$secondary-900;
+        }
+
+        .eye-icon {
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+
+  .error-message {
+    color: colors.$error;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .login-error {
+    background-color: rgba(colors.$error, 0.1);
+    color: colors.$error;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+
+  .login-button {
+    display: block;
+    width: 100%;
+    padding: 0.875rem;
+    background-color: colors.$primary-900;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    @include mixins.transition(background-color, transform);
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: colors.$primary-700;
+      transform: translateY(-2px);
+
+      &::after {
+        transform: translateX(0);
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.4);
+    }
+
+    &:disabled {
+      background-color: colors.$primary-800;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  .login-container{
+    display: flex;
+    flex-direction: column;
+  }
+  .form-container {
+    padding: 1.5rem;
+  }
+
+  .login-box {
+    width: 100%;
+    height: 30vh;
+  }
+  .login-box-2{
+    width: 100%;
+    height: 70vh;
+  }
+  .logo{
+    height: 100%;
+   justify-content: center;
+  }
+
+  .logo h1 {
+    font-size: 1.5rem;
+  }
+  .logo-image{
+    width: 150px;
+  }
+}
+

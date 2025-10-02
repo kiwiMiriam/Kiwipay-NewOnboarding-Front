@@ -1,0 +1,78 @@
+<div class="login-container">
+    <div class="login-box">
+        <div class="logo-container">
+            <div class="logo">
+            <!-- Updated path to use the file in the public folder -->
+            <img src="images/kiwiTextGreenLightIcon.svg" alt="KIWI Logo" class="logo-image">
+            <h1 class="logo-text"> PLAN</h1>
+         </div>
+        </div>
+    </div>
+    <div class="login-box-2">
+        <div class="form-container">
+  <h2>Iniciar Sesión</h2>
+
+  @if(authService.isLoading()) {
+    <app-loader [message]="'Iniciando sesión...'"></app-loader>
+  } @else {
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-field">
+        <label for="username">Nombre de Usuario</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="administrador"
+          [ngClass]="{'is-invalid': formControls['username'].touched && formControls['username'].invalid}"
+        >
+        @if(formControls['username'].touched && formControls['username'].errors?.['required']) {
+          <div class="error-message">El nombre de usuario es requerido</div>
+        }
+      </div>
+
+      <div class="form-field password-field">
+        <label for="password">Contraseña</label>
+        <div class="password-input-container">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="••••••••••"
+            [ngClass]="{'is-invalid': formControls['password'].touched && formControls['password'].invalid}"
+          >
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+          >
+            @if(showPassword) {
+              <span class="eye-icon">👁️‍🗨️</span>
+            } @else {
+              <span class="eye-icon">👁️‍🗨️</span>
+            }
+          </button>
+        </div>
+        @if(formControls['password'].touched && formControls['password'].errors?.['required']) {
+          <div class="error-message">La contraseña es requerida</div>
+        }
+      </div>
+
+      @if(errorMessage) {
+        <div class="login-error">
+          {{ errorMessage }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="login-button"
+        [disabled]="loginForm.invalid || authService.isLoading()"
+      >
+        Ingresar
+      </button>
+    </form>
+  }
+        </div>
+    </div>
+</div>

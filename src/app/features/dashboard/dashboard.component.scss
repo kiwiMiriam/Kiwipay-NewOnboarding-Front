@@ -1,0 +1,28 @@
+@use '../../shared//styles/colors.scss' as colors;
+@use '../../shared/styles/mixins' as mixins;
+
+.dashboard-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: colors.$bg-default;
+}
+
+main {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.content-container {
+  margin-top: 1rem;
+  background: colors.$bg-paper;
+  border-radius: 8px;
+  @include mixins.elevation-1;
+  padding: 1.5rem;
+}

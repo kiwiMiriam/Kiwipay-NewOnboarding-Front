@@ -1,0 +1,17 @@
+.st0{fill:#FF6B00;}
+.st1{fill:#FFFFFF;}
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
+  <g>
+    <rect class="st0" width="400" height="120"/>
+    <path class="st1" d="M75,30h-15l-30,60h15l5-10h35l5,10h15L75,30z M58.3,65L70,40l11.7,25H58.3z"/>
+    <path class="st1" d="M120,30h15v60h-15V30z"/>
+    <path class="st1" d="M150,30h15v45h30v15h-45V30z"/>
+    <path class="st1" d="M210,30h15v60h-15V30z"/>
+    <path class="st1" d="M240,30h15v45h30v15h-45V30z"/>
+    <path class="st1" d="M300,30h45v15h-30v10h25v15h-25v20h-15V30z"/>
+    <path class="st1" d="M360,30h15v60h-15V30z"/>
+    <path class="st1" d="M50,90h300v5H50V90z"/>
+    <text x="55" y="110" class="st1" style="font-size: 12px;">EMPRESA ADMINISTRADORA DE FONDOS COLECTIVOS S.A.</text>
+  </g>
+</svg>

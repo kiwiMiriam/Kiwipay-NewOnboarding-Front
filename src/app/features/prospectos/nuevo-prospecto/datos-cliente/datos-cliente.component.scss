@@ -1,0 +1,207 @@
+@use '../../../../shared/styles/colors.scss' as colors;
+@use '../../../../shared/styles/mixins' as mixins;
+
+.section-container {
+  padding: 20px;
+  background-color: colors.$neutral-50;
+
+  form {
+    .section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 3rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      h4 {
+        margin-bottom: 1.25rem;
+        color: colors.$primary-800;
+        font-weight: 500;
+      }
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+
+      h4 {
+        color: colors.$primary-800;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+      }
+
+      .required-note {
+        color: colors.$text-secondary;
+        font-size: 0.8rem;
+      }
+    }
+
+    // Estilos para secciones expandibles
+    .expandable-section {
+      background-color: white;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+
+      .section-toggle {
+        cursor: pointer;
+
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px 20px;
+          transition: background-color 0.3s ease;
+          border-bottom: 1px solid colors.$neutral-200;
+
+          &:hover {
+            background-color: colors.$neutral-100;
+          }
+
+          h4 {
+            margin: 0;
+            color: colors.$primary-800;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+          }
+
+          small {
+            font-size: 0.8rem;
+            font-weight: normal;
+            color: colors.$text-secondary;
+            margin-left: 10px;
+          }
+        }
+
+        .toggle-icon {
+          color: colors.$primary-900;
+          margin-left: 10px;
+          font-size: 1rem;
+        }
+      }
+
+      .expanded-content {
+        padding: 20px;
+        border-top: 1px solid colors.$neutral-200;
+        background-color: colors.$neutral-50;
+      }
+    }
+
+    .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+
+      @include mixins.respond-to(md) {
+        flex-direction: row;
+
+        .form-group {
+          flex: 1;
+        }
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+
+      &.full-width {
+        flex-basis: 100%;
+      }
+
+      label {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+      input, select {
+        padding: 0.75rem;
+        border: 1px solid colors.$border-light;
+        border-radius: 4px;
+        font-size: 1rem;
+
+        &:focus {
+          outline: none;
+          border-color: colors.$primary-800;
+          box-shadow: 0 0 0 2px rgba(colors.$primary-900, 0.1);
+        }
+
+        &::placeholder {
+          color: colors.$text-secondary;
+        }
+
+        &.ng-invalid.ng-touched {
+          border-color: colors.$error;
+        }
+      }
+
+      .error-message {
+        color: colors.$error;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+      }
+
+      .input-prefix {
+        position: relative;
+
+        .prefix {
+          position: absolute;
+          left: 0.5rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: colors.$text-secondary;
+          font-weight: 500;
+        }
+
+        input {
+          padding-left: 2rem; // Make space for the prefix
+        }
+      }
+    }
+
+    .form-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &.btn-primary {
+          background-color: colors.$primary-900;
+          color: white;
+
+          &:hover {
+            background-color: colors.$primary-700;
+          }
+        }
+
+        &.btn-secondary {
+          background-color: colors.$neutral-200;
+          color: colors.$text-secondary;
+
+          &:hover {
+            background-color: colors.$neutral-300;
+          }
+        }
+      }
+
+      // For screens smaller than 576px
+      @media (max-width: 575.98px) {
+        flex-direction: column-reverse;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+}

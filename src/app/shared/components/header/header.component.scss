@@ -1,0 +1,36 @@
+@use '../../../shared/styles/colors' as colors;
+@use '../../../shared/styles/mixins' as mixins;
+
+.app-header {
+  background-color: colors.$primary-900;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  button {
+    background: colors.$warning;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    @include mixins.transition(background-color);
+
+    &:hover {
+      background: colors.$warning;
+    }
+  }
+}
