@@ -36,7 +36,7 @@
         </div>
 
         <div class="form-group">
-          <label for="sede">Sede de Clínica</label>
+          <label for="sede">Sede de Clínica (Opcional)</label>
           <select id="sede" formControlName="sede">
             <option *ngFor="let sede of sedes" [value]="sede.value">{{sede.label}}</option>
           </select>
@@ -59,7 +59,7 @@
   <!-- Resultados de la cotización -->
   <div class="cotizacion-result" *ngIf="cotizacion && cotizacion.success">
     <div class="pre-aprobado-section">
-      <h3>Tienes un crédito pre-aprobado con Kiwi por un monto de hasta</h3>
+      <h3>Cliente con un crédito pre-aprobado con Kiwi por un monto de hasta</h3>
       <div class="monto-aprobado">
         <span>S/ {{montoPreAprobado | number:'1.0-0'}}</span>
       </div>

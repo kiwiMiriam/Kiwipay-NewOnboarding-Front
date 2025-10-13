@@ -11,60 +11,39 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
       <h3>Datos de la Clínica</h3>
 
       <form [formGroup]="clinicaForm" (ngSubmit)="onSubmit()">
+
         <div class="form-row">
           <div class="form-group">
-            <label for="nombreClinica">Nombre de la Clínica</label>
-            <input type="text" id="nombreClinica" formControlName="nombreClinica">
-            @if (submitted && f['nombreClinica'].errors) {
-              <div class="error-message">El nombre de la clínica es requerido</div>
-            }
+            <label for="categoriaMedica">Categoría Médica</label>
+            <select id="categoriaMedica" formControlName="categoriaMedica">
+              <option value="">Seleccione...</option>
+              <option value="GENERAL">Bariátrica</option>
+              <option value="ESPECIALISTA">Dental</option>
+              <option value="RESIDENTE">Obstetricia</option>
+            </select>
           </div>
 
           <div class="form-group">
-            <label for="direccion">Dirección</label>
-            <input type="text" id="direccion" formControlName="direccion">
-            @if (submitted && f['direccion'].errors) {
-              <div class="error-message">La dirección es requerida</div>
-            }
+            <label for="clinica">Clínica</label>
+            <input type="text" id="clinica" formControlName="clinica">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="telefono">Teléfono</label>
-            <input type="tel" id="telefono" formControlName="telefono">
-            @if (submitted && f['telefono'].errors) {
-              <div class="error-message">El teléfono es requerido</div>
-            }
+            <label for="sede">Sede</label>
+            <input type="text" id="sede" formControlName="sede">
           </div>
 
           <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" formControlName="email">
-            @if (submitted && f['email'].errors) {
-              <div class="error-message">
-                @if (f['email'].errors['required']) {
-                  El email es requerido
-                } @else if (f['email'].errors['email']) {
-                  Debe ingresar un email válido
-                }
-              </div>
+            <label for="ingresos">Ingresos *</label>
+            <div class="input-prefix">
+              <span class="prefix">S/</span>
+              <input type="number" id="ingresos" formControlName="ingresos">
+            </div>
+            @if (submitted && f['ingresos'].errors) {
+              <div class="error-message">Este campo es requerido</div>
             }
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="responsable">Nombre del Responsable</label>
-            <input type="text" id="responsable" formControlName="responsable">
-            @if (submitted && f['responsable'].errors) {
-              <div class="error-message">El nombre del responsable es requerido</div>
-            }
-          </div>
-
-          <div class="form-group">
-            <label for="horario">Horario de Atención</label>
-            <input type="text" id="horario" formControlName="horario">
           </div>
         </div>
 
@@ -83,12 +62,10 @@ export class DatosClinicaComponent {
 
   constructor(private fb: FormBuilder) {
     this.clinicaForm = this.fb.group({
-      nombreClinica: ['', Validators.required],
-      direccion: ['', Validators.required],
-      telefono: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      responsable: ['', Validators.required],
-      horario: ['']
+      categoriaMedica: [''],
+      clinica: [''],
+      sede: [''],
+      ingresos: ['', Validators.required],
     });
   }
 

@@ -118,41 +118,6 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 
         <div class="form-row">
           <div class="form-group">
-            <label for="categoriaMedica">Categoría Médica</label>
-            <select id="categoriaMedica" formControlName="categoriaMedica">
-              <option value="">Seleccione...</option>
-              <option value="GENERAL">Bariátrica</option>
-              <option value="ESPECIALISTA">Dental</option>
-              <option value="RESIDENTE">Obstetricia</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="clinica">Clínica</label>
-            <input type="text" id="clinica" formControlName="clinica">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="sede">Sede</label>
-            <input type="text" id="sede" formControlName="sede">
-          </div>
-
-          <div class="form-group">
-            <label for="ingresos">Ingresos *</label>
-            <div class="input-prefix">
-              <span class="prefix">S/</span>
-              <input type="number" id="ingresos" formControlName="ingresos">
-            </div>
-            @if (submitted && f['ingresos'].errors) {
-              <div class="error-message">Este campo es requerido</div>
-            }
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
             <label for="telefono">Teléfono *</label>
             <input type="tel" id="telefono" formControlName="telefono">
             @if (submitted && f['telefono'].errors) {
@@ -434,10 +399,10 @@ export class DatosClienteComponent {
       fechaNacimiento: ['', Validators.required],
       sexo: ['', Validators.required],
       correo: ['', [Validators.required, Validators.email]],
-      categoriaMedica: [''],
-      clinica: [''],
-      sede: [''],
-      ingresos: ['', Validators.required],
+      //categoriaMedica: [''],
+      //clinica: [''],
+      //sede: [''],
+      //ingresos: ['', Validators.required],
       telefono: ['', Validators.required],
       departamento: ['', Validators.required],
       provincia: ['', Validators.required],
