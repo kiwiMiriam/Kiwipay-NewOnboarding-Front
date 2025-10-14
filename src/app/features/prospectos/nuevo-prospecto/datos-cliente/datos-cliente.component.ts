@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 
 @Component({
   selector: 'app-datos-cliente',
@@ -349,13 +351,62 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
   `,
   styleUrls: ['./datos-cliente.component.scss']
 })
-export class DatosClienteComponent {
+export class DatosClienteComponent implements OnInit {
   clientForm!: FormGroup;
   submitted = false;
+  editMode = false;
+  prospectoId: string | null = null;
 
   // Control de secciones expandibles
   isPacienteExpanded = false;
   isConyugueExpanded = false;
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private prospectosService: ProspectosService
+  ) {
+    this.initForm();
+  }
+
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      this.prospectoId = params['id'];
+      if (this.prospectoId) {
+        this.editMode = true;
+        this.loadProspectoData(this.prospectoId);
+      }
+    });
+  }
+
+  private loadProspectoData(id: string) {
+    this.prospectosService.getProspectos().subscribe(
+      (prospectos: Prospecto[]) => {
+        const prospecto = prospectos.find(p => p.id === id);
+        if (prospecto) {
+          if (prospecto.paciente) {
+            this.isPacienteExpanded = true;
+          }
+          if (prospecto.conyugue) {
+            this.isConyugueExpanded = true;
+          }
+
+          this.clientForm.patchValue(prospecto);
+
+          if (prospecto.departamento) {
+            this.onDepartamentoChange();
+          }
+          if (prospecto.provincia) {
+            this.onProvinciaChange();
+          }
+        }
+      },
+      (error: Error) => {
+        console.error('Error loading prospecto:', error);
+      }
+    );
+  }
 
   // Datos para los dropdowns de ubicación
   departamentos = ['Lima', 'Arequipa', 'Cusco', 'Trujillo', 'Piura', 'Chiclayo'];
@@ -383,10 +434,6 @@ export class DatosClienteComponent {
     }
   };
 
-  constructor(private fb: FormBuilder) {
-    this.initForm();
-  }
-
   private initForm(): void {
     // Crear el formulario con validación
     this.clientForm = this.fb.group({
@@ -399,10 +446,6 @@ export class DatosClienteComponent {
       fechaNacimiento: ['', Validators.required],
       sexo: ['', Validators.required],
       correo: ['', [Validators.required, Validators.email]],
-      //categoriaMedica: [''],
-      //clinica: [''],
-      //sede: [''],
-      //ingresos: ['', Validators.required],
       telefono: ['', Validators.required],
       departamento: ['', Validators.required],
       provincia: ['', Validators.required],
@@ -417,7 +460,7 @@ export class DatosClienteComponent {
         apellidos: [''],
         sexo: [''],
         telefono: [''],
-        correo: ['', Validators.email], // Solo validamos email si se ingresa
+        correo: ['', Validators.email],
         departamento: [''],
         provincia: [''],
         distrito: [''],
@@ -430,7 +473,7 @@ export class DatosClienteComponent {
         numeroDocumento: [''],
         nombres: [''],
         apellidos: [''],
-        correo: ['', Validators.email], // Solo validamos email si se ingresa
+        correo: ['', Validators.email],
         telefono: ['']
       })
     });
@@ -510,41 +553,39 @@ export class DatosClienteComponent {
       return;
     }
 
-    // Si el formulario es válido, procesamos los datos
     const formData = this.clientForm.value;
 
     // Limpiamos secciones opcionales vacías
-    if (this.isPacienteExpanded === false || this.isEmpty(formData.paciente)) {
+    if (!this.isPacienteExpanded || this.isEmpty(formData.paciente)) {
       delete formData.paciente;
     }
 
-    if (this.isConyugueExpanded === false || this.isEmpty(formData.conyugue)) {
+    if (!this.isConyugueExpanded || this.isEmpty(formData.conyugue)) {
       delete formData.conyugue;
     }
 
-    // Enviar datos a un servicio o API
-    console.log('Datos del cliente:', formData);
-
-    // Aquí normalmente llamaríamos a un servicio para guardar los datos
-    // this.clienteService.guardarDatos(formData).subscribe(...);
-
-    alert('Datos guardados correctamente');
+    if (this.editMode && this.prospectoId) {
+      // Update existing prospecto
+      this.prospectosService.updateProspecto(this.prospectoId, {
+        ...formData,
+        id: this.prospectoId
+      });
+    } else {
+      // Create new prospecto
+      this.prospectosService.createProspecto(formData);
+    }
+    this.router.navigate(['/bandeja']);
   }
 
   // Verificar si un objeto tiene todos sus valores vacíos
   private isEmpty(obj: any): boolean {
-    return Object.values(obj).every(value => {
-      if (value === null || value === undefined || value === '') {
-        return true;
-      }
-      return false;
-    });
+    if (!obj) return true;
+    return Object.values(obj).every(x => x === null || x === '' || x === undefined);
   }
 
   onCancel(): void {
     if (confirm('¿Estás seguro de que deseas cancelar? Los cambios no guardados se perderán.')) {
-      this.clientForm.reset();
-      this.submitted = false;
+      this.router.navigate(['/bandeja']);
     }
   }
 }
