@@ -53,6 +53,27 @@
       }
     }
 
+     select {
+        padding: 0.75rem;
+        border: 1px solid colors.$border-light;
+        border-radius: 4px;
+        font-size: 1rem;
+
+        &:focus {
+          outline: none;
+          border-color: colors.$primary-800;
+          box-shadow: 0 0 0 2px rgba(colors.$primary-900, 0.1);
+        }
+
+        &::placeholder {
+          color: colors.$text-secondary;
+        }
+
+        &.ng-invalid.ng-touched {
+          border-color: colors.$error;
+        }
+      }
+
     .form-buttons {
       display: flex;
       gap: 1rem;

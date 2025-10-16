@@ -1,0 +1,117 @@
+<div class="cotizador-container">
+  <h2 class="section-title">Cotizador</h2>
+
+  <!-- Formulario de cotización -->
+  <div class="cotizador-form-section">
+    <form [formGroup]="cotizadorForm" (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="tipoDocumento">Tipo de Documento</label>
+          <select id="tipoDocumento" formControlName="tipoDocumento">
+            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.value">{{tipo.label}}</option>
+          </select>
+          <div class="error-message" *ngIf="submitted && f['tipoDocumento'].errors">
+            El tipo de documento es requerido
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="numeroDocumento">Número de Documento</label>
+          <input type="text" id="numeroDocumento" formControlName="numeroDocumento">
+          <div class="error-message" *ngIf="submitted && f['numeroDocumento'].errors">
+            <span *ngIf="f['numeroDocumento'].errors['required']">El número de documento es requerido</span>
+            <span *ngIf="f['numeroDocumento'].errors['minlength'] || f['numeroDocumento'].errors['maxlength']">El número de documento debe tener entre 8 y 12 caracteres</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="ingresos">Ingresos (S/)</label>
+          <input type="number" id="ingresos" formControlName="ingresos" min="0" step="100">
+          <div class="error-message" *ngIf="submitted && f['ingresos'].errors">
+            <span *ngIf="f['ingresos'].errors['required']">El ingreso es requerido</span>
+            <span *ngIf="f['ingresos'].errors['min']">El ingreso debe ser mayor a 0</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sede">Sede de Clínica (Opcional)</label>
+          <select id="sede" formControlName="sede">
+            <option *ngFor="let sede of sedes" [value]="sede.value">{{sede.label}}</option>
+          </select>
+          <div class="error-message" *ngIf="submitted && f['sede'].errors">
+            La sede es requerida
+          </div>
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          <span *ngIf="!loading">Cotizar</span>
+          <span *ngIf="loading">Calculando...</span>
+        </button>
+        <button type="button" class="btn-secondary" (click)="limpiarFormulario()">Limpiar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Resultados de la cotización -->
+  <div class="cotizacion-result" *ngIf="cotizacion && cotizacion.success">
+    <div class="pre-aprobado-section">
+      <h3>Cliente con un crédito pre-aprobado con Kiwi por un monto de hasta</h3>
+      <div class="monto-aprobado">
+        <span>S/ {{montoPreAprobado | number:'1.0-0'}}</span>
+      </div>
+    </div>
+
+    <div class="monto-section">
+      <h4>Ingresa el monto que deseas tomar</h4>
+      <form [formGroup]="montoForm">
+        <div class="monto-input-container">
+          <input
+            type="number"
+            formControlName="monto"
+            class="monto-input"
+            [max]="montoPreAprobado"
+            [min]="1"
+            [ngClass]="{'ng-invalid': montoForm.get('monto')?.invalid && montoForm.get('monto')?.touched}">
+          <div class="currency-tag">PEN</div>
+        </div>
+        <div class="error-message" *ngIf="montoForm.get('monto')?.touched && montoForm.get('monto')?.invalid">
+          <span *ngIf="montoForm.get('monto')?.errors?.['required']">
+            El monto es requerido
+          </span>
+          <span *ngIf="montoForm.get('monto')?.errors?.['min']">
+            El monto debe ser mayor a 0
+          </span>
+          <span *ngIf="montoForm.get('monto')?.errors?.['max'] || montoForm.get('monto')?.errors?.['montoExcedido']">
+            El monto no puede superar el monto pre-aprobado (S/ {{montoPreAprobado | number:'1.0-0'}})
+          </span>
+        </div>
+      </form>
+    </div>
+
+    <div class="cuotas-options">
+      <div
+        *ngFor="let opcion of opciones"
+        class="cuota-option"
+        [class.selected]="opcion.selected"
+        (click)="seleccionarCuota(opcion)">
+        <span class="radio-circle"></span>
+        <span class="cuota-text">{{opcion.label}}</span>
+      </div>
+    </div>
+
+    <div class="tea-section">
+      <p>Tasa Efectiva Anual (TEA): {{tea | number:'1.2-2'}}% + IGV</p>
+      <p>Tasa de Costo Efectivo Anual (TCEA): {{tcea | number:'1.2-2'}}% + IGV</p>
+    </div>
+  </div>
+
+  <!-- Botones de navegación -->
+  <div class="navigation-buttons" *ngIf="cotizacion && cotizacion.success">
+    <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
+    <button class="btn-primary" (click)="navigateNext()">Continuar</button>
+  </div>
+</div>

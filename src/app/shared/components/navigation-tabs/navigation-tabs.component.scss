@@ -3,29 +3,29 @@
 
 .navigation-tabs {
   width: 100%;
-  
+
   .nav-title {
     font-size: 1.5rem;
     font-weight: bold;
     margin: 0.5rem 1rem;
     color: colors.$text-primary;
   }
-  
+
   .tabs-container {
     position: relative;
     border-bottom: 1px solid colors.$border-light;
   }
-  
+
   .tabs-list {
     display: flex;
     list-style: none;
     padding: 0;
     margin: 0;
-    
+
     li {
       padding: 0;
       margin: 0;
-      
+
       a {
         display: block;
         padding: 1rem 1.5rem;
@@ -34,7 +34,7 @@
         font-weight: 500;
         position: relative;
         transition: color 0.3s ease;
-        
+
         &::after {
           content: '';
           position: absolute;
@@ -46,11 +46,11 @@
           transition: background-color 0.3s ease;
         }
       }
-      
+
       &.active {
         a {
           color: colors.$primary-900;
-          
+
           &::after {
             background-color: colors.$primary-900;
           }
@@ -58,7 +58,7 @@
       }
     }
   }
-  
+
   .tab-indicator {
     position: absolute;
     height: 3px;

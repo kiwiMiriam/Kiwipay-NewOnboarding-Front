@@ -8,7 +8,6 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule],
   template: `
     <header class="app-header">
-      <h1>KIWIPLAN</h1>
       <div class="user-info">
         <span>Bienvenido, {{ authService.user()?.fullName }}</span>
         <button (click)="logout()">Cerrar Sesión</button>

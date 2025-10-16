@@ -100,7 +100,7 @@
 
   <!-- Botones de navegación -->
   <div class="navigation-buttons">
-    <button class="btn-secondary" routerLink="/dashboard/cotizador">Anterior</button>
-    <button class="btn-primary" routerLink="/dashboard/datos-clientes">Siguiente</button>
+    <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
+    <button class="btn-primary" (click)="navigateNext()">Siguiente</button>
   </div>
 </div>

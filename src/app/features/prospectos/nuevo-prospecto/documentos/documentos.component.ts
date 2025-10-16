@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { NavigationService } from '../../../../core/services/navigation.service';
 
 interface Documento {
   id: number;
@@ -14,7 +15,7 @@ interface Documento {
 @Component({
   selector: 'app-documentos',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, NgIf, NgForOf, FormsModule, ReactiveFormsModule],
   templateUrl: './documentos.component.html',
   styleUrls: ['./documentos.component.scss']
 })
@@ -37,6 +38,11 @@ export class DocumentosComponent {
   archivoSeleccionado: File | null = null;
   comentario = '';
   mensajeError = '';
+
+  constructor(
+    private router: Router,
+    private navigationService: NavigationService
+  ) {}
 
   /**
    * Maneja el cambio de tipo de documento
@@ -166,5 +172,21 @@ export class DocumentosComponent {
     } else {
       return (tamano / (1024 * 1024)).toFixed(2) + ' MB';
     }
+  }
+
+  /**
+   * Navega hacia atrás (cotizador) y actualiza el estado de la pestaña activa
+   */
+  navigateBack(): void {
+    // Usa el servicio de navegación para navegar hacia atrás desde la pestaña actual
+    this.navigationService.navigateToTab('cotizador');
+  }
+
+  /**
+   * Navega hacia adelante (datos-clientes) y actualiza el estado de la pestaña activa
+   */
+  navigateNext(): void {
+    // Usa el servicio de navegación para navegar hacia adelante desde la pestaña actual
+    this.navigationService.navigateToTab('cliente');
   }
 }
