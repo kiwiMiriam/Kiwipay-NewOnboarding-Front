@@ -64,14 +64,13 @@
 
   <!-- Tabla de documentos -->
   <div class="documentos-table-container">
-    <div class="table-header">
-      <div class="column tipo-column">Tipo de Documento</div>
-      <div class="column archivo-column">Archivo</div>
-      <div class="column comentario-column">Comentario</div>
-      <div class="column accion-column">Acción</div>
-    </div>
-
-    <div class="empty-state" *ngIf="documentos.length === 0">
+      <div class="table-header">
+        <div class="column tipo-column">Tipo de Documento</div>
+        <div class="column archivo-column">Archivo</div>
+        <div class="column comentario-column">Comentario</div>
+        <div class="column estado-column">Estado</div>
+        <div class="column accion-column">Acción</div>
+      </div>    <div class="empty-state" *ngIf="documentos.length === 0">
       <span class="icon-file empty-icon"></span>
       <p>No hay documentos cargados</p>
     </div>
@@ -89,8 +88,14 @@
           </div>
         </div>
         <div class="column comentario-column">{{documento.comentario || '-'}}</div>
+        <div class="column estado-column">
+          <span [class]="obtenerClaseIconoEstado(documento.estadoAprobacion)"></span>
+        </div>
         <div class="column accion-column">
-          <button class="btn-icon delete-btn" (click)="eliminarDocumento(documento.id)">
+          <button class="btn-icon estado-btn" (click)="abrirModalEstado(documento)" title="Establecer Estado">
+            <span class="icon-estado"></span>
+          </button>
+          <button class="btn-icon delete-btn" (click)="eliminarDocumento(documento.id)" title="Eliminar">
             <span class="icon-trash"></span>
           </button>
         </div>
@@ -101,6 +106,14 @@
   <!-- Botones de navegación -->
   <div class="navigation-buttons">
     <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
-    <button class="btn-primary" (click)="navigateNext()">Siguiente</button>
   </div>
+
+  <!-- Al final del template -->
+<app-modal-estado
+  *ngIf="mostrarModal"
+  [mostrarModal]="mostrarModal"
+  [documento]="documentoSeleccionado"
+  (cerrar)="onCerrarModal()"
+  (guardar)="onGuardarEstado($event)">
+</app-modal-estado>
 </div>

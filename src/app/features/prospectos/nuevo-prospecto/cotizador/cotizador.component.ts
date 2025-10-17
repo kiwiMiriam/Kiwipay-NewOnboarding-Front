@@ -306,7 +306,7 @@ export class CotizadorComponent implements OnInit {
    */
   navigateBack(): void {
     // Usa el servicio de navegación para navegar hacia atrás desde la pestaña actual
-    this.navigationService.navigateToTab('clinica');
+    this.navigationService.navigateToTab('datos-clinica');
   }
 
   /**

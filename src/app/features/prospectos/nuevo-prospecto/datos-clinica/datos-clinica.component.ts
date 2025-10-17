@@ -1,66 +1,21 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { NavigationService } from '../../../../core/services/navigation.service'
+
 
 @Component({
   selector: 'app-datos-clinica',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <div class="section-container">
-      <h3>Datos de la Clínica</h3>
-
-      <form [formGroup]="clinicaForm" (ngSubmit)="onSubmit()">
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="categoriaMedica">Categoría Médica</label>
-            <select id="categoriaMedica" formControlName="categoriaMedica">
-              <option value="">Seleccione...</option>
-              <option value="GENERAL">Bariátrica</option>
-              <option value="ESPECIALISTA">Dental</option>
-              <option value="RESIDENTE">Obstetricia</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="clinica">Clínica</label>
-            <input type="text" id="clinica" formControlName="clinica">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="sede">Sede</label>
-            <input type="text" id="sede" formControlName="sede">
-          </div>
-
-          <div class="form-group">
-            <label for="ingresos">Ingresos *</label>
-            <div class="input-prefix">
-              <span class="prefix">S/</span>
-              <input type="number" id="ingresos" formControlName="ingresos">
-            </div>
-            @if (submitted && f['ingresos'].errors) {
-              <div class="error-message">Este campo es requerido</div>
-            }
-          </div>
-        </div>
-
-        <div class="form-buttons">
-          <button type="submit" class="btn-primary">Guardar</button>
-          <button type="button" class="btn-secondary">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  `,
+  templateUrl: './datos-clinica.component.html',
   styleUrls: ['./datos-clinica.component.scss']
 })
 export class DatosClinicaComponent {
   clinicaForm: FormGroup;
   submitted = false;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private navigationService: NavigationService) {
     this.clinicaForm = this.fb.group({
       categoriaMedica: [''],
       clinica: [''],
@@ -81,4 +36,22 @@ export class DatosClinicaComponent {
     // Process form data here
     console.log(this.clinicaForm.value);
   }
+
+  /**
+   * Navega hacia atrás (datos-clinicas) y actualiza el estado de la pestaña activa
+   */
+  navigateBack(): void {
+    // Usa el servicio de navegación para navegar hacia atrás desde la pestaña actual
+    this.navigationService.navigateToTab('datos-cliente');
+  }
+
+  /**
+   * Navega hacia adelante (documentos) y actualiza el estado de la pestaña activa
+   */
+  navigateNext(): void {
+    // Usa el servicio de navegación para navegar hacia adelante desde la pestaña actual
+    this.navigationService.navigateToTab('cotizador');
+  }
+
+
 }

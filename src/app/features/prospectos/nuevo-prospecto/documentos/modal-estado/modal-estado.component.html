@@ -1,0 +1,29 @@
+   <!-- Modal de Estado de Aprobación -->
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModalEstado()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Estado de Aprobación de Documento</h3>
+
+      <div class="form-group">
+        <label for="estadoAprobacion">Estado</label>
+        <select id="estadoAprobacion" [(ngModel)]="estadoAprobacionTemp">
+          <option value="sin-estado">Sin Estado</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="comentarioAprobacion">Comentario</label>
+        <textarea
+          id="comentarioAprobacion"
+          rows="3"
+          [(ngModel)]="comentarioAprobacionTemp"
+          placeholder="Ingrese un comentario"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModalEstado()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEstadoDocumento()">Guardar</button>
+      </div>
+    </div>
+  </div>

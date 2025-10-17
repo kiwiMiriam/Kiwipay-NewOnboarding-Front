@@ -1,0 +1,52 @@
+<div class="section-container">
+      <h3>Datos de la Clínica</h3>
+
+      <form [formGroup]="clinicaForm" (ngSubmit)="onSubmit()">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="categoriaMedica">Categoría Médica</label>
+            <select id="categoriaMedica" formControlName="categoriaMedica">
+              <option value="">Seleccione...</option>
+              <option value="GENERAL">Bariátrica</option>
+              <option value="ESPECIALISTA">Dental</option>
+              <option value="RESIDENTE">Obstetricia</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="clinica">Clínica</label>
+            <input type="text" id="clinica" formControlName="clinica">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sede">Sede</label>
+            <input type="text" id="sede" formControlName="sede">
+          </div>
+
+          <div class="form-group">
+            <label for="ingresos">Ingresos *</label>
+            <div class="input-prefix">
+              <span class="prefix">S/</span>
+              <input type="number" id="ingresos" formControlName="ingresos">
+            </div>
+            @if (submitted && f['ingresos'].errors) {
+              <div class="error-message">Este campo es requerido</div>
+            }
+          </div>
+        </div>
+
+        <div class="form-buttons">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+     <!-- Botones de navegación -->
+  <div class="navigation-buttons">
+    <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
+    <button class="btn-primary" (click)="navigateNext()">Siguiente</button>
+  </div>
