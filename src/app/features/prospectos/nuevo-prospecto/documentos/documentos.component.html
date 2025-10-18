@@ -2,7 +2,7 @@
   <h2 class="section-title">Documentos</h2>
   <p class="section-description">
     Carga documentos relacionados con el prospecto. Formatos permitidos: PDF, JPG, JPEG, PNG.
-    (Máximo {{MAX_DOCUMENTOS}} documentos)
+    (Máximo {{ MAX_DOCUMENTOS }} documentos)
   </p>
 
   <!-- Sección de carga de documentos -->
@@ -13,9 +13,10 @@
         <select
           id="tipoDocumento"
           [value]="tipoDocumentoSeleccionado"
-          (change)="onTipoDocumentoChange($event)">
+          (change)="onTipoDocumentoChange($event)"
+        >
           <option value="">Seleccionar...</option>
-          <option *ngFor="let tipo of TIPOS_PERMITIDOS" [value]="tipo.id">{{tipo.nombre}}</option>
+          <option *ngFor="let tipo of TIPOS_PERMITIDOS" [value]="tipo.id">{{ tipo.nombre }}</option>
         </select>
       </div>
 
@@ -25,14 +26,15 @@
           <button class="file-select-button" (click)="fileInput.click()">
             <span class="icon-upload"></span> Cargar Documento
           </button>
-          <span class="file-name" *ngIf="archivoSeleccionado">{{archivoSeleccionado.name}}</span>
+          <span class="file-name" *ngIf="archivoSeleccionado">{{ archivoSeleccionado.name }}</span>
           <input
             #fileInput
             type="file"
             id="archivo"
             class="file-input"
             (change)="onArchivoChange($event)"
-            accept=".pdf,.jpg,.jpeg,.png">
+            accept=".pdf,.jpg,.jpeg,.png"
+          />
         </div>
       </div>
     </div>
@@ -44,19 +46,23 @@
           id="comentario"
           rows="2"
           [(ngModel)]="comentario"
-          placeholder="Agrega un comentario (opcional)"></textarea>
+          placeholder="Agrega un comentario (opcional)"
+        ></textarea>
       </div>
     </div>
 
     <div class="error-message" *ngIf="mensajeError">
-      <span class="icon-warning"></span> {{mensajeError}}
+      <span class="icon-warning"></span> {{ mensajeError }}
     </div>
 
     <div class="upload-actions">
       <button
         class="btn-primary"
         (click)="agregarDocumento()"
-        [disabled]="!archivoSeleccionado || !tipoDocumentoSeleccionado || documentos.length >= MAX_DOCUMENTOS">
+        [disabled]="
+          !archivoSeleccionado || !tipoDocumentoSeleccionado || documentos.length >= MAX_DOCUMENTOS
+        "
+      >
         Agregar
       </button>
     </div>
@@ -64,39 +70,49 @@
 
   <!-- Tabla de documentos -->
   <div class="documentos-table-container">
-      <div class="table-header">
-        <div class="column tipo-column">Tipo de Documento</div>
-        <div class="column archivo-column">Archivo</div>
-        <div class="column comentario-column">Comentario</div>
-        <div class="column estado-column">Estado</div>
-        <div class="column accion-column">Acción</div>
-      </div>    <div class="empty-state" *ngIf="documentos.length === 0">
+    <div class="table-header">
+      <div class="column tipo-column">Tipo de Documento</div>
+      <div class="column archivo-column">Archivo</div>
+      <div class="column comentario-column">Comentario</div>
+      <div class="column estado-column">Estado</div>
+      <div class="column accion-column">Acción</div>
+    </div>
+    <div class="empty-state" *ngIf="documentos.length === 0">
       <span class="icon-file empty-icon"></span>
       <p>No hay documentos cargados</p>
     </div>
 
     <div class="table-body">
       <div class="table-row" *ngFor="let documento of documentos">
-        <div class="column tipo-column">{{obtenerNombreTipoDocumento(documento.tipo)}}</div>
+        <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.tipo) }}</div>
         <div class="column archivo-column">
           <div class="file-info">
             <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.archivo)"></span>
             <div class="file-details">
-              <span class="file-name">{{documento.archivo.name}}</span>
-              <span class="file-size">{{formatearTamanoArchivo(documento.archivo.size)}}</span>
+              <span class="file-name">{{ documento.archivo.name }}</span>
+              <span class="file-size">{{ formatearTamanoArchivo(documento.archivo.size) }}</span>
             </div>
           </div>
         </div>
-        <div class="column comentario-column">{{documento.comentario || '-'}}</div>
+        <div class="column comentario-column">{{ documento.comentario || '-' }}</div>
         <div class="column estado-column">
           <span [class]="obtenerClaseIconoEstado(documento.estadoAprobacion)"></span>
         </div>
         <div class="column accion-column">
-          <button class="btn-icon estado-btn" (click)="abrirModalEstado(documento)" title="Establecer Estado">
-            <span class="icon-estado"></span>
+          <button
+            class="btn-icon estado-btn"
+            (click)="abrirModalEstado(documento)"
+            title="Establecer Estado"
+          >
+            <fa-icon [icon]="faGear"></fa-icon>
           </button>
-          <button class="btn-icon delete-btn" (click)="eliminarDocumento(documento.id)" title="Eliminar">
-            <span class="icon-trash"></span>
+          <button
+            class="btn-icon delete-btn"
+            (click)="eliminarDocumento(documento.id)"
+            title="Eliminar"
+          >
+            <!-- <span class="icon-trash"></span> -->
+             <fa-icon [icon]="faTrash"></fa-icon>
           </button>
         </div>
       </div>
@@ -109,11 +125,12 @@
   </div>
 
   <!-- Al final del template -->
-<app-modal-estado
-  *ngIf="mostrarModal"
-  [mostrarModal]="mostrarModal"
-  [documento]="documentoSeleccionado"
-  (cerrar)="onCerrarModal()"
-  (guardar)="onGuardarEstado($event)">
-</app-modal-estado>
+  <app-modal-estado
+    *ngIf="mostrarModal"
+    [mostrarModal]="mostrarModal"
+    [documento]="documentoSeleccionado"
+    (cerrar)="onCerrarModal()"
+    (guardar)="onGuardarEstado($event)"
+  >
+  </app-modal-estado>
 </div>

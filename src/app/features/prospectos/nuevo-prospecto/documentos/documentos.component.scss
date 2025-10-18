@@ -16,13 +16,6 @@
   content: '\1F5CE'; // Document icon
 }
 
-.icon-trash:before {
-  content: '\1F5D1'; // Trash icon
-}
-
-.icon-estado:before {
-  content: '\2699'; // Settings/gear icon
-}
 
 .estado-icon {
   display: inline-block;
@@ -138,6 +131,10 @@
             border-color: colors.$primary-800;
             box-shadow: 0 0 0 2px rgba(colors.$primary-900, 0.1);
           }
+
+          options{
+            width: 100%;
+          }
         }
 
         textarea {
@@ -225,7 +222,7 @@
   .documentos-table-container {
     background-color: white;
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
     @include mixins.elevation-1;
     margin-bottom: 2rem;
 
@@ -250,27 +247,25 @@
     }
 
     .archivo-column {
-      flex: 0 0 25%;
-      min-width: 200px;
-    }
-
-    .comentario-column {
       flex: 0 0 30%;
       min-width: 200px;
     }
 
+    .comentario-column {
+      flex: 0 0 20%;
+      min-width: 200px;
+    }
+
     .estado-column {
-      flex: 0 0 15%;
+       flex: 0 0 10%;
       min-width: 100px;
-      text-align: center;
+      display: flex;
+
     }
 
     .accion-column {
-      flex: 0 0 10%;
+      flex: 0 0 15%;
       min-width: 100px;
-      text-align: center;
-      display: flex;
-      justify-content: center;
       gap: 0.5rem;
     }
 
@@ -320,7 +315,7 @@
             .file-name {
               font-size: 0.9rem;
               color: colors.$text-primary;
-              white-space: nowrap;
+              white-space: wrap;
               overflow: hidden;
               text-overflow: ellipsis;
               max-width: 250px;

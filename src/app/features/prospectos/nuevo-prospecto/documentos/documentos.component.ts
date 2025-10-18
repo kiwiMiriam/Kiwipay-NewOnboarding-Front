@@ -4,6 +4,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { ModalEstadoComponent } from "./modal-estado/modal-estado.component";
+import { faTrash, faGear } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+
 
 interface Documento {
   id: number;
@@ -21,12 +24,16 @@ interface Documento {
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    ModalEstadoComponent
+    ModalEstadoComponent,
+    FontAwesomeModule
 ],
   templateUrl: './documentos.component.html',
   styleUrls: ['./documentos.component.scss']
 })
 export class DocumentosComponent implements OnInit {
+
+  faTrash = faTrash;
+  faGear = faGear;
   // Constants
   readonly MAX_DOCUMENTOS = 10;
   readonly TIPOS_PERMITIDOS = [
