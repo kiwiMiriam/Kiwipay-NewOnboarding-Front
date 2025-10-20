@@ -30,7 +30,7 @@ interface Documento {
   templateUrl: './documentos.component.html',
   styleUrls: ['./documentos.component.scss']
 })
-export class DocumentosComponent implements OnInit {
+export default class DocumentosComponent implements OnInit {
 
   faTrash = faTrash;
   faGear = faGear;
