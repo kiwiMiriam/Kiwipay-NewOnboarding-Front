@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 @Component({
   selector: 'app-loader',
   standalone: true,
@@ -43,7 +42,7 @@ import { CommonModule } from '@angular/common';
 
     .message {
       margin-top: 1rem;
-      color: white;
+      color: #072B31 ;
       font-size: 0.9rem;
     }
 

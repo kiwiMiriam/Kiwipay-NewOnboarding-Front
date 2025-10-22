@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faInbox, faBars } from '@fortawesome/free-solid-svg-icons';
+import { faInbox } from '@fortawesome/free-solid-svg-icons';
+import { HeaderComponent } from '../header/header.component';
+import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -10,19 +12,14 @@ import { faInbox, faBars } from '@fortawesome/free-solid-svg-icons';
   imports: [CommonModule, RouterModule, FontAwesomeModule],
   template: `
     <aside class="sidebar" [class.collapsed]="isCollapsed">
-      <div class="sidebar-header">
-        <img src="images/kiwiTextGreenLightIcon.svg" alt="KiwiPlan Logo" class="logo" *ngIf="!isCollapsed">
-        <button class="toggle-btn" (click)="toggleSidebar()">
-          <fa-icon [icon]="faBars"></fa-icon>
-        </button>
-      </div>
-
       <nav class="sidebar-nav">
         <ul>
           <li>
-            <a routerLink="/dashboard/bandeja" routerLinkActive="active">
+            <a routerLink="/dashboard/bandeja" routerLinkActive="active" (click)="onNavigate()">
               <fa-icon [icon]="faInbox"></fa-icon>
-              <span *ngIf="!isCollapsed">BANDEJA</span>
+              @if (!isCollapsed) {
+                <span>BANDEJA</span>
+              }
             </a>
           </li>
         </ul>
@@ -31,12 +28,40 @@ import { faInbox, faBars } from '@fortawesome/free-solid-svg-icons';
   `,
   styleUrls: ['./sidebar-menu.component.scss']
 })
-export class SidebarMenuComponent {
+export class SidebarMenuComponent implements OnInit, OnDestroy {
   isCollapsed = false;
   faInbox = faInbox;
-  faBars = faBars;
+  private subscriptions: Subscription[] = [];
 
-  toggleSidebar() {
-    this.isCollapsed = !this.isCollapsed;
+  constructor(private router: Router) {}
+
+  ngOnInit() {
+    // Subscribe to sidebar state changes
+    this.subscriptions.push(
+      HeaderComponent.sidebarCollapsed$.subscribe(
+        collapsed => this.isCollapsed = collapsed
+      )
+    );
+
+    // Auto-collapse on navigation for mobile
+    this.subscriptions.push(
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe(() => {
+        if (window.innerWidth < 768) {
+          HeaderComponent.sidebarState.next(true);
+        }
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  onNavigate() {
+    if (window.innerWidth < 768) {
+      HeaderComponent.sidebarState.next(true);
+    }
   }
 }

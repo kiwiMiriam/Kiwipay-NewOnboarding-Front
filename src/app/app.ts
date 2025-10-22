@@ -25,7 +25,6 @@ import { SidebarMenuComponent } from './shared/components/sidebar-menu/sidebar-m
     .main-content {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
       background-color: #f5f5f5;
     }
   `]
