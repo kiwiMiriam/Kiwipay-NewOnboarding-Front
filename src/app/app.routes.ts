@@ -48,6 +48,10 @@ export const routes: Routes = [
           {
             path: 'documentos',
             loadComponent: () => import('./features/prospectos/nuevo-prospecto/documentos/documentos.component')
+          },
+          {
+            path: 'prospecto',
+            loadComponent: () => import('./features/prospectos/nuevo-prospecto/prospecto/prospecto')
           }
         ]
       },

@@ -3,7 +3,7 @@
 .sidebar {
   position: fixed;
   top: 60px; // Adjust based on your header height
-  width: 250px;
+  width: 180px;
   height: calc(100vh - 60px);
   background-color: colors.$primary-900;
   color: colors.$text-on-primary;
@@ -14,7 +14,7 @@
 }
 
 .sidebar.collapsed {
-  width: 60px;
+  width: 45px;
 }
 
 .sidebar-nav {

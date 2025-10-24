@@ -46,6 +46,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { id: 'clinica', label: 'Datos clinicas', path: '/dashboard/nuevo-prospecto/datos-clinica', active: false },
     { id: 'cotizador', label: 'Cotizador', path: '/dashboard/nuevo-prospecto/cotizador', active: false },
     { id: 'documento', label: 'Documentos', path: '/dashboard/nuevo-prospecto/documentos', active: false },
+    { id: 'prospecto', label: 'Prospecto', path: '/dashboard/nuevo-prospecto/prospecto', active: false },
   ];
 
   private routerSubscription: Subscription | undefined;

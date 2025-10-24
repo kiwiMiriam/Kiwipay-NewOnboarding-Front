@@ -1,27 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {  Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
-import { NavigationService } from '../../../../core/services/navigation.service';
+import { Prospecto, ProspectosService } from '@app/core/services/prospectos.service';
+import { NavigationService } from '@src/app/core/services/navigation.service';
 import  { ubicacionMap }  from '@app/shared/constants/ubicacionMap';
 
 @Component({
-  selector: 'app-datos-cliente',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './datos-cliente.component.html',
-  styleUrls: ['./datos-cliente.component.scss']
+  selector: 'app-prospecto-titular',
+  imports: [],
+  templateUrl: './prospecto-titular.html',
+  styleUrl: '../prospecto.scss',
 })
-export class DatosClienteComponent implements OnInit {
-  clientForm!: FormGroup;
+export class ProspectoTitular implements OnInit {
+   clientForm!: FormGroup;
   submitted = false;
   editMode = false;
   prospectoId: string | null = null;
 
-  // Control de secciones expandibles
-  isPacienteExpanded = false;
-  isConyugueExpanded = false;
+ // Control de secciones expandibles
+ isTitularExpanded = true;
 
   constructor(
     private fb: FormBuilder,
@@ -48,12 +45,6 @@ export class DatosClienteComponent implements OnInit {
       (prospectos: Prospecto[]) => {
         const prospecto = prospectos.find(p => p.id === id);
         if (prospecto) {
-          if (prospecto.paciente) {
-            this.isPacienteExpanded = true;
-          }
-          if (prospecto.conyugue) {
-            this.isConyugueExpanded = true;
-          }
 
           this.clientForm.patchValue(prospecto);
 
@@ -100,30 +91,6 @@ export class DatosClienteComponent implements OnInit {
       distrito: ['', Validators.required],
       direccion: ['', Validators.required],
 
-      // INFORMACIÓN PACIENTE (opcional)
-      paciente: this.fb.group({
-        tipoDocumento: [''],
-        numeroDocumento: [''],
-        nombres: [''],
-        apellidos: [''],
-        sexo: [''],
-        telefono: [''],
-        correo: ['', Validators.email],
-        departamento: [''],
-        provincia: [''],
-        distrito: [''],
-        direccion: ['']
-      }),
-
-      // INFORMACIÓN CONYUGUE (opcional)
-      conyugue: this.fb.group({
-        tipoDocumento: [''],
-        numeroDocumento: [''],
-        nombres: [''],
-        apellidos: [''],
-        correo: ['', Validators.email],
-        telefono: ['']
-      })
     });
   }
 
@@ -181,13 +148,10 @@ export class DatosClienteComponent implements OnInit {
   }
 
   // Manejo de secciones expandibles
-  togglePaciente(): void {
-    this.isPacienteExpanded = !this.isPacienteExpanded;
+  toggleTitular(): void {
+    this.isTitularExpanded = !this.isTitularExpanded;
   }
 
-  toggleConyugue(): void {
-    this.isConyugueExpanded = !this.isConyugueExpanded;
-  }
 
   onSubmit(): void {
     this.submitted = true;
@@ -202,15 +166,6 @@ export class DatosClienteComponent implements OnInit {
     }
 
     const formData = this.clientForm.value;
-
-    // Limpiamos secciones opcionales vacías
-    if (!this.isPacienteExpanded || this.isEmpty(formData.paciente)) {
-      delete formData.paciente;
-    }
-
-    if (!this.isConyugueExpanded || this.isEmpty(formData.conyugue)) {
-      delete formData.conyugue;
-    }
 
     if (this.editMode && this.prospectoId) {
       // Update existing prospecto

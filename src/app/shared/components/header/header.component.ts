@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { faBars, faCircleUser, faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { BehaviorSubject } from 'rxjs';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-header',
@@ -36,9 +36,10 @@ import { BehaviorSubject } from 'rxjs';
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
-  public static sidebarState = new BehaviorSubject<boolean>(false);
-
-  constructor(public authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private sidebarService: SidebarService
+  ) {}
 
   // Font Awesome icons
   faBars = faBars;
@@ -49,12 +50,8 @@ export class HeaderComponent {
   isUserMenuOpen = false;
   private closeTimeout: any;
 
-  static get sidebarCollapsed$() {
-    return this.sidebarState.asObservable();
-  }
-
   toggleSidebar() {
-    HeaderComponent.sidebarState.next(!HeaderComponent.sidebarState.value);
+    this.sidebarService.toggleSidebar();
   }
 
   toggleUserMenu() {

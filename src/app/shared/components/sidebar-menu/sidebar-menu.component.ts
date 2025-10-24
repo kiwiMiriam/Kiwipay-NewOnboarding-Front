@@ -1,10 +1,10 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faInbox } from '@fortawesome/free-solid-svg-icons';
-import { HeaderComponent } from '../header/header.component';
 import { filter, Subscription } from 'rxjs';
+import { SidebarService } from '../../services/sidebar.service';
 
 @Component({
   selector: 'app-sidebar-menu',
@@ -33,12 +33,32 @@ export class SidebarMenuComponent implements OnInit, OnDestroy {
   faInbox = faInbox;
   private subscriptions: Subscription[] = [];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private sidebarService: SidebarService,
+    private elementRef: ElementRef
+  ) {
+    // Inicializamos el estado del sidebar
+    this.isCollapsed = this.sidebarService.isCollapsed;
+  }
+
+  @HostListener('document:click', ['$event'])
+  handleClick(event: MouseEvent) {
+    const targetElement = event.target as HTMLElement;
+    const isToggleButton = targetElement.closest('.toggle-btn');
+    const isSidebarClick = this.elementRef.nativeElement.contains(targetElement);
+
+    // Si el clic no fue en el botón de toggle ni en el sidebar
+    // y el sidebar está expandido, entonces lo contraemos
+    if (!isToggleButton && !isSidebarClick && !this.isCollapsed) {
+      this.sidebarService.setSidebarState(true);
+    }
+  }
 
   ngOnInit() {
     // Subscribe to sidebar state changes
     this.subscriptions.push(
-      HeaderComponent.sidebarCollapsed$.subscribe(
+      this.sidebarService.sidebarCollapsed$.subscribe(
         collapsed => this.isCollapsed = collapsed
       )
     );
@@ -49,7 +69,7 @@ export class SidebarMenuComponent implements OnInit, OnDestroy {
         filter(event => event instanceof NavigationEnd)
       ).subscribe(() => {
         if (window.innerWidth < 768) {
-          HeaderComponent.sidebarState.next(true);
+          this.sidebarService.setSidebarState(true);
         }
       })
     );
@@ -61,7 +81,7 @@ export class SidebarMenuComponent implements OnInit, OnDestroy {
 
   onNavigate() {
     if (window.innerWidth < 768) {
-      HeaderComponent.sidebarState.next(true);
+      this.sidebarService.setSidebarState(true);
     }
   }
 }
