@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Prospecto} from '@app/core/services/prospectos.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProspectosService } from '@src/app/core/services/prospectos.service';
+import { ubicacionMap } from '@src/app/shared/constants/ubicacionMap';
 
 @Component({
   selector: 'app-prospecto-paciente',
@@ -11,6 +12,7 @@ import { ProspectosService } from '@src/app/core/services/prospectos.service';
 })
 export class ProspectoPaciente {
   clientForm!: FormGroup;
+  ubicacionMap = ubicacionMap;
  // Control de secciones expandibles
   isPacienteExpanded = false;
 
@@ -18,9 +20,11 @@ export class ProspectoPaciente {
     private fb: FormBuilder,
     private prospectosService: ProspectosService,
 
-  ) {
-    this.initForm();
-  }
+  ) {  }
+
+  ngOnInit(): void {
+  this.initForm();
+}
 
 
   private loadProspectoData(id: string) {
@@ -35,10 +39,10 @@ export class ProspectoPaciente {
             this.clientForm.patchValue(prospecto);
 
             if (prospecto.departamento) {
-              this.onDepartamentoChange();
+              this.onPacienteDepartamentoChange();
             }
             if (prospecto.provincia) {
-              this.onProvinciaChange();
+              this.onPacienteProvinciaChange();
             }
           }
         },
@@ -49,30 +53,9 @@ export class ProspectoPaciente {
     }
 
      // Datos para los dropdowns de ubicación
-  departamentos = ['Lima', 'Arequipa', 'Cusco', 'Trujillo', 'Piura', 'Chiclayo'];
+  departamentos = ubicacionMap ? Object.keys(this.ubicacionMap) : [];
   provincias: string[] = [];
   distritos: string[] = [];
-
-  // Datos para el paciente (opcional)
-  pacienteProvincias: string[] = [];
-  pacienteDistritos: string[] = [];
-
-  // Mapeo de departamentos a provincias (simplificado para demostración)
-  private ubicacionMap: {[key: string]: {[key: string]: string[]}} = {
-    'Lima': {
-      'Lima': ['Miraflores', 'San Isidro', 'San Borja', 'Surco', 'La Molina'],
-      'Callao': ['Callao', 'La Punta', 'Ventanilla']
-    },
-    'Arequipa': {
-      'Arequipa': ['Cercado', 'Cayma', 'Yanahuara', 'José Luis Bustamante y Rivero']
-    },
-    'Cusco': {
-      'Cusco': ['Cusco', 'San Sebastián', 'San Jerónimo', 'Wanchaq']
-    },
-    'Trujillo': {
-      'Trujillo': ['Trujillo', 'Victor Larco', 'La Esperanza', 'El Porvenir']
-    }
-  };
 
   private initForm(): void {
     // Crear el formulario con validación
@@ -96,56 +79,40 @@ export class ProspectoPaciente {
   }
 
   // Acceso a los controles del formulario para validación
-  get f() { return this.clientForm.controls; }
-
-
-    // Manejo de cambios en las ubicaciones
-  onDepartamentoChange(): void {
-    const dpto = this.clientForm.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.provincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.patchValue({
-        provincia: '',
-        distrito: ''
-      });
-      this.distritos = [];
-    }
-  }
-
-  onProvinciaChange(): void {
-    const dpto = this.clientForm.get('departamento')?.value;
-    const prov = this.clientForm.get('provincia')?.value;
-
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.distritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.patchValue({
-        distrito: ''
-      });
-    }
+  //get f() { return this.clientForm.controls; }
+  get pacienteForm() {
+    return this.clientForm.get('paciente') as FormGroup;
   }
 
   // Manejo de cambios en las ubicaciones para el paciente
   onPacienteDepartamentoChange(): void {
-    const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
+    const dpto = this.pacienteForm.get('departamento')?.value;
     if (dpto && this.ubicacionMap[dpto]) {
-      this.pacienteProvincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.get('paciente')?.patchValue({
+      this.provincias = Object.keys(this.ubicacionMap[dpto]);
+      console.log('Provincias cargadas:', this.provincias);
+      this.distritos = [];
+
+      this.pacienteForm.patchValue({
         provincia: '',
         distrito: ''
       });
-      this.pacienteDistritos = [];
+    } else {
+      this.provincias = [];
+      this.distritos = [];
     }
   }
 
   onPacienteProvinciaChange(): void {
-    const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
-    const prov = this.clientForm.get('paciente')?.get('provincia')?.value;
+    const dpto = this.pacienteForm.get('departamento')?.value;
+    const prov = this.pacienteForm.get('provincia')?.value;
 
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.pacienteDistritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.get('paciente')?.patchValue({
+    if (dpto && prov && this.ubicacionMap[dpto]?.[prov]) {
+      this.distritos = this.ubicacionMap[dpto][prov];
+      this.pacienteForm.patchValue({
         distrito: ''
       });
+    } else {
+      this.distritos = [];
     }
   }
 

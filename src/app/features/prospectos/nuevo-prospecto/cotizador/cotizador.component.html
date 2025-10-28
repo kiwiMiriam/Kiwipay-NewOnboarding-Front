@@ -1,7 +1,7 @@
 <div class="cotizador-container">
   <h2 class="section-title">Cotizador</h2>
 
-  <!-- Formulario de cotización -->
+    <!-- Formulario de cotización -->
   <div class="cotizador-form-section">
     <form [formGroup]="cotizadorForm" (ngSubmit)="onSubmit()">
       <div class="form-row">
@@ -66,15 +66,24 @@
     </div>
 
     <div class="monto-section">
-      <h4>Ingresa el monto que deseas tomar</h4>
+      <div class="section-header">
+        <h4>Ingresa el monto que deseas tomar</h4>
+        <div class="campania-toggle" *ngIf="hayCampaniaActiva">
+          <label class="campaign-toggle">
+            <input type="checkbox" [formControl]="usarCampaniaControl">
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Aplicar campaña sin intereses</span>
+          </label>
+        </div>
+      </div>
       <form [formGroup]="montoForm">
         <div class="monto-input-container">
           <input
-            type="number"
+            type="text"
             formControlName="monto"
             class="monto-input"
-            [max]="montoPreAprobado"
-            [min]="1"
+            [attr.maxlength]="montoPreAprobado.toString().length"
+            (input)="formatearMonto($event)"
             [ngClass]="{'ng-invalid': montoForm.get('monto')?.invalid && montoForm.get('monto')?.touched}">
           <div class="currency-tag">PEN</div>
         </div>
@@ -92,20 +101,46 @@
       </form>
     </div>
 
+    <!-- Información de campaña si está disponible -->
+    <div class="campaign-info" *ngIf="hayCampaniaActiva">
+      <div class="campaign-badge">
+        <span class="campaign-text">¡Tienes una campaña activa!</span>
+        <span class="campaign-name">{{campaniaNombre}}</span>
+      </div>
+      <div class="campaign-details">
+        <p>Monto máximo en campaña: S/ {{montoMaximoCampania | number:'1.0-0'}}</p>
+      </div>
+      <label class="campaign-toggle">
+        <input type="checkbox" [formControl]="usarCampaniaControl" [disabled]="montoSeleccionado > montoMaximoCampania">
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">Usar campaña sin intereses</span>
+      </label>
+    </div>
+
+    <!-- Opciones de cuotas -->
     <div class="cuotas-options">
       <div
         *ngFor="let opcion of opciones"
         class="cuota-option"
-        [class.selected]="opcion.selected"
-        (click)="seleccionarCuota(opcion)">
+        [class.selected]="opcion === opcionSeleccionada"
+        [class.campaign]="opcion.esCampania"
+        [class.disabled]="montoSeleccionado > montoPreAprobado"
+        (click)="montoSeleccionado <= montoPreAprobado && seleccionarCuota(opcion)">
         <span class="radio-circle"></span>
-        <span class="cuota-text">{{opcion.label}}</span>
+        <span class="cuota-text">{{opcion.value}} cuotas mensuales de S/ {{opcion.monto | number:'1.2-2'}}</span>
+        <span class="campaign-tag" *ngIf="opcion.esCampania">{{campaniaNombre}}</span>
       </div>
     </div>
 
-    <div class="tea-section">
-      <p>Tasa Efectiva Anual (TEA): {{tea | number:'1.2-2'}}% + IGV</p>
-      <p>Tasa de Costo Efectivo Anual (TCEA): {{tcea | number:'1.2-2'}}% + IGV</p>
+    <!-- Información de tasas -->
+    <div class="tea-section" [class.campaign-active]="usarCampaniaControl.value">
+      <ng-container *ngIf="!usarCampaniaControl.value">
+        <p>Tasa Efectiva Anual (TEA): {{tea | number:'1.2-2'}}% + IGV</p>
+        <p>Tasa de Costo Efectivo Anual (TCEA): {{tcea | number:'1.2-2'}}% + IGV</p>
+      </ng-container>
+      <ng-container *ngIf="usarCampaniaControl.value">
+        <p class="campaign-rate">¡0% de interés en campaña!</p>
+      </ng-container>
     </div>
   </div>
 

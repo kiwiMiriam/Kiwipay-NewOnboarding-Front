@@ -1,10 +1,10 @@
 <!-- INFORMACIÓN PACIENTE (Sección expandible - opcional) -->
  <div class="section-container">
   <form action="clientForm">
-        <div class="expandable-section" formGroupName="paciente">
+        <div class="expandable-section">
           <div class="section-toggle" (click)="togglePaciente()">
             <div class="section-header">
-              <h4>Información del Paciente</h4>
+              <h4>Información del Aval</h4>
             </div>
             <span class="toggle-icon">{{ isPacienteExpanded ? '▼' : '►' }}</span>
           </div>
@@ -79,7 +79,7 @@
                   <label for="pacienteProvincia">Provincia</label>
                   <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
                     <option value="">Seleccione...</option>
-                    @for (prov of provincias; track prov) {
+                    @for (prov of pacienteProvincias; track prov) {
                       <option [value]="prov">{{prov}}</option>
                     }
                   </select>
@@ -91,7 +91,7 @@
                   <label for="pacienteDistrito">Distrito</label>
                   <select id="pacienteDistrito" formControlName="distrito">
                     <option value="">Seleccione...</option>
-                    @for (dist of distritos; track dist) {
+                    @for (dist of pacienteDistritos; track dist) {
                       <option [value]="dist">{{dist}}</option>
                     }
                   </select>

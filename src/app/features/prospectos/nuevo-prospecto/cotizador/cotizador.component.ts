@@ -1,107 +1,109 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
-import { environment } from '../../../../../environments/environment';
 import { NavigationService } from '../../../../core/services/navigation.service';
-
-interface CotizacionPayload {
-  TypeDocument: string;
-  NumDocument: string;
-  Income: string;
-  IdHeadquarters: string;
-}
-
-interface CotizacionResponse {
-  success: boolean;
-  data: {
-    strStatus: string;
-    dcmTEA: number;
-    dcmTCEA: number;
-    payment: {
-      dcmMaf: number;
-      listQuotas: {
-        [key: string]: number;
-      };
-    };
-    isCampaing: boolean;
-    campaing: {
-      intIdCampaing: number;
-      strCampaing: string | null;
-      dcmTEA: number;
-      dcmTCEA: number;
-      dcmMaf: number;
-      listQuotas: any;
-    };
-  };
-  message: string;
-}
-
-interface CuotaOption {
-  id: string;
-  label: string;
-  value: number;
-  monto: number;
-  selected?: boolean;
-}
+import { Subject, takeUntil } from 'rxjs';
+import { CotizadorService } from './services/cotizador.service';
+import { CuotasCalculatorService } from './services/cuotas-calculator.service';
+import { CotizacionResponse, CuotaOption, FormularioCotizador } from './models/cotizador.models';
 
 @Component({
   selector: 'app-cotizador',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './cotizador.component.html',
   styleUrls: ['./cotizador.component.scss']
 })
-export class CotizadorComponent implements OnInit {
-  cotizadorForm: FormGroup;
+export class CotizadorComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Formularios
+  cotizadorForm!: FormGroup;
+  montoForm!: FormGroup;
+
+  // Estados del componente
   submitted = false;
   loading = false;
 
-  // Datos para formulario y selects
-  tiposDocumento = [
+  // Campaña
+  hayCampaniaActiva = false;
+  campaniaNombre: string = '';
+  montoMaximoCampania: number = 0;
+  usarCampaniaControl = new FormControl(false);
+
+  // Datos para selects
+  readonly tiposDocumento = [
     { value: 'DNI', label: 'DNI' },
     { value: 'CE', label: 'Carné de extranjería' },
     { value: 'PAS', label: 'Pasaporte' }
   ];
 
-  sedes = [
+  readonly sedes = [
     { value: '1', label: 'Lima' },
     { value: '2', label: 'Arequipa' },
     { value: '3', label: 'Trujillo' }
   ];
 
-  // Datos de respuesta
+  // Datos de cotización
   cotizacion: CotizacionResponse | null = null;
-  montoPreAprobado: number = 0;
-  montoSeleccionado: number = 0;
-  tea: number = 0;
-  tcea: number = 0;
+  montoPreAprobado = 0;
+  montoSeleccionado = 0;
+  tea = 0;
+  tcea = 0;
+
+  // Opciones de cuotas
+  opcionesRegulares: CuotaOption[] = [];
+  opcionesCampania: CuotaOption[] = [];
   opciones: CuotaOption[] = [];
   opcionSeleccionada: CuotaOption | null = null;
 
-  // FormGroup para el monto a solicitar
-  montoForm: FormGroup;
-
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient,
     private router: Router,
-    private navigationService: NavigationService
-  ) {
-    this.cotizadorForm = this.fb.group({
+    private navigationService: NavigationService,
+    private cotizadorService: CotizadorService,
+    private cuotasCalculator: CuotasCalculatorService,
+  ) {}
+
+  ngOnInit(): void {
+    // ✅ inicialización segura
+    this.cotizadorForm = this.initCotizadorForm();
+    this.montoForm = this.initMontoForm();
+    this.setupMontoFormSubscription();
+    this.setupCampaniaSubscription();
+  }
+
+  private initCotizadorForm(): FormGroup {
+    return this.fb.group({
       tipoDocumento: ['DNI', [Validators.required]],
       numeroDocumento: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(12)]],
       ingresos: ['', [Validators.required, Validators.min(0)]],
       sede: ['1', Validators.required]
     });
+  }
 
-    // Inicializar el formulario para el monto
-    this.montoForm = this.fb.group({
-      monto: [0, [Validators.required, Validators.min(1)]]
+  private initMontoForm(): FormGroup {
+    return this.fb.group({
+      monto: ['', [Validators.required, Validators.min(1000)]],
+      campana: [false]
     });
-  }  ngOnInit(): void {
-    // Inicializar el componente
+  }
+
+  private setupCampaniaSubscription(): void {
+    // Actualizar opciones cuando cambie el estado de la campaña
+    this.usarCampaniaControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(usarCampania => {
+        this.actualizarListaOpciones();
+      });
+  }
+
+  private setupMontoFormSubscription(): void {
+    this.montoForm.get('monto')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(this.handleMontoChange.bind(this));
   }
 
   get f() { return this.cotizadorForm.controls; }
@@ -114,87 +116,65 @@ export class CotizadorComponent implements OnInit {
     }
 
     this.loading = true;
+    const formData = this.cotizadorForm.value;
 
-    const payload: CotizacionPayload = {
-      TypeDocument: this.f['tipoDocumento'].value,
-      NumDocument: this.f['numeroDocumento'].value,
-      Income: this.f['ingresos'].value.toString(),
-      IdHeadquarters: this.f['sede'].value
+    const payload = {
+      TypeDocument: formData.tipoDocumento,
+      NumDocument: formData.numeroDocumento,
+      Income: formData.ingresos.toString(),
+      IdHeadquarters: formData.sede
     };
 
-    this.obtenerCotizacion(payload);
+    this.cotizadorService.getCotizacion(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: this.handleCotizacionSuccess.bind(this),
+        error: this.handleCotizacionError.bind(this)
+      });
   }
 
-  obtenerCotizacion(payload: CotizacionPayload): void {
-    if (environment.useMockApi) {
-      // Usar respuesta simulada para desarrollo
-      setTimeout(() => {
-        const mockResponse: CotizacionResponse = {
-          success: true,
-          data: {
-            strStatus: "Aprobado",
-            dcmTEA: 59.60,
-            dcmTCEA: 60.67,
-            payment: {
-              dcmMaf: 12189.20,
-              listQuotas: {
-                "18Quotas": 14989.97,
-                "16Quotas": 14056.69,
-                "14Quotas": 12999.44,
-                "12Quotas": 11799.54,
-                "6Quotas": 7100.35
-              }
-            },
-            isCampaing: false,
-            campaing: {
-              intIdCampaing: 0,
-              strCampaing: null,
-              dcmTEA: 0,
-              dcmTCEA: 0,
-              dcmMaf: 0,
-              listQuotas: null
-            }
-          },
-          message: ""
-        };
-
-        this.loading = false;
-        this.cotizacion = mockResponse;
-        this.procesarRespuesta(mockResponse);
-      }, 1000); // Simular 1 segundo de delay
+  private handleCotizacionSuccess(response: CotizacionResponse): void {
+    this.loading = false;
+    if (response.success) {
+      this.cotizacion = response;
+      this.procesarRespuesta(response);
     } else {
-      // Llamar al API real
-      const url = `${environment.apiUrl}/apiprospectos/simulator/postGeneratePreAprobate`;
-
-      this.http.post<CotizacionResponse>(url, payload)
-        .subscribe({
-          next: (response) => {
-            this.loading = false;
-            if (response.success) {
-              this.cotizacion = response;
-              this.procesarRespuesta(response);
-            } else {
-              // Manejar error de negocio
-              console.error('Error en la respuesta:', response.message);
-            }
-          },
-          error: (error) => {
-            this.loading = false;
-            console.error('Error en la petición:', error);
-          }
-        });
+      console.error('Error en la respuesta:', response.message);
     }
   }
 
-  procesarRespuesta(response: CotizacionResponse): void {
+  private handleCotizacionError(error: unknown): void {
+    this.loading = false;
+    console.error('Error en la petición:', error);
+  }
+
+  private procesarRespuesta(response: CotizacionResponse): void {
     const { data } = response;
 
+    // Actualizar montos y tasas regulares
     this.montoPreAprobado = data.payment.dcmMaf;
     this.montoSeleccionado = data.payment.dcmMaf;
     this.tea = data.dcmTEA;
     this.tcea = data.dcmTCEA;
 
-    // Actualizar formulario de monto con validador personalizado
+    // Actualizar información de campaña
+    this.hayCampaniaActiva = data.isCampaing;
+    if (data.isCampaing && data.campaing) {
+      this.campaniaNombre = data.campaing.strCampaing || 'Campaña Especial';
+      this.montoMaximoCampania = data.campaing.dcmMaf;
+      // Solo activar la campaña si el monto seleccionado es válido para ella
+      this.usarCampaniaControl.setValue(
+        this.montoSeleccionado <= this.montoMaximoCampania
+      );
+    } else {
+      this.usarCampaniaControl.setValue(false);
+    }
+
+    this.actualizarFormularioMonto();
+    this.calcularOpciones();
+  }
+
+  private actualizarFormularioMonto(): void {
     this.montoForm.setControl('monto', this.fb.control(
       this.montoPreAprobado,
       [
@@ -204,39 +184,92 @@ export class CotizadorComponent implements OnInit {
         this.validarMontoMaximo.bind(this)
       ]
     ));
+  }
 
-    // Escuchar cambios en el monto seleccionado
-    this.montoForm.get('monto')?.valueChanges.subscribe(valor => {
-      if (valor && !isNaN(valor)) {
-        this.montoSeleccionado = Number(valor);
-        // Asegurar que el valor no exceda el máximo permitido
-        if (this.montoSeleccionado > this.montoPreAprobado) {
-          this.montoForm.get('monto')?.setValue(this.montoPreAprobado, { emitEvent: false });
-          this.montoSeleccionado = this.montoPreAprobado;
-        }
-        this.recalcularCuotas();
+  private handleMontoChange(valor: string | null): void {
+    if (!valor) return;
+
+    // Convertir el valor formateado a número y validar
+    const montoNumerico = this.parsearMonto(valor);
+    if (isNaN(montoNumerico)) return;
+
+    // Siempre establecer el monto seleccionado primero
+    this.montoSeleccionado = montoNumerico;
+
+    // Validar contra el monto pre-aprobado
+    if (montoNumerico > this.montoPreAprobado) {
+      const montoFormateado = this.formatearMontoParaInput(this.montoPreAprobado);
+      this.montoForm.get('monto')?.setValue(montoFormateado, { emitEvent: false });
+      this.montoSeleccionado = this.montoPreAprobado;
+
+      // Deshabilitar cuotas cuando excede
+      this.opciones = [];
+      this.opcionSeleccionada = null;
+      return;
+    }
+
+    // Calcular inmediatamente las nuevas cuotas
+    this.calcularOpciones();
+    this.actualizarListaOpciones();
+  }
+
+  // Formatear el monto mientras se escribe
+  formatearMonto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let valor = input.value.replace(/[^0-9]/g, '');
+
+    // Convertir a número y formatear
+    const numero = parseInt(valor);
+    if (!isNaN(numero)) {
+      input.value = this.formatearMontoParaInput(numero);
+    }
+  }
+
+  private formatearMontoParaInput(monto: number): string {
+    return monto.toLocaleString('es-PE', {
+      maximumFractionDigits: 0,
+      useGrouping: true
+    });
+  }
+
+  private parsearMonto(montoFormateado: string): number {
+    return parseInt(montoFormateado.replace(/[^0-9]/g, ''));
+  }
+
+  private calcularOpciones(): void {
+    if (!this.cotizacion || !this.montoSeleccionado) return;
+
+    try {
+      const resultado = this.cuotasCalculator.procesarOpcionesCuotas(
+        this.cotizacion,
+        this.montoSeleccionado
+      );
+
+      // Convertir los resultados a opciones de UI
+      this.opcionesRegulares = this.cuotasCalculator.convertirACuotasUI(resultado.cuotasRegulares);
+      this.opcionesCampania = this.cuotasCalculator.convertirACuotasUI(resultado.cuotasCampania);
+
+      // Actualizar lista de opciones según modo seleccionado
+      this.actualizarListaOpciones();
+
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error al calcular cuotas:', error.message);
+        // Aquí podrías mostrar un mensaje al usuario
       }
-    });
+      this.opciones = [];
+      this.opcionSeleccionada = null;
+    }
+  }
 
-    // Procesar opciones de cuotas
-    this.opciones = [];
-    const listQuotas = data.payment.listQuotas;
+  private actualizarListaOpciones(): void {
+    // Determinar qué opciones mostrar basado en el estado de la campaña
+    const opcionesAMostrar = this.usarCampaniaControl.value && this.hayCampaniaActiva
+      ? this.opcionesCampania
+      : this.opcionesRegulares;
 
-    Object.keys(listQuotas).forEach(key => {
-      const numCuotas = parseInt(key.replace('Quotas', ''));
-      const totalPagar = listQuotas[key];
-      const montoCuota = totalPagar / numCuotas;
-
-      this.opciones.push({
-        id: key,
-        label: `${numCuotas} cuotas mensuales de S/ ${montoCuota.toFixed(1)}`,
-        value: numCuotas,
-        monto: montoCuota
-      });
-    });
-
-    // Ordenar de mayor a menor número de cuotas
-    this.opciones.sort((a, b) => b.value - a.value);
+    // Ordenar las opciones
+    this.opciones = this.cuotasCalculator.ordenarOpciones(opcionesAMostrar);
 
     // Seleccionar la primera opción por defecto
     if (this.opciones.length > 0) {
@@ -249,12 +282,21 @@ export class CotizadorComponent implements OnInit {
     opcion.selected = true;
     this.opcionSeleccionada = opcion;
   }
+   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   limpiarFormulario(): void {
     this.submitted = false;
     this.cotizacion = null;
     this.opciones = [];
     this.opcionSeleccionada = null;
+    this.montoPreAprobado = 0;
+    this.montoSeleccionado = 0;
+    this.tea = 0;
+    this.tcea = 0;
+
     this.cotizadorForm.reset({
       tipoDocumento: 'DNI',
       sede: '1'
@@ -265,55 +307,49 @@ export class CotizadorComponent implements OnInit {
   /**
    * Validador personalizado para asegurar que el monto no exceda el máximo pre-aprobado
    */
-  validarMontoMaximo(control: AbstractControl): ValidationErrors | null {
-    const valor = Number(control.value);
-    if (isNaN(valor) || valor > this.montoPreAprobado) {
-      return { 'montoExcedido': true };
+  private validarMontoMaximo(control: AbstractControl): ValidationErrors | null {
+    const valor = this.parsearMonto(control.value);
+    if (isNaN(valor)) return null;
+
+    if (valor > this.montoPreAprobado) {
+      return {
+        montoExcedido: {
+          max: this.formatearMontoParaInput(this.montoPreAprobado),
+          actual: this.formatearMontoParaInput(valor)
+        }
+      };
     }
     return null;
   }
 
   /**
-   * Recalcula las cuotas basado en el monto seleccionado
+   * Devuelve el resumen de la cotización seleccionada
    */
-  recalcularCuotas(): void {
-    if (!this.cotizacion || !this.montoSeleccionado) return;
+  get resumenCotizacion(): {
+    montoTotal: number;
+    cuotaMensual: number;
+    numeroCuotas: number;
+    tea: number;
+    tcea: number;
+    tipoCuota: string;
+  } | null {
+    if (!this.opcionSeleccionada) return null;
 
-    // Factor de proporcionalidad entre el monto seleccionado y el pre-aprobado
-    const factor = this.montoSeleccionado / this.montoPreAprobado;
-
-    // Recalcular las opciones de cuotas
-    this.opciones.forEach(opcion => {
-      const nuevaMonto = opcion.monto * factor;
-      opcion.label = `${opcion.value} cuotas mensuales de S/ ${nuevaMonto.toFixed(1)}`;
-      opcion.monto = nuevaMonto;
-    });
-
-    // Reseleccionar la opción actual si existe
-    if (this.opcionSeleccionada) {
-      const opcionId = this.opcionSeleccionada.id;
-      const opcionActualizada = this.opciones.find(o => o.id === opcionId);
-      if (opcionActualizada) {
-        this.seleccionarCuota(opcionActualizada);
-      } else if (this.opciones.length > 0) {
-        this.seleccionarCuota(this.opciones[0]);
-      }
-    }
+    return {
+      montoTotal: this.opcionSeleccionada.montoTotal,
+      cuotaMensual: this.opcionSeleccionada.monto,
+      numeroCuotas: this.opcionSeleccionada.value,
+      tea: this.opcionSeleccionada.tea,
+      tcea: this.opcionSeleccionada.tcea,
+      tipoCuota: this.opcionSeleccionada.esCampania ? 'Campaña' : 'Regular'
+    };
   }
 
-  /**
-   * Navega hacia atrás (datos-clinicas) y actualiza el estado de la pestaña activa
-   */
   navigateBack(): void {
-    // Usa el servicio de navegación para navegar hacia atrás desde la pestaña actual
     this.navigationService.navigateToTab('datos-clinica');
   }
 
-  /**
-   * Navega hacia adelante (documentos) y actualiza el estado de la pestaña activa
-   */
   navigateNext(): void {
-    // Usa el servicio de navegación para navegar hacia adelante desde la pestaña actual
     this.navigationService.navigateToTab('documento');
   }
 }

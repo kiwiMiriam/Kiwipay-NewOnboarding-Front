@@ -4,11 +4,13 @@ import {
   HttpHandler,
   HttpEvent,
   HttpInterceptor,
-  HttpErrorResponse
+  HttpErrorResponse,
+  HttpContext
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { SKIP_AUTH_TOKEN } from './skip-auth.context';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -16,8 +18,13 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private router: Router) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    // Si el contexto indica que se debe saltar la autenticación, pasar la request sin modificar
+    if (request.context.get(SKIP_AUTH_TOKEN)) {
+      return next.handle(request);
+    }
+
     const token = localStorage.getItem('auth_token');
-    
+
     if (token) {
       // Clone the request and add the token
       request = request.clone({
@@ -26,7 +33,7 @@ export class AuthInterceptor implements HttpInterceptor {
         }
       });
     }
-    
+
     return next.handle(request).pipe(
       catchError((error) => {
         if (error instanceof HttpErrorResponse) {

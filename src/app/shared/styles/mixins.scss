@@ -53,3 +53,7 @@ $breakpoints: (
   transition-duration: 0.2s;
   transition-timing-function: ease;
 }
+
+@mixin card-shadow {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
