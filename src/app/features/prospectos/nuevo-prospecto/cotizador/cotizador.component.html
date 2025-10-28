@@ -118,17 +118,30 @@
     </div>
 
     <!-- Opciones de cuotas -->
-    <div class="cuotas-options">
+    <div class="cuotas-options" [class.disabled-container]="cuotasDeshabilitadas">
       <div
         *ngFor="let opcion of opciones"
         class="cuota-option"
         [class.selected]="opcion === opcionSeleccionada"
         [class.campaign]="opcion.esCampania"
-        [class.disabled]="montoSeleccionado > montoPreAprobado"
-        (click)="montoSeleccionado <= montoPreAprobado && seleccionarCuota(opcion)">
+        [class.disabled]="cuotasDeshabilitadas"
+        (click)="!cuotasDeshabilitadas && seleccionarCuota(opcion)">
         <span class="radio-circle"></span>
         <span class="cuota-text">{{opcion.value}} cuotas mensuales de S/ {{opcion.monto | number:'1.2-2'}}</span>
         <span class="campaign-tag" *ngIf="opcion.esCampania">{{campaniaNombre}}</span>
+      </div>
+
+      <!-- Mensaje cuando las cuotas están deshabilitadas -->
+      <div class="cuotas-disabled-message" *ngIf="cuotasDeshabilitadas && montoSeleccionado > 0">
+        <div class="warning-icon">⚠️</div>
+        <div class="warning-text">
+          <p *ngIf="montoSeleccionado > montoPreAprobado">
+            El monto ingresado (S/ {{montoSeleccionado | number:'1.0-0'}}) excede el monto pre-aprobado (S/ {{montoPreAprobado | number:'1.0-0'}})
+          </p>
+          <p *ngIf="montoSeleccionado <= 0">
+            Ingresa un monto válido para ver las opciones de cuotas
+          </p>
+        </div>
       </div>
     </div>
 

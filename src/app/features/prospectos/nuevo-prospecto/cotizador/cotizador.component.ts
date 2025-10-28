@@ -86,7 +86,7 @@ export class CotizadorComponent implements OnInit, OnDestroy {
 
   private initMontoForm(): FormGroup {
     return this.fb.group({
-      monto: ['', [Validators.required, Validators.min(1000)]],
+      monto: ['', [Validators.required, Validators.min(1)]],
       campana: [false]
     });
   }
@@ -153,7 +153,8 @@ export class CotizadorComponent implements OnInit, OnDestroy {
 
     // Actualizar montos y tasas regulares
     this.montoPreAprobado = data.payment.dcmMaf;
-    this.montoSeleccionado = data.payment.dcmMaf;
+    // Redondear el monto seleccionado para la primera carga
+    this.montoSeleccionado = Math.round(data.payment.dcmMaf);
     this.tea = data.dcmTEA;
     this.tcea = data.dcmTCEA;
 
@@ -175,8 +176,11 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   }
 
   private actualizarFormularioMonto(): void {
+    // Usar el monto seleccionado redondeado y formatearlo para el input
+    const montoFormateado = this.formatearMontoParaInput(this.montoSeleccionado);
+
     this.montoForm.setControl('monto', this.fb.control(
-      this.montoPreAprobado,
+      montoFormateado,
       [
         Validators.required,
         Validators.min(1),
@@ -187,41 +191,75 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   }
 
   private handleMontoChange(valor: string | null): void {
-    if (!valor) return;
-
-    // Convertir el valor formateado a número y validar
-    const montoNumerico = this.parsearMonto(valor);
-    if (isNaN(montoNumerico)) return;
-
-    // Siempre establecer el monto seleccionado primero
-    this.montoSeleccionado = montoNumerico;
-
-    // Validar contra el monto pre-aprobado
-    if (montoNumerico > this.montoPreAprobado) {
-      const montoFormateado = this.formatearMontoParaInput(this.montoPreAprobado);
-      this.montoForm.get('monto')?.setValue(montoFormateado, { emitEvent: false });
-      this.montoSeleccionado = this.montoPreAprobado;
-
-      // Deshabilitar cuotas cuando excede
+    if (!valor) {
+      this.montoSeleccionado = 0;
       this.opciones = [];
       this.opcionSeleccionada = null;
       return;
     }
 
-    // Calcular inmediatamente las nuevas cuotas
-    this.calcularOpciones();
-    this.actualizarListaOpciones();
+    // Convertir el valor formateado a número
+    const montoNumerico = this.parsearMonto(valor);
+    if (isNaN(montoNumerico)) {
+      this.montoSeleccionado = 0;
+      this.opciones = [];
+      this.opcionSeleccionada = null;
+      return;
+    }
+
+    // Establecer el monto seleccionado
+    this.montoSeleccionado = montoNumerico;
+
+    // Calcular cuotas en tiempo real si el monto es válido
+    if (montoNumerico > 0 && montoNumerico <= this.montoPreAprobado) {
+      this.calcularOpciones();
+      this.actualizarListaOpciones();
+    } else {
+      // Deshabilitar cuotas cuando excede o es inválido
+      this.opciones = [];
+      this.opcionSeleccionada = null;
+    }
   }
 
-  // Formatear el monto mientras se escribe
+  // Formatear el monto mientras se escribe y calcular cuotas en tiempo real
   formatearMonto(event: Event): void {
     const input = event.target as HTMLInputElement;
     let valor = input.value.replace(/[^0-9]/g, '');
 
+    // Limpiar el debounce timer anterior si existe
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
     // Convertir a número y formatear
     const numero = parseInt(valor);
     if (!isNaN(numero)) {
-      input.value = this.formatearMontoParaInput(numero);
+      const valorFormateado = this.formatearMontoParaInput(numero);
+
+      // Actualizar el input directamente
+      input.value = valorFormateado;
+
+      // Usar debounce para calcular cuotas después de que el usuario deje de escribir
+      this.debounceTimer = setTimeout(() => {
+        // Actualizar el monto seleccionado
+        this.montoSeleccionado = numero;
+
+        // Calcular cuotas en tiempo real si el monto es válido
+        if (numero > 0 && numero <= this.montoPreAprobado) {
+          this.calcularOpciones();
+          this.actualizarListaOpciones();
+        } else {
+          // Deshabilitar cuotas cuando excede o es inválido
+          this.opciones = [];
+          this.opcionSeleccionada = null;
+        }
+      }, 100); // 100ms de debounce para mejor rendimiento
+    } else {
+      // Si no es un número válido, limpiar el input y deshabilitar cuotas
+      input.value = '';
+      this.montoSeleccionado = 0;
+      this.opciones = [];
+      this.opcionSeleccionada = null;
     }
   }
 
@@ -283,6 +321,10 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     this.opcionSeleccionada = opcion;
   }
    ngOnDestroy(): void {
+    // Limpiar el debounce timer si existe
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -320,6 +362,13 @@ export class CotizadorComponent implements OnInit, OnDestroy {
       };
     }
     return null;
+  }
+
+  /**
+   * Verifica si las cuotas deben estar deshabilitadas
+   */
+  get cuotasDeshabilitadas(): boolean {
+    return this.montoSeleccionado <= 0 || this.montoSeleccionado > this.montoPreAprobado;
   }
 
   /**
