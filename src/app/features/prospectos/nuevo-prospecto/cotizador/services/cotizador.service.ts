@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { environment } from '@src/environments/environment';
 import { EndPoints } from '@src/config/end_points';
 import { CotizacionPayload, CotizacionResponse } from '../models/cotizador.models';
-import { MOCK_COTIZACION_RESPONSE } from '../mocks/cotizador.mock';
+import { MOCK_COTIZACION_RESPONSE, MOCK_COTIZACION_RESPONSE_2_WITH_CAMPAIGN, MOCK_COTIZACION_RECHAZO_TRUJILLO } from '../mocks/cotizador.mock';
 import { SKIP_AUTH_TOKEN } from '@src/app/core/interceptors/skip-auth.context';
 
 @Injectable({
@@ -21,7 +21,7 @@ export class CotizadorService {
    */
   getCotizacion(payload: CotizacionPayload): Observable<CotizacionResponse> {
     if (environment.useMockApi) {
-      return this.getMockCotizacion();
+      return this.getMockCotizacion(payload);
     }
     return this.getRealCotizacion(payload);
   }
@@ -50,7 +50,7 @@ export class CotizadorService {
   /**
    * Verifica si el usuario es elegible para campaña especial
    */
-  checkCampanaEligibility(): Observable<boolean> {
+  /*checkCampanaEligibility(): Observable<boolean> {
     if (environment.useMockApi) {
       // Por ahora retornamos true para desarrollo
       return of(true);
@@ -67,9 +67,13 @@ export class CotizadorService {
       headers,
       context
     });
-  }
+  }*/
 
-  private getMockCotizacion(): Observable<CotizacionResponse> {
+  private getMockCotizacion(payload: CotizacionPayload): Observable<CotizacionResponse> {
+    // Campaña depende únicamente de IdHeadquarters (1 = Lima regular, 2 = Arequipa campaña)
+    const id = payload?.IdHeadquarters;
+    if (id === '2') return of(MOCK_COTIZACION_RESPONSE_2_WITH_CAMPAIGN);
+    if (id === '3') return of(MOCK_COTIZACION_RECHAZO_TRUJILLO);
     return of(MOCK_COTIZACION_RESPONSE);
   }
 }

@@ -29,7 +29,7 @@ export const MOCK_COTIZACION_RESPONSE: CotizacionResponse = {
   message: ""
 };
 
-export const MOCK_COTIZAC_RESPONSE_2_WITH_CAMPAIGN: CotizacionResponse = {
+export const MOCK_COTIZACION_RESPONSE_2_WITH_CAMPAIGN: CotizacionResponse = {
   success: true,
   data: {
     strStatus: "Aprobado",
@@ -61,4 +61,18 @@ export const MOCK_COTIZAC_RESPONSE_2_WITH_CAMPAIGN: CotizacionResponse = {
   },
   message: ""
 }
+
+
+export const MOCK_COTIZACION_RECHAZO_TRUJILLO: CotizacionResponse = {
+  success: false,
+  data: {
+    strStatus: null as unknown as string,
+    dcmTEA: 0,
+    dcmTCEA: 0,
+    payment: null as unknown as any,
+    isCampaing: false,
+    campaing: null as unknown as any
+  },
+  message: "Cuota Kiwi no apta para prestamo;"
+};
 

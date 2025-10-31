@@ -43,7 +43,8 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   readonly sedes = [
     { value: '1', label: 'Lima' },
     { value: '2', label: 'Arequipa' },
-    { value: '3', label: 'Trujillo' }
+    { value: '3', label: 'Trujillo' },
+    { value: '7', label: 'Cusco' },
   ];
 
   // Datos de cotización
@@ -96,6 +97,7 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     this.usarCampaniaControl.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(usarCampania => {
+        this.actualizarMaximoYValidadores();
         this.actualizarListaOpciones();
       });
   }
@@ -135,11 +137,15 @@ export class CotizadorComponent implements OnInit, OnDestroy {
 
   private handleCotizacionSuccess(response: CotizacionResponse): void {
     this.loading = false;
+    this.cotizacion = response;
     if (response.success) {
-      this.cotizacion = response;
       this.procesarRespuesta(response);
     } else {
-      console.error('Error en la respuesta:', response.message);
+      // Limpiar estado de opciones y montos para vista de rechazo
+      this.opciones = [];
+      this.opcionSeleccionada = null;
+      this.montoPreAprobado = 0;
+      this.montoSeleccionado = 0;
     }
   }
 
@@ -151,10 +157,10 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   private procesarRespuesta(response: CotizacionResponse): void {
     const { data } = response;
 
-    // Actualizar montos y tasas regulares
-    this.montoPreAprobado = data.payment.dcmMaf;
-    // Redondear el monto seleccionado para la primera carga
-    this.montoSeleccionado = Math.round(data.payment.dcmMaf);
+    // Actualizar montos y tasas regulares (siempre redondeo hacia abajo)
+    this.montoPreAprobado = Math.floor(data.payment.dcmMaf);
+    // Redondear el monto seleccionado para la primera carga hacia abajo
+    this.montoSeleccionado = Math.floor(data.payment.dcmMaf);
     this.tea = data.dcmTEA;
     this.tcea = data.dcmTCEA;
 
@@ -162,7 +168,7 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     this.hayCampaniaActiva = data.isCampaing;
     if (data.isCampaing && data.campaing) {
       this.campaniaNombre = data.campaing.strCampaing || 'Campaña Especial';
-      this.montoMaximoCampania = data.campaing.dcmMaf;
+      this.montoMaximoCampania = Math.floor(data.campaing.dcmMaf);
       // Solo activar la campaña si el monto seleccionado es válido para ella
       this.usarCampaniaControl.setValue(
         this.montoSeleccionado <= this.montoMaximoCampania
@@ -173,6 +179,7 @@ export class CotizadorComponent implements OnInit, OnDestroy {
 
     this.actualizarFormularioMonto();
     this.calcularOpciones();
+    this.actualizarMaximoYValidadores();
   }
 
   private actualizarFormularioMonto(): void {
@@ -313,6 +320,56 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     if (this.opciones.length > 0) {
       this.seleccionarCuota(this.opciones[0]);
     }
+  }
+
+  private actualizarMaximoYValidadores(): void {
+    if (!this.cotizacion) return;
+    const usandoCampania = !!this.usarCampaniaControl.value && this.hayCampaniaActiva && this.cotizacion.data.campaing;
+    const nuevoMaximo = usandoCampania ? Math.floor(this.cotizacion.data.campaing.dcmMaf) : Math.floor(this.cotizacion.data.payment.dcmMaf);
+    this.montoPreAprobado = nuevoMaximo;
+
+    const controlMonto = this.montoForm.get('monto');
+    if (controlMonto) {
+      controlMonto.clearValidators();
+      controlMonto.addValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(this.montoPreAprobado),
+        this.validarMontoMaximo.bind(this)
+      ]);
+      controlMonto.updateValueAndValidity({ emitEvent: false });
+    }
+
+    // Ajustar el monto seleccionado si excede el nuevo máximo
+    if (this.montoSeleccionado > this.montoPreAprobado) {
+      this.montoSeleccionado = this.montoPreAprobado;
+      const montoFormateado = this.formatearMontoParaInput(this.montoSeleccionado);
+      this.montoForm.get('monto')?.setValue(montoFormateado, { emitEvent: false });
+    }
+  }
+
+  togglearCampania(): void {
+    if (!this.hayCampaniaActiva || !this.cotizacion) return;
+    const nuevoValor = !this.usarCampaniaControl.value;
+
+    // Determinar el nuevo máximo según el modo
+    const nuevoMaximo = nuevoValor
+      ? Math.floor(this.cotizacion.data.campaing?.dcmMaf || this.montoMaximoCampania)
+      : Math.floor(this.cotizacion.data.payment.dcmMaf);
+
+    // Aplicar el estado del toggle sin emitir evento (controlamos manualmente el flujo)
+    this.usarCampaniaControl.setValue(nuevoValor, { emitEvent: false });
+
+    // Actualizar máximos, validadores y monto seleccionado al máximo del modo activo
+    this.montoPreAprobado = nuevoMaximo;
+    this.montoSeleccionado = nuevoMaximo;
+    const montoFormateado = this.formatearMontoParaInput(this.montoSeleccionado);
+    this.montoForm.get('monto')?.setValue(montoFormateado, { emitEvent: false });
+    this.actualizarMaximoYValidadores();
+
+    // Recalcular opciones con el nuevo monto y refrescar la lista inmediatamente
+    this.calcularOpciones();
+    this.actualizarListaOpciones();
   }
 
   seleccionarCuota(opcion: CuotaOption): void {

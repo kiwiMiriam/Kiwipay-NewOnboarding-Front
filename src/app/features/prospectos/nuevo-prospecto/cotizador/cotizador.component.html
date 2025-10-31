@@ -1,14 +1,16 @@
 <div class="cotizador-container">
   <h2 class="section-title">Cotizador</h2>
 
-    <!-- Formulario de cotización -->
+  <!-- Formulario de cotización -->
   <div class="cotizador-form-section">
     <form [formGroup]="cotizadorForm" (ngSubmit)="onSubmit()">
       <div class="form-row">
         <div class="form-group">
           <label for="tipoDocumento">Tipo de Documento</label>
           <select id="tipoDocumento" formControlName="tipoDocumento">
-            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.value">{{tipo.label}}</option>
+            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.value">
+              {{ tipo.label }}
+            </option>
           </select>
           <div class="error-message" *ngIf="submitted && f['tipoDocumento'].errors">
             El tipo de documento es requerido
@@ -17,10 +19,17 @@
 
         <div class="form-group">
           <label for="numeroDocumento">Número de Documento</label>
-          <input type="text" id="numeroDocumento" formControlName="numeroDocumento">
+          <input type="text" id="numeroDocumento" formControlName="numeroDocumento" />
           <div class="error-message" *ngIf="submitted && f['numeroDocumento'].errors">
-            <span *ngIf="f['numeroDocumento'].errors['required']">El número de documento es requerido</span>
-            <span *ngIf="f['numeroDocumento'].errors['minlength'] || f['numeroDocumento'].errors['maxlength']">El número de documento debe tener entre 8 y 12 caracteres</span>
+            <span *ngIf="f['numeroDocumento'].errors['required']"
+              >El número de documento es requerido</span
+            >
+            <span
+              *ngIf="
+                f['numeroDocumento'].errors['minlength'] || f['numeroDocumento'].errors['maxlength']
+              "
+              >El número de documento debe tener entre 8 y 12 caracteres</span
+            >
           </div>
         </div>
       </div>
@@ -28,7 +37,7 @@
       <div class="form-row">
         <div class="form-group">
           <label for="ingresos">Ingresos (S/)</label>
-          <input type="number" id="ingresos" formControlName="ingresos" min="0" step="100">
+          <input type="number" id="ingresos" formControlName="ingresos" min="0" step="100" />
           <div class="error-message" *ngIf="submitted && f['ingresos'].errors">
             <span *ngIf="f['ingresos'].errors['required']">El ingreso es requerido</span>
             <span *ngIf="f['ingresos'].errors['min']">El ingreso debe ser mayor a 0</span>
@@ -38,7 +47,7 @@
         <div class="form-group">
           <label for="sede">Sede de Clínica (Opcional)</label>
           <select id="sede" formControlName="sede">
-            <option *ngFor="let sede of sedes" [value]="sede.value">{{sede.label}}</option>
+            <option *ngFor="let sede of sedes" [value]="sede.value">{{ sede.label }}</option>
           </select>
           <div class="error-message" *ngIf="submitted && f['sede'].errors">
             La sede es requerida
@@ -56,25 +65,41 @@
     </form>
   </div>
 
+  <!-- Vista de rechazo amigable -->
+  <div class="rechazo-container" *ngIf="cotizacion && !cotizacion.success">
+    <div class="rechazo-card">
+      <h3>Lo sentimos</h3>
+      <p>{{ cotizacion.message || 'No fue posible pre-aprobar el crédito.' }}</p>
+    </div>
+  </div>
+
   <!-- Resultados de la cotización -->
   <div class="cotizacion-result" *ngIf="cotizacion && cotizacion.success">
+    <!-- Información de campaña si está disponible (mover arriba) -->
+    <div class="campaign-info" *ngIf="hayCampaniaActiva">
+      <div class="campaign-info-container">
+        <div class="campaign-badge">
+          <span class="campaign-text">Tienes una campaña activa válida</span>
+        </div>
+        <span
+          class="campaign-toggle-span"
+          [class.active]="usarCampaniaControl.value"
+          (click)="togglearCampania()"
+          > {{usarCampaniaControl.value? 'Desactivar campaña sin interes': 'Activar campaña sin interes'}}</span
+        >
+      </div>
+    </div>
+
     <div class="pre-aprobado-section">
       <h3>Cliente con un crédito pre-aprobado con Kiwi por un monto de hasta</h3>
       <div class="monto-aprobado">
-        <span>S/ {{montoPreAprobado | number:'1.0-0'}}</span>
+        <span>S/ {{ montoPreAprobado | number : '1.0-0' }}</span>
       </div>
     </div>
 
     <div class="monto-section">
       <div class="section-header">
         <h4>Ingresa el monto que deseas tomar</h4>
-        <div class="campania-toggle" *ngIf="hayCampaniaActiva">
-          <label class="campaign-toggle">
-            <input type="checkbox" [formControl]="usarCampaniaControl">
-            <span class="toggle-slider"></span>
-            <span class="toggle-label">Aplicar campaña sin intereses</span>
-          </label>
-        </div>
       </div>
       <form [formGroup]="montoForm">
         <div class="monto-input-container">
@@ -82,40 +107,30 @@
             type="text"
             formControlName="monto"
             class="monto-input"
-            [attr.maxlength]="montoPreAprobado.toString().length"
             (input)="formatearMonto($event)"
-            [ngClass]="{'ng-invalid': montoForm.get('monto')?.invalid && montoForm.get('monto')?.touched}">
+            [ngClass]="{
+              'ng-invalid': montoForm.get('monto')?.invalid && montoForm.get('monto')?.touched
+            }"
+          />
           <div class="currency-tag">PEN</div>
         </div>
-        <div class="error-message" *ngIf="montoForm.get('monto')?.touched && montoForm.get('monto')?.invalid">
-          <span *ngIf="montoForm.get('monto')?.errors?.['required']">
-            El monto es requerido
-          </span>
-          <span *ngIf="montoForm.get('monto')?.errors?.['min']">
-            El monto debe ser mayor a 0
-          </span>
-          <span *ngIf="montoForm.get('monto')?.errors?.['max'] || montoForm.get('monto')?.errors?.['montoExcedido']">
-            El monto no puede superar el monto pre-aprobado (S/ {{montoPreAprobado | number:'1.0-0'}})
+        <div
+          class="error-message"
+          *ngIf="montoForm.get('monto')?.touched && montoForm.get('monto')?.invalid"
+        >
+          <span *ngIf="montoForm.get('monto')?.errors?.['required']"> El monto es requerido </span>
+          <span *ngIf="montoForm.get('monto')?.errors?.['min']"> El monto debe ser mayor a 0 </span>
+          <span
+            *ngIf="montoForm.get('monto')?.errors?.['max'] || montoForm.get('monto')?.errors?.['montoExcedido']"
+          >
+            El monto no puede superar el monto pre-aprobado (S/
+            {{ montoPreAprobado | number : '1.0-0' }})
           </span>
         </div>
       </form>
     </div>
 
-    <!-- Información de campaña si está disponible -->
-    <div class="campaign-info" *ngIf="hayCampaniaActiva">
-      <div class="campaign-badge">
-        <span class="campaign-text">¡Tienes una campaña activa!</span>
-        <span class="campaign-name">{{campaniaNombre}}</span>
-      </div>
-      <div class="campaign-details">
-        <p>Monto máximo en campaña: S/ {{montoMaximoCampania | number:'1.0-0'}}</p>
-      </div>
-      <label class="campaign-toggle">
-        <input type="checkbox" [formControl]="usarCampaniaControl" [disabled]="montoSeleccionado > montoMaximoCampania">
-        <span class="toggle-slider"></span>
-        <span class="toggle-label">Usar campaña sin intereses</span>
-      </label>
-    </div>
+
 
     <!-- Opciones de cuotas -->
     <div class="cuotas-options" [class.disabled-container]="cuotasDeshabilitadas">
@@ -125,10 +140,13 @@
         [class.selected]="opcion === opcionSeleccionada"
         [class.campaign]="opcion.esCampania"
         [class.disabled]="cuotasDeshabilitadas"
-        (click)="!cuotasDeshabilitadas && seleccionarCuota(opcion)">
+        (click)="!cuotasDeshabilitadas && seleccionarCuota(opcion)"
+      >
         <span class="radio-circle"></span>
-        <span class="cuota-text">{{opcion.value}} cuotas mensuales de S/ {{opcion.monto | number:'1.2-2'}}</span>
-        <span class="campaign-tag" *ngIf="opcion.esCampania">{{campaniaNombre}}</span>
+        <span class="cuota-text"
+          >{{ opcion.value }} cuotas mensuales de S/ {{ opcion.monto | number : '1.2-2' }}</span
+        >
+        <span class="campaign-tag" *ngIf="opcion.esCampania">{{ campaniaNombre }}</span>
       </div>
 
       <!-- Mensaje cuando las cuotas están deshabilitadas -->
@@ -136,7 +154,8 @@
         <div class="warning-icon">⚠️</div>
         <div class="warning-text">
           <p *ngIf="montoSeleccionado > montoPreAprobado">
-            El monto ingresado (S/ {{montoSeleccionado | number:'1.0-0'}}) excede el monto pre-aprobado (S/ {{montoPreAprobado | number:'1.0-0'}})
+            El monto ingresado (S/ {{ montoSeleccionado | number : '1.0-0' }}) excede el monto
+            pre-aprobado (S/ {{ montoPreAprobado | number : '1.0-0' }})
           </p>
           <p *ngIf="montoSeleccionado <= 0">
             Ingresa un monto válido para ver las opciones de cuotas
@@ -148,19 +167,21 @@
     <!-- Información de tasas -->
     <div class="tea-section" [class.campaign-active]="usarCampaniaControl.value">
       <ng-container *ngIf="!usarCampaniaControl.value">
-        <p>Tasa Efectiva Anual (TEA): {{tea | number:'1.2-2'}}% + IGV</p>
-        <p>Tasa de Costo Efectivo Anual (TCEA): {{tcea | number:'1.2-2'}}% + IGV</p>
+        <p>Tasa Efectiva Anual (TEA): {{ tea | number : '1.2-2' }}% + IGV</p>
+        <p>Tasa de Costo Efectivo Anual (TCEA): {{ tcea | number : '1.2-2' }}% + IGV</p>
       </ng-container>
       <ng-container *ngIf="usarCampaniaControl.value">
         <p class="campaign-rate">¡0% de interés en campaña!</p>
       </ng-container>
     </div>
+    <div class="form-buttons">
+          <button type="submit" class="btn-primary">Guardar</button>
+    </div>
   </div>
 
   <!-- Botones de navegación -->
-  <div class="navigation-buttons" >
+  <div class="navigation-buttons">
     <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
     <button class="btn-primary" (click)="navigateNext()">Siguiente</button>
   </div>
 </div>
-
