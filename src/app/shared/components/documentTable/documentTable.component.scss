@@ -1,0 +1,66 @@
+@use '../../styles/colors.scss' as colors;
+
+.document-table {
+  padding: 20px;
+  background-color: colors.$neutral-50;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    td.acciones {
+      display: flex;
+      gap: 0.5rem;
+
+      button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+        color: #444;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #007bff;
+        }
+      }
+
+      .icon-upload::before { content: "📤"; }
+      .icon-download::before { content: "📥"; }
+      .icon-check::before { content: "✅"; }
+      .icon-x::before { content: "❌"; }
+    }
+
+    td.aprobado {
+      color: #28a745;
+      font-weight: 600;
+    }
+
+    td.rechazado {
+      color: #dc3545;
+      font-weight: 600;
+    }
+
+    td.en\ revisión {
+      color: #ffc107;
+      font-weight: 600;
+    }
+  }
+}

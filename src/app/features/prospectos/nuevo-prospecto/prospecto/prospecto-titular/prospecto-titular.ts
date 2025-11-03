@@ -19,6 +19,7 @@ export class ProspectoTitular implements OnInit {
 
  // Control de secciones expandibles
  isTitularExpanded = true;
+ isModeloExpanded = true;
 
   constructor(
     private fb: FormBuilder,
@@ -150,6 +151,9 @@ export class ProspectoTitular implements OnInit {
   // Manejo de secciones expandibles
   toggleTitular(): void {
     this.isTitularExpanded = !this.isTitularExpanded;
+  }
+  toggleModelo(): void {
+    this.isModeloExpanded = !this.isModeloExpanded;
   }
 
 

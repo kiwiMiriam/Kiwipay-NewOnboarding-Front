@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Prospecto, ProspectosService } from '@src/app/core/services/prospectos.service';
 import { ubicacionMap } from '@src/app/shared/constants/ubicacionMap';
+import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
 
 @Component({
   selector: 'app-prospecto-aval',
-  imports: [],
+  imports: [DocumentTableComponent],
   templateUrl: './prospecto-aval.html',
   styleUrl: '../prospecto.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -139,5 +140,24 @@ export class ProspectoAval {
   togglePaciente(): void {
     this.isPacienteExpanded = !this.isPacienteExpanded;
   }
+
+
+  // Datos de ejemplo para la tabla de documentos
+  documentos = [
+  {
+      nombre: 'Contrato.pdf',
+      fechaCarga: new Date('2025-10-10'),
+      fechaRevision: new Date('2025-10-12'),
+      comentario: 'Pendiente de aprobación',
+      estadoRevision: DocumentoEstado.Pendiente
+    },
+    {
+      nombre: 'Factura_123.pdf',
+      fechaCarga: new Date('2025-10-15'),
+      fechaRevision: new Date('2025-10-16'),
+      comentario: 'Aprobado',
+      estadoRevision: DocumentoEstado.Aprobado
+    }
+  ];
 
 }

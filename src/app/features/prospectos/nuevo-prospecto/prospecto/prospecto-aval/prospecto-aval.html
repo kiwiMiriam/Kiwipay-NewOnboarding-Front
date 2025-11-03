@@ -1,110 +1,124 @@
 <!-- INFORMACIÓN PACIENTE (Sección expandible - opcional) -->
- <div class="section-container">
+<div class="section-container">
   <form action="clientForm">
-        <div class="expandable-section">
-          <div class="section-toggle" (click)="togglePaciente()">
-            <div class="section-header">
-              <h4>Información del Aval</h4>
-            </div>
-            <span class="toggle-icon">{{ isPacienteExpanded ? '▼' : '►' }}</span>
+    <div class="expandable-section">
+      <div class="section-toggle" (click)="togglePaciente()">
+        <div class="section-header">
+          <h4>Información del Aval</h4>
+        </div>
+        <span class="toggle-icon">{{ isPacienteExpanded ? '▼' : '►' }}</span>
+      </div>
+
+      @if (isPacienteExpanded) {
+      <div class="expanded-content" formGroupName="paciente">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteTipoDocumento">Tipo de Documento</label>
+            <select id="pacienteTipoDocumento" formControlName="tipoDocumento">
+              <option value="">Seleccione...</option>
+              <option value="DNI">DNI</option>
+              <option value="CE">Carnet de Extranjería</option>
+              <option value="PASAPORTE">Pasaporte</option>
+            </select>
           </div>
 
-          @if (isPacienteExpanded) {
-            <div class="expanded-content" formGroupName="paciente">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteTipoDocumento">Tipo de Documento</label>
-                  <select id="pacienteTipoDocumento" formControlName="tipoDocumento">
-                    <option value="">Seleccione...</option>
-                    <option value="DNI">DNI</option>
-                    <option value="CE">Carnet de Extranjería</option>
-                    <option value="PASAPORTE">Pasaporte</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="pacienteNumeroDocumento">Número de Documento</label>
-                  <input type="text" id="pacienteNumeroDocumento" formControlName="numeroDocumento">
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteNombres">Nombres</label>
-                  <input type="text" id="pacienteNombres" formControlName="nombres">
-                </div>
-
-                <div class="form-group">
-                  <label for="pacienteApellidos">Apellidos</label>
-                  <input type="text" id="pacienteApellidos" formControlName="apellidos">
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteSexo">Sexo</label>
-                  <select id="pacienteSexo" formControlName="sexo">
-                    <option value="">Seleccione...</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                    <option value="O">Otro</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="pacienteTelefono">Teléfono</label>
-                  <input type="tel" id="pacienteTelefono" formControlName="telefono">
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteCorreo">Correo Electrónico</label>
-                  <input type="email" id="pacienteCorreo" formControlName="correo">
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteDepartamento">Departamento</label>
-                  <select id="pacienteDepartamento" formControlName="departamento" (change)="onPacienteDepartamentoChange()">
-                    <option value="">Seleccione...</option>
-                    @for (dep of departamentos; track dep) {
-                      <option [value]="dep">{{dep}}</option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="pacienteProvincia">Provincia</label>
-                  <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
-                    <option value="">Seleccione...</option>
-                    @for (prov of pacienteProvincias; track prov) {
-                      <option [value]="prov">{{prov}}</option>
-                    }
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pacienteDistrito">Distrito</label>
-                  <select id="pacienteDistrito" formControlName="distrito">
-                    <option value="">Seleccione...</option>
-                    @for (dist of pacienteDistritos; track dist) {
-                      <option [value]="dist">{{dist}}</option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-group full-width">
-                  <label for="pacienteDireccion">Dirección</label>
-                  <input type="text" id="pacienteDireccion" formControlName="direccion">
-                </div>
-              </div>
-            </div>
-          }
+          <div class="form-group">
+            <label for="pacienteNumeroDocumento">Número de Documento</label>
+            <input type="text" id="pacienteNumeroDocumento" formControlName="numeroDocumento" />
+          </div>
         </div>
 
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteNombres">Nombres</label>
+            <input type="text" id="pacienteNombres" formControlName="nombres" />
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteApellidos">Apellidos</label>
+            <input type="text" id="pacienteApellidos" formControlName="apellidos" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteSexo">Sexo</label>
+            <select id="pacienteSexo" formControlName="sexo">
+              <option value="">Seleccione...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="O">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteTelefono">Teléfono</label>
+            <input type="tel" id="pacienteTelefono" formControlName="telefono" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteCorreo">Correo Electrónico</label>
+            <input type="email" id="pacienteCorreo" formControlName="correo" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteDepartamento">Departamento</label>
+            <select
+              id="pacienteDepartamento"
+              formControlName="departamento"
+              (change)="onPacienteDepartamentoChange()"
+            >
+              <option value="">Seleccione...</option>
+              @for (dep of departamentos; track dep) {
+              <option [value]="dep">{{ dep }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteProvincia">Provincia</label>
+            <select
+              id="pacienteProvincia"
+              formControlName="provincia"
+              (change)="onPacienteProvinciaChange()"
+            >
+              <option value="">Seleccione...</option>
+              @for (prov of pacienteProvincias; track prov) {
+              <option [value]="prov">{{ prov }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacienteDistrito">Distrito</label>
+            <select id="pacienteDistrito" formControlName="distrito">
+              <option value="">Seleccione...</option>
+              @for (dist of pacienteDistritos; track dist) {
+              <option [value]="dist">{{ dist }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="pacienteDireccion">Dirección</label>
+            <input type="text" id="pacienteDireccion" formControlName="direccion" />
+          </div>
+        </div>
+        <div class="form-buttons">
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </div>
+      <div>
+        <h2 >Documentos del Aval</h2>
+        <app-document-table [documentos]="documentos"></app-document-table>
+      </div>
+      }
+    </div>
   </form>
- </div>
+</div>

@@ -205,8 +205,15 @@
     }
   }
 }
+h2{
+  margin: 1rem;
+}
 
 // Navigation buttons
+  .containerBtn{
+    background-color: colors.$neutral-300;
+    padding: 1rem;
+  }
   .navigation-buttons {
     display: flex;
     justify-content: space-between;
