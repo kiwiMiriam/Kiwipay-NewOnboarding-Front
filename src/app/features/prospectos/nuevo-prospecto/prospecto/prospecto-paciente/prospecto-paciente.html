@@ -1,7 +1,7 @@
 <!-- INFORMACIÓN PACIENTE (Sección expandible - opcional) -->
- <div class="section-container">
-  <form action="clientForm">
-        <div class="expandable-section" formGroupName="paciente">
+<div class="section-container">
+  <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+    <div class="expandable-section">
           <div class="section-toggle" (click)="togglePaciente()">
             <div class="section-header">
               <h4>Información del Paciente</h4>
@@ -10,7 +10,8 @@
           </div>
 
           @if (isPacienteExpanded) {
-            <div class="expanded-content" formGroupName="paciente">
+            <div class="expanded-content" [formGroup]="clientForm">
+              <div formGroupName="paciente">
               <div class="form-row">
                 <div class="form-group">
                   <label for="pacienteTipoDocumento">Tipo de Documento</label>
@@ -69,8 +70,8 @@
                   <label for="pacienteDepartamento">Departamento</label>
                   <select id="pacienteDepartamento" formControlName="departamento" (change)="onPacienteDepartamentoChange()">
                     <option value="">Seleccione...</option>
-                    @for (dep of departamentos; track dep) {
-                      <option [value]="dep">{{dep}}</option>
+                    @for (dep of departamentos; track dep.id) {
+                      <option [value]="dep.nombre">{{dep.nombre}}</option>
                     }
                   </select>
                 </div>
@@ -79,8 +80,8 @@
                   <label for="pacienteProvincia">Provincia</label>
                   <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
                     <option value="">Seleccione...</option>
-                    @for (prov of provincias; track prov) {
-                      <option [value]="prov">{{prov}}</option>
+                    @for (prov of provincias; track prov.id) {
+                      <option [value]="prov.nombre">{{prov.nombre}}</option>
                     }
                   </select>
                 </div>
@@ -91,8 +92,8 @@
                   <label for="pacienteDistrito">Distrito</label>
                   <select id="pacienteDistrito" formControlName="distrito">
                     <option value="">Seleccione...</option>
-                    @for (dist of distritos; track dist) {
-                      <option [value]="dist">{{dist}}</option>
+                    @for (dist of distritos; track dist.id) {
+                      <option [value]="dist.nombre">{{dist.nombre}}</option>
                     }
                   </select>
                 </div>
@@ -102,6 +103,12 @@
                   <input type="text" id="pacienteDireccion" formControlName="direccion">
                 </div>
               </div>
+              </div>
+            </div>
+            <div class="form-buttons">
+              <button type="submit" class="btn-primary" [disabled]="isLoading">
+                @if (isLoading) { Guardando... } @else { @if (editMode) { Actualizar } @else { Guardar } }
+              </button>
             </div>
           }
         </div>

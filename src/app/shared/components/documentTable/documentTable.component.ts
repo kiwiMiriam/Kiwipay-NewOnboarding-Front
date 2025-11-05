@@ -2,21 +2,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FaIconComponent, FontAwesomeModule } from "@fortawesome/angular-fontawesome";
 import { faUpload, faDownload, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { DocumentoData } from '@src/app/core/services/prospecto-api.service';
 
 export enum DocumentoEstado {
   Pendiente = 'Pendiente',
   Aprobado = 'Aprobado',
   Rechazado = 'Rechazado',
   EnRevision = 'En revisión'
-}
-
-interface Documento {
-  id?: number;
-  nombre: string;
-  fechaCarga: Date;
-  fechaRevision?: Date | null;
-  comentario?: string;
-  estadoRevision: DocumentoEstado;
 }
 
 
@@ -46,7 +38,7 @@ interface Documento {
             <td>{{ doc.fechaCarga | date: 'shortDate' }}</td>
             <td>{{ doc.fechaRevision ? (doc.fechaRevision | date: 'shortDate') : '-' }}</td>
             <td>{{ doc.comentario || '-' }}</td>
-            <td [ngClass]="doc.estadoRevision.toLowerCase()">{{ doc.estadoRevision }}</td>
+            <td [ngClass]="doc.estadoRevision?.toLowerCase() || ''">{{ doc.estadoRevision || 'Pendiente' }}</td>
             <td class="acciones">
               <button (click)="onSubir(doc)" title="Subir archivo">
                  <fa-icon [icon]="faUpload"></fa-icon>
@@ -67,17 +59,17 @@ interface Documento {
     </table>
   </div>
   `,
-  styleUrls: ['./documenttable.component.scss'],
+  styleUrls: ['./documentTable.component.scss'],
 })
 export class DocumentTableComponent {
     /** ✅ Array recibido desde el componente padre */
-  @Input() documentos : Documento[] = [];
+  @Input() documentos : DocumentoData[] = [];
 
 
-  @Output() subir = new EventEmitter<Documento>();
-  @Output() descargar = new EventEmitter<Documento>();
-  @Output() aprobar = new EventEmitter<Documento>();
-  @Output() rechazar = new EventEmitter<Documento>();
+  @Output() subir = new EventEmitter<DocumentoData>();
+  @Output() descargar = new EventEmitter<DocumentoData>();
+  @Output() aprobar = new EventEmitter<DocumentoData>();
+  @Output() rechazar = new EventEmitter<DocumentoData>();
   /** Íconos FontAwesome */
 faUpload= faUpload;
 faDownload= faDownload;
@@ -85,22 +77,22 @@ faCheck= faCheck;
 faTimes= faTimes;
 
   /** Métodos que emiten los eventos al padre */
-  onSubir(doc: Documento): void {
+  onSubir(doc: DocumentoData): void {
     console.log('Subir archivo para:', doc);
     // Lógica para subir archivo
   }
 
-  onDescargar(doc: Documento): void {
+  onDescargar(doc: DocumentoData): void {
     console.log('Descargar archivo para:', doc);
     // Lógica para descargar archivo
   }
 
-  onAprobar(doc: Documento): void {
+  onAprobar(doc: DocumentoData): void {
     console.log('Aprobar archivo para:', doc);
     // Lógica para aprobar archivo
   }
 
-  onRechazar(doc: Documento): void {
+  onRechazar(doc: DocumentoData): void {
     console.log('Rechazar archivo para:', doc);
     // Lógica para rechazar archivo
 

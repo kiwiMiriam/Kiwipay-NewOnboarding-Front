@@ -1,8 +1,7 @@
-import { TRANSLATIONS } from "@angular/core";
 
 export const environment = {
   production : false,
-  authApi: 'https://newProspecto.pe',
+  kiwiPayApi: 'https://newProspecto.pe',
   useMockApi: true, // Set to false to use real API
   tokenExpirationTime: 15 * 60 * 1000, // 15 minutes in milliseconds
   Back_Office_BaseUrl: 'https://apiprospectos.kiwipay1.pe',

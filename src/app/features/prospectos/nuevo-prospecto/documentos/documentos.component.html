@@ -16,7 +16,9 @@
           (change)="onTipoDocumentoChange($event)"
         >
           <option value="">Seleccionar...</option>
-          <option *ngFor="let tipo of TIPOS_PERMITIDOS" [value]="tipo.id">{{ tipo.nombre }}</option>
+          @for (tipo of TIPOS_PERMITIDOS; track tipo.id) {
+            <option [value]="tipo.id">{{ tipo.nombre }}</option>
+          }
         </select>
       </div>
 
@@ -26,7 +28,9 @@
           <button class="file-select-button" (click)="fileInput.click()">
             <span class="icon-upload"></span> Cargar Documento
           </button>
-          <span class="file-name" *ngIf="archivoSeleccionado">{{ archivoSeleccionado.name }}</span>
+          @if (archivoSeleccionado) {
+            <span class="file-name">{{ archivoSeleccionado.name }}</span>
+          }
           <input
             #fileInput
             type="file"
@@ -51,9 +55,11 @@
       </div>
     </div>
 
-    <div class="error-message" *ngIf="mensajeError">
-      <span class="icon-warning"></span> {{ mensajeError }}
-    </div>
+    @if (mensajeError) {
+      <div class="error-message">
+        <span class="icon-warning"></span> {{ mensajeError }}
+      </div>
+    }
 
     <div class="upload-actions">
       <button
@@ -77,13 +83,16 @@
       <div class="column estado-column">Estado</div>
       <div class="column accion-column">Acción</div>
     </div>
-    <div class="empty-state" *ngIf="documentos.length === 0">
-      <span class="icon-file empty-icon"></span>
-      <p>No hay documentos cargados</p>
-    </div>
+    @if (documentos.length === 0) {
+      <div class="empty-state">
+        <span class="icon-file empty-icon"></span>
+        <p>No hay documentos cargados</p>
+      </div>
+    }
 
     <div class="table-body">
-      <div class="table-row" *ngFor="let documento of documentos">
+      @for (documento of documentos; track documento.id) {
+        <div class="table-row">
         <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.tipo) }}</div>
         <div class="column archivo-column">
           <div class="file-info">
@@ -111,11 +120,11 @@
             (click)="eliminarDocumento(documento.id)"
             title="Eliminar"
           >
-            <!-- <span class="icon-trash"></span> -->
-             <fa-icon [icon]="faTrash"></fa-icon>
+            <fa-icon [icon]="faTrash"></fa-icon>
           </button>
         </div>
-      </div>
+        </div>
+      }
     </div>
   </div>
 
@@ -125,12 +134,13 @@
   </div>
 
   <!-- Al final del template -->
-  <app-modal-estado
-    *ngIf="mostrarModal"
-    [mostrarModal]="mostrarModal"
-    [documento]="documentoSeleccionado"
-    (cerrar)="onCerrarModal()"
-    (guardar)="onGuardarEstado($event)"
-  >
-  </app-modal-estado>
+  @if (mostrarModal) {
+    <app-modal-estado
+      [mostrarModal]="mostrarModal"
+      [documento]="documentoSeleccionado"
+      (cerrar)="onCerrarModal()"
+      (guardar)="onGuardarEstado($event)"
+    >
+    </app-modal-estado>
+  }
 </div>

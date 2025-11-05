@@ -1,15 +1,7 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface Documento {
-  id: number;
-  tipo: string;
-  archivo: File;
-  comentario: string;
-  fecha: Date;
-  estadoAprobacion: 'sin-estado' | 'aprobado' | 'rechazado';
-}
+import { DocumentoLocal } from '../documentos.component';
 
 @Component({
   selector: 'app-modal-estado',
@@ -19,12 +11,9 @@ interface Documento {
   templateUrl: './modal-estado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-
-
-
-export class ModalEstadoComponent {
+export class ModalEstadoComponent implements OnChanges {
   @Input() mostrarModal = false;
-  @Input() documento: Documento | null = null;
+  @Input() documento: DocumentoLocal | null = null;
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<{
     estadoAprobacion: 'sin-estado' | 'aprobado' | 'rechazado',
@@ -34,10 +23,10 @@ export class ModalEstadoComponent {
   estadoAprobacionTemp: 'sin-estado' | 'aprobado' | 'rechazado' = 'sin-estado';
   comentarioAprobacionTemp = '';
 
-  ngOnChanges(): void {
-    if (this.documento) {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['documento'] && this.documento) {
       this.estadoAprobacionTemp = this.documento.estadoAprobacion;
-      this.comentarioAprobacionTemp = this.documento.comentario;
+      this.comentarioAprobacionTemp = this.documento.comentario || '';
     }
   }
 

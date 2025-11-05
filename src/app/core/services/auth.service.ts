@@ -9,7 +9,7 @@ import { AuthState, LoginRequest, LoginResponse } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
 
 // Auth API configuration from environment
-const API_URL = environment.authApi;
+const API_URL = environment.kiwiPayApi;
 const USE_MOCK_API = environment.useMockApi;
 const TOKEN_EXPIRATION_TIME = environment.tokenExpirationTime;
 
@@ -33,7 +33,7 @@ export class AuthService {
 
   // For token refresh
   private tokenExpirationTimer: any;
-  
+
   constructor(
     private http: HttpClient,
     private router: Router
@@ -110,7 +110,7 @@ export class AuthService {
     // Store token in localStorage
     localStorage.setItem('auth_token', response.token);
     localStorage.setItem('user', JSON.stringify(user));
-    
+
     // Set expiration time
     const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
     localStorage.setItem('token_expiration', expirationDate.toISOString());
@@ -133,7 +133,7 @@ export class AuthService {
 
   private handleLoginError(error: any): void {
     console.error('Login error', error);
-    
+
     this.authState.update(state => ({
       ...state,
       isLoading: false,
@@ -202,17 +202,17 @@ export class AuthService {
             // Update token
             const user = this.user() as User;
             user.token = response.token;
-            
+
             localStorage.setItem('auth_token', response.token);
             localStorage.setItem('user', JSON.stringify(user));
-            
+
             // Update expiration
             const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
             localStorage.setItem('token_expiration', expirationDate.toISOString());
-            
+
             // Setup next auto refresh
             this.autoRefreshToken(TOKEN_EXPIRATION_TIME);
-            
+
             this.authState.update(state => ({
               ...state,
               user
@@ -221,7 +221,7 @@ export class AuthService {
         })
       );
     }
-    
+
     // In real API mode, call the refresh endpoint
     return this.http.post<LoginResponse>(`${API_URL}/refresh`, {
       token: localStorage.getItem('auth_token')
@@ -231,17 +231,17 @@ export class AuthService {
           // Update token
           const user = this.user() as User;
           user.token = response.token;
-          
+
           localStorage.setItem('auth_token', response.token);
           localStorage.setItem('user', JSON.stringify(user));
-          
+
           // Update expiration
           const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
           localStorage.setItem('token_expiration', expirationDate.toISOString());
-          
+
           // Setup next auto refresh
           this.autoRefreshToken(TOKEN_EXPIRATION_TIME);
-          
+
           this.authState.update(state => ({
             ...state,
             user
@@ -259,12 +259,12 @@ export class AuthService {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
     const expirationDateStr = localStorage.getItem('token_expiration');
-    
+
     if (token && userData && expirationDateStr) {
       try {
         const user = JSON.parse(userData);
         const expirationDate = new Date(expirationDateStr);
-        
+
         // Check if token is expired
         if (expirationDate > new Date()) {
           // Token still valid
@@ -273,7 +273,7 @@ export class AuthService {
             user,
             isAuthenticated: true
           }));
-          
+
           // Setup auto refresh for remaining time
           const remainingTime = expirationDate.getTime() - new Date().getTime();
           this.autoRefreshToken(remainingTime);

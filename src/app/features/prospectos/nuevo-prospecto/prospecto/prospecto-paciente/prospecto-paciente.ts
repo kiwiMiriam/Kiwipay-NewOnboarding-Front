@@ -1,124 +1,278 @@
-import { Component } from '@angular/core';
-import { Prospecto} from '@app/core/services/prospectos.service';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ProspectosService } from '@src/app/core/services/prospectos.service';
-import { ubicacionMap } from '@src/app/shared/constants/ubicacionMap';
+import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { LocationService, Department, Province, District } from '@app/core/services/location.service';
+import { ProspectoApiService, PacienteData } from '@app/core/services/prospecto-api.service';
 
 @Component({
   selector: 'app-prospecto-paciente',
-  imports: [],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './prospecto-paciente.html',
   styleUrls: ['../prospecto.scss']
 })
-export class ProspectoPaciente {
+export class ProspectoPaciente implements OnInit, OnDestroy {
+  @Input() initialData?: PacienteData;
+  @Output() dataSaved = new EventEmitter<PacienteData>();
+  @Output() dataUpdated = new EventEmitter<PacienteData>();
+
   clientForm!: FormGroup;
-  ubicacionMap = ubicacionMap;
- // Control de secciones expandibles
+  submitted = false;
+  isLoading = false;
+  editMode = false;
+
+  // Control de secciones expandibles
   isPacienteExpanded = false;
 
-   constructor(
-    private fb: FormBuilder,
-    private prospectosService: ProspectosService,
+  // Location data
+  departamentos: Department[] = [];
+  provincias: Province[] = [];
+  distritos: District[] = [];
+  selectedDepartamentoId?: string;
+  selectedProvinciaId?: string;
 
-  ) {  }
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private fb: FormBuilder,
+    private locationService: LocationService,
+    private prospectoApiService: ProspectoApiService
+  ) {
+    this.initForm();
+  }
 
   ngOnInit(): void {
-  this.initForm();
-}
+    this.loadDepartments();
+    
+    if (this.initialData) {
+      this.isPacienteExpanded = true;
+      this.editMode = true;
+      this.loadInitialData(this.initialData);
+    }
+  }
 
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
-  private loadProspectoData(id: string) {
-      this.prospectosService.getProspectos().subscribe(
-        (prospectos: Prospecto[]) => {
-          const prospecto = prospectos.find(p => p.id === id);
-          if (prospecto) {
-            if (prospecto.paciente) {
-              this.isPacienteExpanded = true;
-            }
-
-            this.clientForm.patchValue(prospecto);
-
-            if (prospecto.departamento) {
-              this.onPacienteDepartamentoChange();
-            }
-            if (prospecto.provincia) {
-              this.onPacienteProvinciaChange();
-            }
-          }
+  private loadDepartments() {
+    this.locationService.getDepartments()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (departments) => {
+          this.departamentos = departments;
         },
-        (error: Error) => {
-          console.error('Error loading prospecto:', error);
+        error: (error) => {
+          console.error('Error loading departments:', error);
         }
-      );
+      });
+  }
+
+  private loadInitialData(data: PacienteData) {
+    // Wait for departments to load
+    if (this.departamentos.length > 0) {
+      this.loadLocationData(data);
+    } else {
+      this.locationService.getDepartments()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (departments) => {
+            this.departamentos = departments;
+            this.loadLocationData(data);
+          }
+        });
     }
 
-     // Datos para los dropdowns de ubicación
-  departamentos = ubicacionMap ? Object.keys(this.ubicacionMap) : [];
-  provincias: string[] = [];
-  distritos: string[] = [];
+    // Patch form values
+    this.pacienteForm.patchValue({
+      tipoDocumento: data.tipoDocumento || '',
+      numeroDocumento: data.numeroDocumento || '',
+      nombres: data.nombres || '',
+      apellidos: data.apellidos || '',
+      sexo: data.sexo || '',
+      telefono: data.telefono || '',
+      correo: data.correo || '',
+      departamento: data.departamento || '',
+      provincia: data.provincia || '',
+      distrito: data.distrito || '',
+      direccion: data.direccion || ''
+    });
+  }
+
+  private loadLocationData(data: PacienteData) {
+    if (data.departamento) {
+      const dept = this.departamentos.find(d => d.nombre === data.departamento);
+      if (dept) {
+        this.selectedDepartamentoId = dept.id;
+        this.loadProvinces(dept.id, () => {
+          if (data.provincia) {
+            const prov = this.provincias.find(p => p.nombre === data.provincia);
+            if (prov) {
+              this.selectedProvinciaId = prov.id;
+              this.loadDistricts(prov.id);
+            }
+          }
+        });
+      }
+    }
+  }
 
   private initForm(): void {
-    // Crear el formulario con validación
     this.clientForm = this.fb.group({
-
-      // INFORMACIÓN PACIENTE (opcional)
       paciente: this.fb.group({
         tipoDocumento: [''],
-        numeroDocumento: [''],
+        numeroDocumento: ['', Validators.pattern('^[0-9]{8,12}$')],
         nombres: [''],
         apellidos: [''],
         sexo: [''],
-        telefono: [''],
+        telefono: ['', Validators.pattern('^[0-9]{9,12}$')],
         correo: ['', Validators.email],
         departamento: [''],
         provincia: [''],
         distrito: [''],
         direccion: ['']
-      }),
+      })
     });
   }
 
-  // Acceso a los controles del formulario para validación
-  //get f() { return this.clientForm.controls; }
   get pacienteForm() {
     return this.clientForm.get('paciente') as FormGroup;
   }
 
-  // Manejo de cambios en las ubicaciones para el paciente
-  onPacienteDepartamentoChange(): void {
-    const dpto = this.pacienteForm.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.provincias = Object.keys(this.ubicacionMap[dpto]);
-      console.log('Provincias cargadas:', this.provincias);
-      this.distritos = [];
+  get f() {
+    return this.pacienteForm.controls;
+  }
 
+  onPacienteDepartamentoChange(): void {
+    const deptName = this.pacienteForm.get('departamento')?.value;
+    const dept = this.departamentos.find(d => d.nombre === deptName);
+    
+    if (dept) {
+      this.selectedDepartamentoId = dept.id;
+      this.loadProvinces(dept.id);
       this.pacienteForm.patchValue({
         provincia: '',
         distrito: ''
       });
-    } else {
       this.provincias = [];
       this.distritos = [];
     }
   }
 
-  onPacienteProvinciaChange(): void {
-    const dpto = this.pacienteForm.get('departamento')?.value;
-    const prov = this.pacienteForm.get('provincia')?.value;
+  private loadProvinces(departamentoId: string, callback?: () => void) {
+    this.locationService.getProvinces(departamentoId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (provinces) => {
+          this.provincias = provinces;
+          if (callback) callback();
+        },
+        error: (error) => {
+          console.error('Error loading provinces:', error);
+        }
+      });
+  }
 
-    if (dpto && prov && this.ubicacionMap[dpto]?.[prov]) {
-      this.distritos = this.ubicacionMap[dpto][prov];
+  onPacienteProvinciaChange(): void {
+    const provName = this.pacienteForm.get('provincia')?.value;
+    const prov = this.provincias.find(p => p.nombre === provName);
+    
+    if (prov) {
+      this.selectedProvinciaId = prov.id;
+      this.loadDistricts(prov.id);
       this.pacienteForm.patchValue({
         distrito: ''
       });
-    } else {
-      this.distritos = [];
     }
   }
 
-  // Manejo de secciones expandibles
+  private loadDistricts(provinciaId: string) {
+    this.locationService.getDistricts(provinciaId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (districts) => {
+          this.distritos = districts;
+        },
+        error: (error) => {
+          console.error('Error loading districts:', error);
+        }
+      });
+  }
+
   togglePaciente(): void {
     this.isPacienteExpanded = !this.isPacienteExpanded;
   }
 
+  onSubmit(): void {
+    this.submitted = true;
+
+    // Validate only if form has values
+    const formValue = this.pacienteForm.value;
+    const hasValues = Object.values(formValue).some(v => v !== '' && v !== null);
+
+    if (hasValues && this.pacienteForm.invalid) {
+      const firstError = document.querySelector('.error-message');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    if (!hasValues) {
+      return; // Don't save if form is empty
+    }
+
+    this.isLoading = true;
+    const formData = this.pacienteForm.value;
+    const pacienteData: PacienteData = {
+      tipoDocumento: formData.tipoDocumento || undefined,
+      numeroDocumento: formData.numeroDocumento || undefined,
+      nombres: formData.nombres || undefined,
+      apellidos: formData.apellidos || undefined,
+      sexo: formData.sexo || undefined,
+      telefono: formData.telefono || undefined,
+      correo: formData.correo || undefined,
+      departamento: formData.departamento || undefined,
+      provincia: formData.provincia || undefined,
+      distrito: formData.distrito || undefined,
+      direccion: formData.direccion || undefined
+    };
+
+    if (this.editMode) {
+      this.prospectoApiService.updatePatient(pacienteData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.dataUpdated.emit(pacienteData);
+            alert('Paciente actualizado exitosamente');
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error updating patient:', error);
+            alert('Error al actualizar el paciente');
+          }
+        });
+    } else {
+      this.prospectoApiService.createPatient(pacienteData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.editMode = true;
+            this.isPacienteExpanded = true;
+            this.dataSaved.emit(pacienteData);
+            alert('Paciente guardado exitosamente');
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error creating patient:', error);
+            alert('Error al guardar el paciente');
+          }
+        });
+    }
+  }
 }
+

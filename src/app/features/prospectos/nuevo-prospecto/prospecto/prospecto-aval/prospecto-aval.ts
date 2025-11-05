@@ -1,163 +1,285 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Prospecto, ProspectosService } from '@src/app/core/services/prospectos.service';
-import { ubicacionMap } from '@src/app/shared/constants/ubicacionMap';
+import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { LocationService, Department, Province, District } from '@app/core/services/location.service';
+import { ProspectoApiService, AvalistaData } from '@app/core/services/prospecto-api.service';
 import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
 
 @Component({
   selector: 'app-prospecto-aval',
-  imports: [DocumentTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, DocumentTableComponent],
   templateUrl: './prospecto-aval.html',
   styleUrl: '../prospecto.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProspectoAval {
-   clientForm!: FormGroup;
- // Control de secciones expandibles
-  isPacienteExpanded = false;
-  ubicacionMap = ubicacionMap;
+export class ProspectoAval implements OnInit, OnDestroy {
+  @Input() initialData?: AvalistaData;
+  @Input() documentos?: any[];
+  @Output() dataSaved = new EventEmitter<AvalistaData>();
+  @Output() dataUpdated = new EventEmitter<AvalistaData>();
 
-   constructor(
+  clientForm!: FormGroup;
+  submitted = false;
+  isLoading = false;
+  editMode = false;
+
+  // Control de secciones expandibles
+  isAvalistaExpanded = false;
+
+  // Location data
+  departamentos: Department[] = [];
+  avalistaProvincias: Province[] = [];
+  avalistaDistritos: District[] = [];
+  selectedDepartamentoId?: string;
+  selectedProvinciaId?: string;
+
+  // Documentos
+  documentosList: any[] = [];
+
+  private destroy$ = new Subject<void>();
+
+  constructor(
     private fb: FormBuilder,
-    private prospectosService: ProspectosService,
-
+    private locationService: LocationService,
+    private prospectoApiService: ProspectoApiService
   ) {
     this.initForm();
   }
 
+  ngOnInit() {
+    this.loadDepartments();
 
-  private loadProspectoData(id: string) {
-      this.prospectosService.getProspectos().subscribe(
-        (prospectos: Prospecto[]) => {
-          const prospecto = prospectos.find(p => p.id === id);
-          if (prospecto) {
-            if (prospecto.paciente) {
-              this.isPacienteExpanded = true;
-            }
-
-            this.clientForm.patchValue(prospecto);
-
-            if (prospecto.departamento) {
-              this.onDepartamentoChange();
-            }
-            if (prospecto.provincia) {
-              this.onProvinciaChange();
-            }
-          }
-        },
-        (error: Error) => {
-          console.error('Error loading prospecto:', error);
-        }
-      );
+    if (this.initialData) {
+      this.isAvalistaExpanded = true;
+      this.editMode = true;
+      this.loadInitialData(this.initialData);
     }
 
-     // Datos para los dropdowns de ubicación
-  departamentos = ['Lima', 'Arequipa', 'Cusco', 'Trujillo', 'Piura', 'Chiclayo'];
-  provincias: string[] = [];
-  distritos: string[] = [];
+    if (this.documentos) {
+      this.documentosList = this.documentos;
+    }
+  }
 
-  // Datos para el paciente (opcional)
-  pacienteProvincias: string[] = [];
-  pacienteDistritos: string[] = [];
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
+  private loadDepartments() {
+    this.locationService.getDepartments()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (departments) => {
+          this.departamentos = departments;
+        },
+        error: (error) => {
+          console.error('Error loading departments:', error);
+        }
+      });
+  }
 
-  private initForm(): void {
-    // Crear el formulario con validación
-    this.clientForm = this.fb.group({
+  private loadInitialData(data: AvalistaData) {
+    if (this.departamentos.length > 0) {
+      this.loadLocationData(data);
+    } else {
+      this.locationService.getDepartments()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (departments) => {
+            this.departamentos = departments;
+            this.loadLocationData(data);
+          }
+        });
+    }
 
-      // INFORMACIÓN PACIENTE (opcional)
-      paciente: this.fb.group({
-        tipoDocumento: [''],
-        numeroDocumento: [''],
-        nombres: [''],
-        apellidos: [''],
-        sexo: [''],
-        telefono: [''],
-        correo: ['', Validators.email],
-        departamento: [''],
-        provincia: [''],
-        distrito: [''],
-        direccion: ['']
-      }),
+    // Patch form values
+    const avalistaForm = this.clientForm.get('avalista') as FormGroup;
+    avalistaForm.patchValue({
+      tipoDocumento: data.tipoDocumento,
+      numeroDocumento: data.numeroDocumento,
+      estadoCivil: data.estadoCivil,
+      nombres: data.nombres,
+      apellidos: data.apellidos,
+      sexo: data.sexo,
+      telefono: data.telefono,
+      correo: data.correo || '',
+      ingresos: data.ingresos,
+      departamento: data.departamento,
+      provincia: data.provincia,
+      distrito: data.distrito,
+      direccion: data.direccion
     });
   }
 
-  // Acceso a los controles del formulario para validación
-  get f() { return this.clientForm.controls; }
+  private loadLocationData(data: AvalistaData) {
+    if (data.departamento) {
+      const dept = this.departamentos.find(d => d.nombre === data.departamento);
+      if (dept) {
+        this.selectedDepartamentoId = dept.id;
+        this.loadProvinces(dept.id, () => {
+          if (data.provincia) {
+            const prov = this.avalistaProvincias.find(p => p.nombre === data.provincia);
+            if (prov) {
+              this.selectedProvinciaId = prov.id;
+              this.loadDistricts(prov.id);
+            }
+          }
+        });
+      }
+    }
+  }
 
+  private initForm(): void {
+    this.clientForm = this.fb.group({
+      avalista: this.fb.group({
+        tipoDocumento: ['', Validators.required],
+        numeroDocumento: ['', [Validators.required, Validators.pattern('^[0-9]{8,12}$')]],
+        estadoCivil: ['', Validators.required],
+        nombres: ['', [Validators.required, Validators.minLength(2)]],
+        apellidos: ['', [Validators.required, Validators.minLength(2)]],
+        sexo: ['', Validators.required],
+        telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9,12}$')]],
+        correo: ['', Validators.email],
+        ingresos: ['', [Validators.required, Validators.min(0)]],
+        departamento: ['', Validators.required],
+        provincia: ['', Validators.required],
+        distrito: ['', Validators.required],
+        direccion: ['', [Validators.required, Validators.minLength(5)]]
+      })
+    });
+  }
 
-    // Manejo de cambios en las ubicaciones
-  onDepartamentoChange(): void {
-    const dpto = this.clientForm.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.provincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.patchValue({
+  get f() {
+    return (this.clientForm.get('avalista') as FormGroup).controls;
+  }
+
+  get avalistaForm() {
+    return this.clientForm.get('avalista') as FormGroup;
+  }
+
+  onAvalistaDepartamentoChange(): void {
+    const deptName = this.avalistaForm.get('departamento')?.value;
+    const dept = this.departamentos.find(d => d.nombre === deptName);
+
+    if (dept) {
+      this.selectedDepartamentoId = dept.id;
+      this.loadProvinces(dept.id);
+      this.avalistaForm.patchValue({
         provincia: '',
         distrito: ''
       });
-      this.distritos = [];
+      this.avalistaProvincias = [];
+      this.avalistaDistritos = [];
     }
   }
 
-  onProvinciaChange(): void {
-    const dpto = this.clientForm.get('departamento')?.value;
-    const prov = this.clientForm.get('provincia')?.value;
+  private loadProvinces(departamentoId: string, callback?: () => void) {
+    this.locationService.getProvinces(departamentoId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (provinces) => {
+          this.avalistaProvincias = provinces;
+          if (callback) callback();
+        },
+        error: (error) => {
+          console.error('Error loading provinces:', error);
+        }
+      });
+  }
 
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.distritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.patchValue({
+  onAvalistaProvinciaChange(): void {
+    const provName = this.avalistaForm.get('provincia')?.value;
+    const prov = this.avalistaProvincias.find(p => p.nombre === provName);
+
+    if (prov) {
+      this.selectedProvinciaId = prov.id;
+      this.loadDistricts(prov.id);
+      this.avalistaForm.patchValue({
         distrito: ''
       });
     }
   }
 
-  // Manejo de cambios en las ubicaciones para el paciente
-  onPacienteDepartamentoChange(): void {
-    const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.pacienteProvincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.get('paciente')?.patchValue({
-        provincia: '',
-        distrito: ''
+  private loadDistricts(provinciaId: string) {
+    this.locationService.getDistricts(provinciaId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (districts) => {
+          this.avalistaDistritos = districts;
+        },
+        error: (error) => {
+          console.error('Error loading districts:', error);
+        }
       });
-      this.pacienteDistritos = [];
-    }
   }
 
-  onPacienteProvinciaChange(): void {
-    const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
-    const prov = this.clientForm.get('paciente')?.get('provincia')?.value;
-
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.pacienteDistritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.get('paciente')?.patchValue({
-        distrito: ''
-      });
-    }
+  toggleAvalista(): void {
+    this.isAvalistaExpanded = !this.isAvalistaExpanded;
   }
 
-  // Manejo de secciones expandibles
-  togglePaciente(): void {
-    this.isPacienteExpanded = !this.isPacienteExpanded;
-  }
+  onSubmit(): void {
+    this.submitted = true;
 
-
-  // Datos de ejemplo para la tabla de documentos
-  documentos = [
-  {
-      nombre: 'Contrato.pdf',
-      fechaCarga: new Date('2025-10-10'),
-      fechaRevision: new Date('2025-10-12'),
-      comentario: 'Pendiente de aprobación',
-      estadoRevision: DocumentoEstado.Pendiente
-    },
-    {
-      nombre: 'Factura_123.pdf',
-      fechaCarga: new Date('2025-10-15'),
-      fechaRevision: new Date('2025-10-16'),
-      comentario: 'Aprobado',
-      estadoRevision: DocumentoEstado.Aprobado
+    if (this.avalistaForm.invalid) {
+      const firstError = document.querySelector('.error-message');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
     }
-  ];
 
+    this.isLoading = true;
+    const formData = this.avalistaForm.value;
+    const avalistaData: AvalistaData = {
+      tipoDocumento: formData.tipoDocumento,
+      numeroDocumento: formData.numeroDocumento,
+      estadoCivil: formData.estadoCivil,
+      nombres: formData.nombres,
+      apellidos: formData.apellidos,
+      sexo: formData.sexo,
+      telefono: formData.telefono,
+      correo: formData.correo,
+      ingresos: parseFloat(formData.ingresos),
+      departamento: formData.departamento,
+      provincia: formData.provincia,
+      distrito: formData.distrito,
+      direccion: formData.direccion
+    };
+
+    if (this.editMode) {
+      this.prospectoApiService.updateAvalista(avalistaData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.dataUpdated.emit(avalistaData);
+            alert('Avalista actualizado exitosamente');
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error updating avalista:', error);
+            alert('Error al actualizar el avalista');
+          }
+        });
+    } else {
+      this.prospectoApiService.createAvalista(avalistaData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.isLoading = false;
+            this.editMode = true;
+            this.isAvalistaExpanded = true;
+            this.dataSaved.emit(avalistaData);
+            alert('Avalista guardado exitosamente');
+          },
+          error: (error) => {
+            this.isLoading = false;
+            console.error('Error creating avalista:', error);
+            alert('Error al guardar el avalista');
+          }
+        });
+    }
+  }
 }
+

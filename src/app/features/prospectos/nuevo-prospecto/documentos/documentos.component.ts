@@ -7,9 +7,9 @@ import { ModalEstadoComponent } from "./modal-estado/modal-estado.component";
 import { faTrash, faGear } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
-
-interface Documento {
-  id: number;
+// Interface local para documentos con archivos
+export interface DocumentoLocal {
+  id: string;
   tipo: string;
   archivo: File;
   comentario: string;
@@ -26,7 +26,7 @@ interface Documento {
     ReactiveFormsModule,
     ModalEstadoComponent,
     FontAwesomeModule
-],
+  ],
   templateUrl: './documentos.component.html',
   styleUrls: ['./documentos.component.scss']
 })
@@ -34,6 +34,7 @@ export default class DocumentosComponent implements OnInit {
 
   faTrash = faTrash;
   faGear = faGear;
+
   // Constants
   readonly MAX_DOCUMENTOS = 10;
   readonly TIPOS_PERMITIDOS = [
@@ -47,7 +48,7 @@ export default class DocumentosComponent implements OnInit {
   readonly EXTENSION_PERMITIDAS = ['.pdf', '.jpg', '.jpeg', '.png'];
 
   // Variables
-  documentos: Documento[] = [];
+  documentos: DocumentoLocal[] = [];
   tipoDocumentoSeleccionado = '';
   archivoSeleccionado: File | null = null;
   comentario = '';
@@ -55,9 +56,9 @@ export default class DocumentosComponent implements OnInit {
 
   // Modal variables
   mostrarModal = false;
-  documentoSeleccionado: Documento | null = null;
-  estadoAprobacionTemp: 'sin-estado' | 'aprobado' | 'rechazado' = 'sin-estado';
-  comentarioAprobacionTemp = '';
+  documentoSeleccionado: DocumentoLocal | null = null;
+  estadoRevisionTemp: string = 'Pendiente';
+  comentarioRevisionTemp = '';
 
   constructor(
     private router: Router,
@@ -104,8 +105,8 @@ export default class DocumentosComponent implements OnInit {
       return;
     }
 
-    const nuevoDocumento: Documento = {
-      id: Date.now(),
+    const nuevoDocumento: DocumentoLocal = {
+      id: this.generarId(),
       tipo: this.tipoDocumentoSeleccionado,
       archivo: this.archivoSeleccionado,
       comentario: this.comentario,
@@ -125,8 +126,14 @@ export default class DocumentosComponent implements OnInit {
     }
   }
 
-  eliminarDocumento(id: number): void {
-    this.documentos = this.documentos.filter(doc => doc.id !== id);
+  private generarId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  eliminarDocumento(id: string): void {
+    if (id) {
+      this.documentos = this.documentos.filter(doc => doc.id !== id);
+    }
   }
 
   obtenerNombreTipoDocumento(tipoId: string): string {
@@ -153,31 +160,29 @@ export default class DocumentosComponent implements OnInit {
     }
   }
 
-   // En la clase DocumentosComponent:
-
-abrirModalEstado(documento: Documento): void {
-  this.documentoSeleccionado = documento;
-  this.mostrarModal = true;
-}
-
-onCerrarModal(): void {
-  this.mostrarModal = false;
-  this.documentoSeleccionado = null;
-}
-
-onGuardarEstado(event: { estadoAprobacion: 'sin-estado' | 'aprobado' | 'rechazado', comentario: string }): void {
-  if (this.documentoSeleccionado) {
-    const index = this.documentos.findIndex(doc => doc.id === this.documentoSeleccionado?.id);
-    if (index !== -1) {
-      this.documentos[index] = {
-        ...this.documentos[index],
-        estadoAprobacion: event.estadoAprobacion,
-        comentario: event.comentario
-      };
-    }
+  abrirModalEstado(documento: DocumentoLocal): void {
+    this.documentoSeleccionado = documento;
+    this.mostrarModal = true;
   }
-  this.onCerrarModal();
-}
+
+  onCerrarModal(): void {
+    this.mostrarModal = false;
+    this.documentoSeleccionado = null;
+  }
+
+  onGuardarEstado(event: { estadoAprobacion: 'sin-estado' | 'aprobado' | 'rechazado', comentario: string }): void {
+    if (this.documentoSeleccionado) {
+      const index = this.documentos.findIndex(doc => doc.id === this.documentoSeleccionado?.id);
+      if (index !== -1) {
+        this.documentos[index] = {
+          ...this.documentos[index],
+          estadoAprobacion: event.estadoAprobacion,
+          comentario: event.comentario
+        };
+      }
+    }
+    this.onCerrarModal();
+  }
 
   obtenerClaseIconoEstado(estado: 'sin-estado' | 'aprobado' | 'rechazado'): string {
     switch (estado) {

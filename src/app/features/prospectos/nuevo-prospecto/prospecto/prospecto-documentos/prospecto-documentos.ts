@@ -1,40 +1,41 @@
-import { Component } from '@angular/core';
-import {  DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
+import { Component, Input, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
+import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto-api.service';
 
 @Component({
   selector: 'app-prospecto-documentos',
-  imports: [DocumentTableComponent],
+  imports: [CommonModule, DocumentTableComponent],
   template: `
-  <div>
-    <div>
+  <div class="section-container">
+    <div class="documentos-section">
       <h2>Documentos del Asociado</h2>
-      <app-document-table [documentos]="documentos"></app-document-table>
+      <app-document-table [documentos]="documentosAsociado || []"></app-document-table>
     </div>
-    <div>
+    <div class="documentos-section">
       <h2>Ficha de riesgo del Asociado</h2>
-      <app-document-table [documentos]="documentos"></app-document-table>
+      <app-document-table [documentos]="documentosRiesgo || []"></app-document-table>
     </div>
   </div>
   `,
   styleUrls: ['./prospecto-documentos.css'],
 })
-export class ProspectoDocumentos {
+export class ProspectoDocumentos implements OnInit {
+  @Input() documentosAsociado?: DocumentoData[];
+  @Input() documentosRiesgo?: DocumentoData[];
 
-    // Datos de ejemplo para la tabla de documentos
-    documentos = [
-    {
-        nombre: 'Contrato.pdf',
-        fechaCarga: new Date('2025-10-10'),
-        fechaRevision: new Date('2025-10-12'),
-        comentario: 'Pendiente de aprobación',
-        estadoRevision: DocumentoEstado.Pendiente
-      },
-      {
-        nombre: 'Factura_123.pdf',
-        fechaCarga: new Date('2025-10-15'),
-        fechaRevision: new Date('2025-10-16'),
-        comentario: 'Aprobado',
-        estadoRevision: DocumentoEstado.Aprobado
-      }
-    ];
+  documentosAsociadoList: DocumentoData[] = [];
+  documentosRiesgoList: DocumentoData[] = [];
+
+  constructor(private prospectoApiService: ProspectoApiService) {}
+
+  ngOnInit(): void {
+    if (this.documentosAsociado) {
+      this.documentosAsociadoList = this.documentosAsociado;
+    }
+
+    if (this.documentosRiesgo) {
+      this.documentosRiesgoList = this.documentosRiesgo;
+    }
+  }
 }

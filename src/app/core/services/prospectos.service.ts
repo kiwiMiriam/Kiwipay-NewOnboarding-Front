@@ -39,6 +39,16 @@ export interface Prospecto {
     distrito?: string;
     direccion?: string;
   };
+  // Avalista info
+  avalista?: {
+    tipoDocumento?: string;
+    numeroDocumento?: string;
+    nombres?: string;
+    apellidos?: string;
+    estadoCivil?: string;
+    telefono?: string;
+    ingresos?: string;
+  };
   // Conyugue info
   conyugue?: {
     tipoDocumento?: string;
