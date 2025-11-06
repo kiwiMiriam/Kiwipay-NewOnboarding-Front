@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FaIconComponent, FontAwesomeModule } from "@fortawesome/angular-fontawesome";
 import { faUpload, faDownload, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { DocumentoData } from '@src/app/core/services/prospecto-api.service';
+import type { DocumentoData } from '@app/core/services/documento.service';
 
 export enum DocumentoEstado {
   Pendiente = 'Pendiente',
@@ -17,7 +17,7 @@ export enum DocumentoEstado {
   standalone: true,
   imports: [CommonModule, FaIconComponent, FontAwesomeModule, FormsModule],
   template: `
-  <div class="document-table">
+  <div class="document-table" (click)="$event.stopPropagation()">
     <table>
       <thead>
         <tr>
@@ -179,8 +179,10 @@ export class DocumentTableComponent {
   }
 
   onDescargar(doc: DocumentoData): void {
-    if (!this.isEstadoPendiente(doc)) {
+    if (!this.isEstadoPendiente(doc) && doc.url) {
       this.descargar.emit(doc);
+    } else {
+      console.warn('No se puede descargar el documento porque está pendiente o no tiene URL');
     }
   }
 

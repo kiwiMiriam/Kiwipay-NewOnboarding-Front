@@ -1,6 +1,6 @@
 <!-- INFORMACIÓN AVALISTA (Sección expandible - opcional) -->
 <div class="section-container">
-  <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="clientForm" (ngSubmit)="onSubmit($event)">
     <div class="expandable-section">
       <div class="section-toggle" (click)="toggleAvalista()">
         <div class="section-header">
@@ -135,11 +135,20 @@
           </button>
         </div>
       </div>
-      <div>
-        <h2>Documentos del Aval</h2>
-        <app-document-table [documentos]="documentosList"></app-document-table>
-      </div>
       }
     </div>
   </form>
+
+  @if (isAvalistaExpanded) {
+    <div class="documentos-section">
+      <h2>Documentos del Aval</h2>
+      <app-document-table
+        [documentos]="documentosList"
+        (subir)="onDocumentoSubir($event)"
+        (descargar)="onDocumentoDescargar($event)"
+        (aprobar)="onDocumentoAprobar($event)"
+        (rechazar)="onDocumentoRechazar($event)">
+      </app-document-table>
+    </div>
+  }
 </div>

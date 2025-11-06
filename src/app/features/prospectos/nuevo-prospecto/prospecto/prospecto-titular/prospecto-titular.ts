@@ -10,7 +10,7 @@ import { ProspectoApiService, ClienteData } from '@app/core/services/prospecto-a
   selector: 'app-prospecto-titular',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './prospecto-titular.html',
-  styleUrl: '../prospecto.scss',
+  styleUrls: ['./prospecto-titular.scss', '../prospecto.scss'],
 })
 export class ProspectoTitular implements OnInit, OnDestroy {
   @Input() initialData?: ClienteData;
@@ -45,9 +45,12 @@ export class ProspectoTitular implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadDepartments();
-    
-    if (this.initialData) {
+
+    if (this.initialData && Object.keys(this.initialData).length > 0) {
+      this.editMode = true;
       this.loadInitialData(this.initialData);
+    } else {
+      this.editMode = false;
     }
   }
 
@@ -71,7 +74,7 @@ export class ProspectoTitular implements OnInit, OnDestroy {
 
   private loadInitialData(data: ClienteData) {
     this.editMode = true;
-    
+
     // Wait for departments to load, then load provinces and districts
     if (this.departamentos.length > 0) {
       this.loadLocationData(data);
@@ -144,7 +147,9 @@ export class ProspectoTitular implements OnInit, OnDestroy {
       tasaExperian: ['', Validators.min(0)],
       nuevaTasa: ['', Validators.min(0)],
       tasaAdicional: ['', Validators.min(0)],
-      tasaFinal: ['', [Validators.required, Validators.min(0)]]
+      tasaFinal: ['', [Validators.required, Validators.min(0)]],
+      resultadoModelo: ['', Validators.required],
+      puntajeModelo: ['', [Validators.required, Validators.min(0), Validators.max(100)]]
     });
   }
 
@@ -153,7 +158,7 @@ export class ProspectoTitular implements OnInit, OnDestroy {
   onDepartamentoChange(): void {
     const deptName = this.clientForm.get('departamento')?.value;
     const dept = this.departamentos.find(d => d.nombre === deptName);
-    
+
     if (dept) {
       this.selectedDepartamentoId = dept.id;
       this.loadProvinces(dept.id);
@@ -183,7 +188,7 @@ export class ProspectoTitular implements OnInit, OnDestroy {
   onProvinciaChange(): void {
     const provName = this.clientForm.get('provincia')?.value;
     const prov = this.provincias.find(p => p.nombre === provName);
-    
+
     if (prov) {
       this.selectedProvinciaId = prov.id;
       this.loadDistricts(prov.id);

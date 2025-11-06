@@ -1,0 +1,37 @@
+.section-container {
+  margin-bottom: 2rem;
+
+  form {
+    margin-bottom: 2rem;
+  }
+}
+
+.documentos-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-top: 2rem;
+
+  h2 {
+    margin-bottom: 1rem;
+    color: #333;
+  }
+}
+
+.form-buttons {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+// Asegurar que los modales de documentos estén por encima del formulario
+:host ::ng-deep {
+  .modal-overlay {
+    z-index: 1050;
+  }
+
+  .modal-content {
+    z-index: 1051;
+  }
+}

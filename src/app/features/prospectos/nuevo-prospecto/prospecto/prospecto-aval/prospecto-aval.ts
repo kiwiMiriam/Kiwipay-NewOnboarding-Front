@@ -6,6 +6,8 @@ import { takeUntil } from 'rxjs/operators';
 import { LocationService, Department, Province, District } from '@app/core/services/location.service';
 import { ProspectoApiService, AvalistaData } from '@app/core/services/prospecto-api.service';
 import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
+import { DocumentoService } from '@app/core/services/documento.service';
+import type { DocumentoData } from '@app/core/services/documento.service';
 
 @Component({
   selector: 'app-prospecto-aval',
@@ -15,7 +17,7 @@ import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/compone
 })
 export class ProspectoAval implements OnInit, OnDestroy {
   @Input() initialData?: AvalistaData;
-  @Input() documentos?: any[];
+  @Input() documentos?: DocumentoData[];
   @Output() dataSaved = new EventEmitter<AvalistaData>();
   @Output() dataUpdated = new EventEmitter<AvalistaData>();
 
@@ -35,16 +37,97 @@ export class ProspectoAval implements OnInit, OnDestroy {
   selectedProvinciaId?: string;
 
   // Documentos
-  documentosList: any[] = [];
-
+  documentosList: DocumentoData[] = [];
+  documentosLoading = false;
   private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private locationService: LocationService,
-    private prospectoApiService: ProspectoApiService
+    private prospectoApiService: ProspectoApiService,
+    private documentoService: DocumentoService
   ) {
     this.initForm();
+  }
+
+  // Manejadores de eventos para la tabla de documentos
+  onDocumentoSubir(event: { documento: DocumentoData; archivo: File }): void {
+    this.documentosLoading = true;
+    this.documentoService.subirDocumento(event.documento.id, event.archivo)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: DocumentoData) => {
+          this.documentosLoading = false;
+          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
+          if (index !== -1) {
+            this.documentosList[index] = { ...this.documentosList[index], ...response };
+          }
+        },
+        error: (error: Error) => {
+          this.documentosLoading = false;
+          console.error('Error al subir documento:', error);
+          alert('Error al subir el documento');
+        }
+      });
+  }
+
+  onDocumentoDescargar(documento: DocumentoData): void {
+    this.documentoService.descargarDocumento(documento.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob: Blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = documento.nombre || 'documento';
+          link.click();
+          window.URL.revokeObjectURL(url);
+        },
+        error: (error: Error) => {
+          console.error('Error al descargar documento:', error);
+          alert('Error al descargar el documento');
+        }
+      });
+  }
+
+  onDocumentoAprobar(event: { documento: DocumentoData; comentario: string }): void {
+    this.documentosLoading = true;
+    this.documentoService.aprobarDocumento(event.documento.id, event.comentario)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: DocumentoData) => {
+          this.documentosLoading = false;
+          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
+          if (index !== -1) {
+            this.documentosList[index] = { ...this.documentosList[index], ...response };
+          }
+        },
+        error: (error: Error) => {
+          this.documentosLoading = false;
+          console.error('Error al aprobar documento:', error);
+          alert('Error al aprobar el documento');
+        }
+      });
+  }
+
+  onDocumentoRechazar(event: { documento: DocumentoData; comentario: string }): void {
+    this.documentosLoading = true;
+    this.documentoService.rechazarDocumento(event.documento.id, event.comentario)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: DocumentoData) => {
+          this.documentosLoading = false;
+          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
+          if (index !== -1) {
+            this.documentosList[index] = { ...this.documentosList[index], ...response };
+          }
+        },
+        error: (error: Error) => {
+          this.documentosLoading = false;
+          console.error('Error al rechazar documento:', error);
+          alert('Error al rechazar el documento');
+        }
+      });
   }
 
   ngOnInit() {
@@ -218,7 +301,10 @@ export class ProspectoAval implements OnInit, OnDestroy {
     this.isAvalistaExpanded = !this.isAvalistaExpanded;
   }
 
-  onSubmit(): void {
+  onSubmit(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
     this.submitted = true;
 
     if (this.avalistaForm.invalid) {

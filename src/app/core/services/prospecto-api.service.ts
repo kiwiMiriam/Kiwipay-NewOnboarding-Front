@@ -68,6 +68,7 @@ export interface AvalistaData {
 export interface DocumentoData {
   id?: string;
   nombre: string;
+  url?: string;
   fechaCarga: Date | string;
   fechaRevision?: Date | string;
   comentario?: string;

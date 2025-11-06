@@ -13,38 +13,38 @@
       <div class="expanded-content">
         <!--  resultados experian-->
         <div class="expandable-section">
-          <div class="section-toggle" (click)="toggleModelo()">
-            <div class="section-header">
+          <div class="section-toggle">
+            <div class="section-header" (click)="toggleModelo()">
               <h4>Resultados del modelo</h4>
               <span class="toggle-icon">{{ isModeloExpanded ? '▼' : '►' }}</span>
             </div>
             @if( isModeloExpanded) {
-            <div class="expanded-content">
+            <div class="expanded-content" (click)="$event.stopPropagation()">
               <div class="form-row">
                 <div class="form-group">
                   <label for="tasaExperian">Tasa Experian</label>
-                  <input type="number" id="tasaExperian" formControlName="tasaExperian" step="0.01" />
+                  <input type="number" id="tasaExperian" formControlName="tasaExperian" step="0.01" (click)="$event.stopPropagation()" />
                   @if (submitted && f['tasaExperian'].errors?.['min']) {
                   <div class="error-message">La tasa debe ser mayor o igual a 0</div>
                   }
                 </div>
                 <div class="form-group">
                   <label for="nuevaTasa">Nueva Tasa</label>
-                  <input type="number" id="nuevaTasa" formControlName="nuevaTasa" step="0.01" />
+                  <input type="number" id="nuevaTasa" formControlName="nuevaTasa" step="0.01" (click)="$event.stopPropagation()" />
                   @if (submitted && f['nuevaTasa'].errors?.['min']) {
                   <div class="error-message">La tasa debe ser mayor o igual a 0</div>
                   }
                 </div>
                 <div class="form-group">
                   <label for="tasaAdicional">Tasa Adicional</label>
-                  <input type="number" id="tasaAdicional" formControlName="tasaAdicional" step="0.01" />
+                  <input type="number" id="tasaAdicional" formControlName="tasaAdicional" step="0.01" (click)="$event.stopPropagation()" />
                   @if (submitted && f['tasaAdicional'].errors?.['min']) {
                   <div class="error-message">La tasa debe ser mayor o igual a 0</div>
                   }
                 </div>
                 <div class="form-group">
                   <label for="tasaFinal">Tasa Final *</label>
-                  <input type="number" id="tasaFinal" formControlName="tasaFinal" step="0.01" required />
+                  <input type="number" id="tasaFinal" formControlName="tasaFinal" step="0.01" required (click)="$event.stopPropagation()" />
                   @if (submitted && f['tasaFinal'].errors) {
                   <div class="error-message">
                     @if (f['tasaFinal'].errors['required']) { La tasa final es requerida }
@@ -53,7 +53,9 @@
                   }
                 </div>
               </div>
-              <p>*La tasa final sera decidida por el equipo de Riesgos, en caso la tasa sea mayor al 100% el cliente debe rechazarse manualmente.*</p>
+              <div class="info-message" (click)="$event.stopPropagation()">
+                <p>*La tasa final sera decidida por el equipo de Riesgos, en caso la tasa sea mayor al 100% el cliente debe rechazarse manualmente.*</p>
+              </div>
             </div>
             }
           </div>
