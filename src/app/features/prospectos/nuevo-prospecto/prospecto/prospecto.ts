@@ -43,7 +43,7 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
 
         <app-prospecto-aval
           [initialData]="prospectoData?.avalista"
-          [documentos]="prospectoData?.documentos"
+          [documentos]="documentosAsociado"
           (dataSaved)="onAvalistaSaved($event)"
           (dataUpdated)="onAvalistaUpdated($event)">
         </app-prospecto-aval>
@@ -99,6 +99,13 @@ export default class Prospecto implements OnInit, OnDestroy {
   isProcessing = false;
   prospectoId?: string;
   mostrarModalConfirmacion = false;
+
+  // Normaliza los documentos para asegurar que el campo `id` siempre sea una cadena,
+  // evitando incompatibilidades de tipos entre distintas definiciones de DocumentoData.
+  get documentosAsociado(): any[] {
+    const docs = this.prospectoData?.documentos || [];
+    return docs.map(d => ({ ...d, id: (d as any).id ?? '' }));
+  }
 
   private destroy$ = new Subject<void>();
 

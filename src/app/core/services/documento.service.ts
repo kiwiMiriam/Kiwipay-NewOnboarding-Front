@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@src/environments/environment';
+import { DocumentoData } from './prospecto-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -33,12 +34,4 @@ export class DocumentoService {
   }
 }
 
-export interface DocumentoData {
-  id: string;
-  nombre: string;
-  url?: string;
-  fechaCarga: string;
-  fechaRevision?: string;
-  comentario?: string;
-  estadoRevision?: string;
-}
+

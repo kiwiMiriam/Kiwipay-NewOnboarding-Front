@@ -10,7 +10,7 @@ import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto
   <div class="section-container">
     <div class="documentos-section">
       <h2>Documentos del Asociado</h2>
-      <app-document-table 
+      <app-document-table
         [documentos]="documentosAsociadoList"
         (subir)="onSubirAsociado($event)"
         (descargar)="onDescargarAsociado($event)"
@@ -20,7 +20,7 @@ import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto
     </div>
     <div class="documentos-section">
       <h2>Ficha de riesgo del Asociado</h2>
-      <app-document-table 
+      <app-document-table
         [documentos]="documentosRiesgoList"
         (subir)="onSubirRiesgo($event)"
         (descargar)="onDescargarRiesgo($event)"

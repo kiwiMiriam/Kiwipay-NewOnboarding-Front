@@ -1,9 +1,9 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FaIconComponent, FontAwesomeModule } from "@fortawesome/angular-fontawesome";
 import { faUpload, faDownload, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
-import type { DocumentoData } from '@app/core/services/documento.service';
+import { DocumentoData } from '@app/core/services/prospecto-api.service';
 
 export enum DocumentoEstado {
   Pendiente = 'Pendiente',
@@ -16,6 +16,7 @@ export enum DocumentoEstado {
   selector: 'app-document-table',
   standalone: true,
   imports: [CommonModule, FaIconComponent, FontAwesomeModule, FormsModule],
+  styles: [`:host { display: block; }`],
   template: `
   <div class="document-table" (click)="$event.stopPropagation()">
     <table>
@@ -131,90 +132,116 @@ export enum DocumentoEstado {
   styleUrls: ['./documentTable.component.scss'],
 })
 export class DocumentTableComponent {
-  /** ✅ Array recibido desde el componente padre */
   @Input() documentos: DocumentoData[] = [];
+  @Output() private readonly subir = new EventEmitter<{ documento: DocumentoData; archivo: File }>();
+  @Output() private readonly descargar = new EventEmitter<DocumentoData>();
+  @Output() private readonly aprobar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();
+  @Output() private readonly rechazar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();
+  @ViewChild('fileInput') private fileInput!: ElementRef<HTMLInputElement>;
 
-  @Output() subir = new EventEmitter<{ documento: DocumentoData; archivo: File }>();
-  @Output() descargar = new EventEmitter<DocumentoData>();
-  @Output() aprobar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();
-  @Output() rechazar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();
+  protected readonly faUpload = faUpload;
+  protected readonly faDownload = faDownload;
+  protected readonly faCheck = faCheck;
+  protected readonly faTimes = faTimes;
 
-  /** Íconos FontAwesome */
-  faUpload = faUpload;
-  faDownload = faDownload;
-  faCheck = faCheck;
-  faTimes = faTimes;
+  protected mostrarModalSubir = false;
+  protected mostrarModalAprobar = false;
+  protected mostrarModalRechazar = false;
+  protected documentoSeleccionado: DocumentoData | null = null;
+  protected archivoSeleccionado: File | null = null;
+  protected comentarioAprobar = '';
+  protected comentarioRechazar = '';
 
-  /** Variables para modales */
-  mostrarModalSubir = false;
-  mostrarModalAprobar = false;
-  mostrarModalRechazar = false;
-  documentoSeleccionado: DocumentoData | null = null;
-  archivoSeleccionado: File | null = null;
-  comentarioAprobar = '';
-  comentarioRechazar = '';
-
-  /** Verifica si el estado es Pendiente */
-  isEstadoPendiente(doc: DocumentoData): boolean {
-    return (doc.estadoRevision || 'Pendiente').toLowerCase() === 'pendiente';
+  protected isEstadoPendiente(doc: DocumentoData): boolean {
+    return !doc.estadoRevision || doc.estadoRevision.toLowerCase() === DocumentoEstado.Pendiente.toLowerCase();
   }
 
-  /** Métodos para abrir modales */
-  onSubir(doc: DocumentoData): void {
+  protected isAccionDisabled(doc: DocumentoData): boolean {
+    return this.isEstadoPendiente(doc) || !doc.url;
+  }
+
+  protected onSubir(doc: DocumentoData): void {
+    this.resetState();
     this.documentoSeleccionado = doc;
-    this.archivoSeleccionado = null;
     this.mostrarModalSubir = true;
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 
-  onAprobar(doc: DocumentoData): void {
+  protected onAprobar(doc: DocumentoData): void {
+    this.resetState();
     this.documentoSeleccionado = doc;
     this.comentarioAprobar = doc.comentario || '';
     this.mostrarModalAprobar = true;
   }
 
-  onRechazar(doc: DocumentoData): void {
+  protected onRechazar(doc: DocumentoData): void {
+    this.resetState();
     this.documentoSeleccionado = doc;
     this.comentarioRechazar = doc.comentario || '';
     this.mostrarModalRechazar = true;
   }
 
-  onDescargar(doc: DocumentoData): void {
-    if (!this.isEstadoPendiente(doc) && doc.url) {
+  protected onDescargar(doc: DocumentoData): void {
+    if (!this.isAccionDisabled(doc)) {
       this.descargar.emit(doc);
-    } else {
-      console.warn('No se puede descargar el documento porque está pendiente o no tiene URL');
     }
   }
 
-  /** Métodos para manejar archivo seleccionado */
-  onArchivoSeleccionado(event: Event): void {
+  private resetState(): void {
+    this.documentoSeleccionado = null;
+    this.archivoSeleccionado = null;
+    this.comentarioAprobar = '';
+    this.comentarioRechazar = '';
+    this.mostrarModalSubir = false;
+    this.mostrarModalAprobar = false;
+    this.mostrarModalRechazar = false;
+  }
+
+  protected onArchivoSeleccionado(event: Event): void {
     const target = event.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      this.archivoSeleccionado = target.files[0];
+    if (target.files?.length) {
+      const file = target.files[0];
+      const isValidFileType = this.isValidFileType(file);
+      const isValidFileSize = this.isValidFileSize(file);
+
+      if (isValidFileType && isValidFileSize) {
+        this.archivoSeleccionado = file;
+      } else {
+        this.archivoSeleccionado = null;
+        if (!isValidFileType) {
+          console.error('Tipo de archivo no válido. Solo se permiten archivos PDF, JPG, JPEG y PNG.');
+        }
+        if (!isValidFileSize) {
+          console.error('El archivo excede el tamaño máximo permitido de 5MB.');
+        }
+      }
     }
   }
 
-  /** Métodos para cerrar modales */
-  cerrarModalSubir(): void {
+  protected cerrarModalSubir(): void {
     this.mostrarModalSubir = false;
     this.documentoSeleccionado = null;
     this.archivoSeleccionado = null;
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 
-  cerrarModalAprobar(): void {
+  protected cerrarModalAprobar(): void {
     this.mostrarModalAprobar = false;
     this.documentoSeleccionado = null;
     this.comentarioAprobar = '';
   }
 
-  cerrarModalRechazar(): void {
+  protected cerrarModalRechazar(): void {
     this.mostrarModalRechazar = false;
     this.documentoSeleccionado = null;
     this.comentarioRechazar = '';
   }
 
-  /** Métodos para confirmar acciones */
-  confirmarSubirArchivo(): void {
+  protected confirmarSubirArchivo(): void {
     if (this.documentoSeleccionado && this.archivoSeleccionado) {
       this.subir.emit({
         documento: this.documentoSeleccionado,
@@ -224,23 +251,33 @@ export class DocumentTableComponent {
     }
   }
 
-  confirmarAprobar(): void {
+  protected confirmarAprobar(): void {
     if (this.documentoSeleccionado) {
       this.aprobar.emit({
         documento: this.documentoSeleccionado,
-        comentario: this.comentarioAprobar
+        comentario: this.comentarioAprobar.trim()
       });
       this.cerrarModalAprobar();
     }
   }
 
-  confirmarRechazar(): void {
+  protected confirmarRechazar(): void {
     if (this.documentoSeleccionado) {
       this.rechazar.emit({
         documento: this.documentoSeleccionado,
-        comentario: this.comentarioRechazar
+        comentario: this.comentarioRechazar.trim()
       });
       this.cerrarModalRechazar();
     }
+  }
+
+  private isValidFileType(file: File): boolean {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    return allowedTypes.includes(file.type);
+  }
+
+  private isValidFileSize(file: File): boolean {
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5MB
+    return file.size <= maxSizeInBytes;
   }
 }

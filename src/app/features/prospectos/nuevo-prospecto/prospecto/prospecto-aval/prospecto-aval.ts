@@ -3,154 +3,195 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { LocationService, Department, Province, District } from '@app/core/services/location.service';
-import { ProspectoApiService, AvalistaData } from '@app/core/services/prospecto-api.service';
-import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
-import { DocumentoService } from '@app/core/services/documento.service';
-import type { DocumentoData } from '@app/core/services/documento.service';
+import {
+  LocationService,
+  Department,
+  Province,
+  District,
+} from '@app/core/services/location.service';
+import {
+  ProspectoApiService,
+  AvalistaData,
+  DocumentoData,
+} from '@app/core/services/prospecto-api.service';
+import {
+  DocumentoEstado,
+  DocumentTableComponent,
+} from '@src/app/shared/components/documentTable/documentTable.component';
 
 @Component({
   selector: 'app-prospecto-aval',
+  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, DocumentTableComponent],
   templateUrl: './prospecto-aval.html',
-  styleUrl: '../prospecto.scss',
+  styleUrls: ['../prospecto.scss'],
 })
 export class ProspectoAval implements OnInit, OnDestroy {
   @Input() initialData?: AvalistaData;
   @Input() documentos?: DocumentoData[];
   @Output() dataSaved = new EventEmitter<AvalistaData>();
   @Output() dataUpdated = new EventEmitter<AvalistaData>();
+  @Output() documentosUpdated = new EventEmitter<DocumentoData[]>();
 
-  clientForm!: FormGroup;
-  submitted = false;
-  isLoading = false;
-  editMode = false;
+  public clientForm!: FormGroup;
+  public submitted = false;
+  public isLoading = false;
+  public editMode = false;
 
   // Control de secciones expandibles
-  isAvalistaExpanded = false;
+  public isAvalistaExpanded = false;
 
   // Location data
-  departamentos: Department[] = [];
-  avalistaProvincias: Province[] = [];
-  avalistaDistritos: District[] = [];
-  selectedDepartamentoId?: string;
-  selectedProvinciaId?: string;
+  public departamentos: Department[] = [];
+  public avalistaProvincias: Province[] = [];
+  public avalistaDistritos: District[] = [];
+  public selectedDepartamentoId?: string;
+  public selectedProvinciaId?: string;
 
   // Documentos
-  documentosList: DocumentoData[] = [];
-  documentosLoading = false;
-  private destroy$ = new Subject<void>();
+  public documentosList: DocumentoData[] = [];
+  public documentosLoading = false;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
     private locationService: LocationService,
-    private prospectoApiService: ProspectoApiService,
-    private documentoService: DocumentoService
+    private prospectoApiService: ProspectoApiService
   ) {
     this.initForm();
   }
 
   // Manejadores de eventos para la tabla de documentos
-  onDocumentoSubir(event: { documento: DocumentoData; archivo: File }): void {
+  public onDocumentoSubir(event: { documento: DocumentoData; archivo: File }): void {
     this.documentosLoading = true;
-    this.documentoService.subirDocumento(event.documento.id, event.archivo)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: DocumentoData) => {
-          this.documentosLoading = false;
-          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
-          if (index !== -1) {
-            this.documentosList[index] = { ...this.documentosList[index], ...response };
-          }
-        },
-        error: (error: Error) => {
-          this.documentosLoading = false;
-          console.error('Error al subir documento:', error);
-          alert('Error al subir el documento');
-        }
-      });
+    const updatedDocumentos = [...this.documentosList];
+    const index = updatedDocumentos.findIndex((doc) => doc.id === event.documento.id);
+
+    if (index !== -1) {
+      const formData = new FormData();
+      formData.append('archivo', event.archivo);
+
+      // Simular la carga del archivo y actualizar el documento
+      const updatedDoc: DocumentoData = {
+        ...event.documento,
+        url: URL.createObjectURL(event.archivo),
+        fechaCarga: new Date().toISOString(),
+        estadoRevision: DocumentoEstado.Pendiente,
+      };
+
+      updatedDocumentos[index] = updatedDoc;
+      this.prospectoApiService
+        .updateDocumentos(updatedDocumentos)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            this.documentosLoading = false;
+            this.documentosList = updatedDocumentos;
+          },
+          error: (error: Error) => {
+            this.documentosLoading = false;
+            console.error('Error al subir documento:', error);
+            alert('Error al subir el documento');
+          },
+        });
+    }
   }
 
-  onDocumentoDescargar(documento: DocumentoData): void {
-    this.documentoService.descargarDocumento(documento.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (blob: Blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = documento.nombre || 'documento';
-          link.click();
-          window.URL.revokeObjectURL(url);
-        },
-        error: (error: Error) => {
-          console.error('Error al descargar documento:', error);
-          alert('Error al descargar el documento');
-        }
-      });
+  public onDocumentoDescargar(documento: DocumentoData): void {
+    if (documento.url) {
+      const link = document.createElement('a');
+      link.href = documento.url;
+      link.download = documento.nombre || 'documento';
+      link.click();
+    } else {
+      console.warn('El documento no tiene URL para descargar');
+    }
   }
 
-  onDocumentoAprobar(event: { documento: DocumentoData; comentario: string }): void {
+  public onDocumentoAprobar(event: { documento: DocumentoData; comentario: string }): void {
     this.documentosLoading = true;
-    this.documentoService.aprobarDocumento(event.documento.id, event.comentario)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: DocumentoData) => {
-          this.documentosLoading = false;
-          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
-          if (index !== -1) {
-            this.documentosList[index] = { ...this.documentosList[index], ...response };
-          }
-        },
-        error: (error: Error) => {
-          this.documentosLoading = false;
-          console.error('Error al aprobar documento:', error);
-          alert('Error al aprobar el documento');
-        }
-      });
+    const updatedDocumentos = [...this.documentosList];
+    const index = updatedDocumentos.findIndex((doc) => doc.id === event.documento.id);
+
+    if (index !== -1) {
+      const updatedDoc: DocumentoData = {
+        ...event.documento,
+        estadoRevision: DocumentoEstado.Aprobado,
+        comentario: event.comentario,
+        fechaRevision: new Date().toISOString(),
+      };
+
+      updatedDocumentos[index] = updatedDoc;
+      this.prospectoApiService
+        .updateDocumentos(updatedDocumentos)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.documentosLoading = false;
+            this.documentosList = updatedDocumentos;
+          },
+          error: (error: Error) => {
+            this.documentosLoading = false;
+            console.error('Error al aprobar documento:', error);
+            alert('Error al aprobar el documento');
+          },
+        });
+    }
   }
 
-  onDocumentoRechazar(event: { documento: DocumentoData; comentario: string }): void {
+  public onDocumentoRechazar(event: { documento: DocumentoData; comentario: string }): void {
     this.documentosLoading = true;
-    this.documentoService.rechazarDocumento(event.documento.id, event.comentario)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response: DocumentoData) => {
-          this.documentosLoading = false;
-          const index = this.documentosList.findIndex(doc => doc.id === event.documento.id);
-          if (index !== -1) {
-            this.documentosList[index] = { ...this.documentosList[index], ...response };
-          }
-        },
-        error: (error: Error) => {
-          this.documentosLoading = false;
-          console.error('Error al rechazar documento:', error);
-          alert('Error al rechazar el documento');
-        }
-      });
+    const updatedDocumentos = [...this.documentosList];
+    const index = updatedDocumentos.findIndex((doc) => doc.id === event.documento.id);
+
+    if (index !== -1) {
+      const updatedDoc: DocumentoData = {
+        ...event.documento,
+        estadoRevision: DocumentoEstado.Rechazado,
+        comentario: event.comentario,
+        fechaRevision: new Date().toISOString(),
+      };
+
+      updatedDocumentos[index] = updatedDoc;
+      this.prospectoApiService
+        .updateDocumentos(updatedDocumentos)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.documentosLoading = false;
+            this.documentosList = updatedDocumentos;
+          },
+          error: (error: Error) => {
+            this.documentosLoading = false;
+            console.error('Error al rechazar documento:', error);
+            alert('Error al rechazar el documento');
+          },
+        });
+    }
   }
 
-  ngOnInit() {
+  public ngOnInit(): void {
     this.loadDepartments();
-
     if (this.initialData) {
       this.isAvalistaExpanded = true;
       this.editMode = true;
       this.loadInitialData(this.initialData);
     }
-
-    if (this.documentos) {
-      this.documentosList = this.documentos;
+    if (this.documentos && this.documentos.length) {
+      this.documentosList = [...this.documentos];
     }
   }
 
-  ngOnDestroy() {
+  public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  private loadDepartments() {
-    this.locationService.getDepartments()
+  //
+
+  private loadDepartments(): void {
+    this.locationService
+      .getDepartments()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (departments) => {
@@ -158,51 +199,59 @@ export class ProspectoAval implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading departments:', error);
-        }
+        },
       });
   }
 
-  private loadInitialData(data: AvalistaData) {
+  private loadInitialData(data: AvalistaData): void {
     if (this.departamentos.length > 0) {
       this.loadLocationData(data);
     } else {
-      this.locationService.getDepartments()
+      this.locationService
+        .getDepartments()
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (departments) => {
             this.departamentos = departments;
             this.loadLocationData(data);
-          }
+          },
+          error: (error) => {
+            console.error('Error cargando departamentos:', error);
+          },
         });
     }
-
-    // Patch form values
-    const avalistaForm = this.clientForm.get('avalista') as FormGroup;
-    avalistaForm.patchValue({
-      tipoDocumento: data.tipoDocumento,
-      numeroDocumento: data.numeroDocumento,
-      estadoCivil: data.estadoCivil,
-      nombres: data.nombres,
-      apellidos: data.apellidos,
-      sexo: data.sexo,
-      telefono: data.telefono,
-      correo: data.correo || '',
-      ingresos: data.ingresos,
-      departamento: data.departamento,
-      provincia: data.provincia,
-      distrito: data.distrito,
-      direccion: data.direccion
-    });
   }
 
-  private loadLocationData(data: AvalistaData) {
+  // ...existing code...
+  private patchAvalistaForm(data: AvalistaData): void {
+    const avalistaFormObject = this.clientForm.get('avalista');
+    if (avalistaFormObject) {
+      avalistaFormObject.patchValue({
+        tipoDocumento: data.tipoDocumento,
+        numeroDocumento: data.numeroDocumento,
+        estadoCivil: data.estadoCivil,
+        nombres: data.nombres,
+        apellidos: data.apellidos,
+        sexo: data.sexo,
+        telefono: data.telefono,
+        correo: data.correo || '',
+        ingresos: data.ingresos,
+        departamento: data.departamento,
+        provincia: data.provincia,
+        distrito: data.distrito,
+        direccion: data.direccion
+      });
+    }
+  }
+
+  private loadLocationData(data: AvalistaData): void {
     if (data.departamento) {
-      const dept = this.departamentos.find(d => d.nombre === data.departamento);
+      const dept = this.departamentos.find((d) => d.nombre === data.departamento);
       if (dept) {
         this.selectedDepartamentoId = dept.id;
         this.loadProvinces(dept.id, () => {
           if (data.provincia) {
-            const prov = this.avalistaProvincias.find(p => p.nombre === data.provincia);
+            const prov = this.avalistaProvincias.find((p) => p.nombre === data.provincia);
             if (prov) {
               this.selectedProvinciaId = prov.id;
               this.loadDistricts(prov.id);
@@ -216,49 +265,50 @@ export class ProspectoAval implements OnInit, OnDestroy {
   private initForm(): void {
     this.clientForm = this.fb.group({
       avalista: this.fb.group({
-        tipoDocumento: ['', Validators.required],
+        tipoDocumento: ['', [Validators.required]],
         numeroDocumento: ['', [Validators.required, Validators.pattern('^[0-9]{8,12}$')]],
-        estadoCivil: ['', Validators.required],
+        estadoCivil: ['', [Validators.required]],
         nombres: ['', [Validators.required, Validators.minLength(2)]],
         apellidos: ['', [Validators.required, Validators.minLength(2)]],
-        sexo: ['', Validators.required],
+        sexo: ['', [Validators.required]],
         telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9,12}$')]],
-        correo: ['', Validators.email],
+        correo: ['', [Validators.email]],
         ingresos: ['', [Validators.required, Validators.min(0)]],
-        departamento: ['', Validators.required],
-        provincia: ['', Validators.required],
-        distrito: ['', Validators.required],
-        direccion: ['', [Validators.required, Validators.minLength(5)]]
-      })
+        departamento: ['', [Validators.required]],
+        provincia: ['', [Validators.required]],
+        distrito: ['', [Validators.required]],
+        direccion: ['', [Validators.required, Validators.minLength(5)]],
+      }),
     });
   }
 
-  get f() {
+  public get f() {
     return (this.clientForm.get('avalista') as FormGroup).controls;
   }
 
-  get avalistaForm() {
+  public get avalistaForm() {
     return this.clientForm.get('avalista') as FormGroup;
   }
 
-  onAvalistaDepartamentoChange(): void {
+  public onAvalistaDepartamentoChange(): void {
     const deptName = this.avalistaForm.get('departamento')?.value;
-    const dept = this.departamentos.find(d => d.nombre === deptName);
+    const dept = this.departamentos.find((d) => d.nombre === deptName);
 
     if (dept) {
       this.selectedDepartamentoId = dept.id;
       this.loadProvinces(dept.id);
       this.avalistaForm.patchValue({
         provincia: '',
-        distrito: ''
+        distrito: '',
       });
       this.avalistaProvincias = [];
       this.avalistaDistritos = [];
     }
   }
 
-  private loadProvinces(departamentoId: string, callback?: () => void) {
-    this.locationService.getProvinces(departamentoId)
+  private loadProvinces(departamentoId: string, callback?: () => void): void {
+    this.locationService
+      .getProvinces(departamentoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (provinces) => {
@@ -267,25 +317,26 @@ export class ProspectoAval implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading provinces:', error);
-        }
+        },
       });
   }
 
-  onAvalistaProvinciaChange(): void {
+  public onAvalistaProvinciaChange(): void {
     const provName = this.avalistaForm.get('provincia')?.value;
-    const prov = this.avalistaProvincias.find(p => p.nombre === provName);
+    const prov = this.avalistaProvincias.find((p) => p.nombre === provName);
 
     if (prov) {
       this.selectedProvinciaId = prov.id;
       this.loadDistricts(prov.id);
       this.avalistaForm.patchValue({
-        distrito: ''
+        distrito: '',
       });
     }
   }
 
-  private loadDistricts(provinciaId: string) {
-    this.locationService.getDistricts(provinciaId)
+  private loadDistricts(provinciaId: string): void {
+    this.locationService
+      .getDistricts(provinciaId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (districts) => {
@@ -293,15 +344,15 @@ export class ProspectoAval implements OnInit, OnDestroy {
         },
         error: (error) => {
           console.error('Error loading districts:', error);
-        }
+        },
       });
   }
 
-  toggleAvalista(): void {
+  public toggleAvalista(): void {
     this.isAvalistaExpanded = !this.isAvalistaExpanded;
   }
 
-  onSubmit(event: Event): void {
+  public onSubmit(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
 
@@ -330,42 +381,46 @@ export class ProspectoAval implements OnInit, OnDestroy {
       departamento: formData.departamento,
       provincia: formData.provincia,
       distrito: formData.distrito,
-      direccion: formData.direccion
+      direccion: formData.direccion,
     };
 
-    if (this.editMode) {
-      this.prospectoApiService.updateAvalista(avalistaData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.isLoading = false;
-            this.dataUpdated.emit(avalistaData);
-            alert('Avalista actualizado exitosamente');
-          },
-          error: (error) => {
-            this.isLoading = false;
-            console.error('Error updating avalista:', error);
-            alert('Error al actualizar el avalista');
-          }
-        });
-    } else {
-      this.prospectoApiService.createAvalista(avalistaData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.isLoading = false;
-            this.editMode = true;
-            this.isAvalistaExpanded = true;
-            this.dataSaved.emit(avalistaData);
-            alert('Avalista guardado exitosamente');
-          },
-          error: (error) => {
-            this.isLoading = false;
-            console.error('Error creating avalista:', error);
-            alert('Error al guardar el avalista');
-          }
-        });
-    }
+    const saveAvalista$ = this.editMode
+      ? this.prospectoApiService.updateAvalista(avalistaData)
+      : this.prospectoApiService.createAvalista(avalistaData);
+
+    saveAvalista$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.isLoading = false;
+        if (this.editMode) {
+          this.dataUpdated.emit(avalistaData);
+          alert('Avalista actualizado exitosamente');
+        } else {
+          this.editMode = true;
+          this.isAvalistaExpanded = true;
+          this.dataSaved.emit(avalistaData);
+          alert('Avalista guardado exitosamente');
+        }
+        // Si hay documentos, actualizarlos también
+        if (this.documentosList.length) {
+          this.prospectoApiService
+            .updateDocumentos(this.documentosList)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: () => {
+                this.documentosUpdated.emit(this.documentosList);
+              },
+              error: (error) => {
+                console.error('Error actualizando documentos:', error);
+                alert('Error al actualizar los documentos');
+              },
+            });
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Error en operación de avalista:', error);
+        alert(`Error al ${this.editMode ? 'actualizar' : 'guardar'} el avalista`);
+      },
+    });
   }
 }
-
