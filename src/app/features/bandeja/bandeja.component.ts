@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { ProspectosService, Prospecto } from '../../core/services/prospectos.service';
 import { ProspectoFilter } from '../../core/models/prospecto.model';
+import { ProspectoApiService } from '@src/app/core/services/prospecto-api.service';
 
 @Component({
   selector: 'app-bandeja',
@@ -431,6 +432,7 @@ export class BandejaComponent implements OnInit {
 
   constructor(
     private prospectosService: ProspectosService,
+    private prospectoApiService: ProspectoApiService,
     private router: Router,
     private route: ActivatedRoute,
     private fb: FormBuilder
@@ -517,16 +519,18 @@ export class BandejaComponent implements OnInit {
   }
 
   eliminarProspecto(id: string) {
-    if (confirm('¿Está seguro de eliminar este prospecto?')) {
-      this.prospectosService.deleteProspecto(id).subscribe(
-        success => {
-          if (success) {
-            this.loadProspectos(this.filterForm.value);
-          }
-        }
-      );
-    }
-  }
+  if (confirm('¿Está seguro de eliminar este prospecto?')) {
+    this.prospectoApiService.deleteClient(Number(id)).subscribe({
+      next: () => {
+        alert('Prospecto eliminado exitosamente');
+        this.loadProspectos(this.filterForm.value);
+      },
+      error: (err: any) => {
+        alert('Error al eliminar prospecto');
+        console.error(err);
+      }
+    });
+  }}
 
   exportarExcel() {
     // Implementar la exportación a Excel

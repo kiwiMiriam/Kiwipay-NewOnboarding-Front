@@ -186,22 +186,6 @@ export class ProspectosService {
     }
   }
 
-  deleteProspecto(id: string): Observable<boolean> {
-    const currentProspectos = this.prospectos.value;
-    const index = currentProspectos.findIndex(p => p.id === id);
-    if (index !== -1) {
-      this.prospectos.next(currentProspectos.filter(p => p.id !== id));
-      return new Observable(subscriber => {
-        subscriber.next(true);
-        subscriber.complete();
-      });
-    }
-    return new Observable(subscriber => {
-      subscriber.next(false);
-      subscriber.complete();
-    });
-  }
-
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
   }
