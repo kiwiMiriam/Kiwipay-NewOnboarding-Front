@@ -22,9 +22,11 @@ import { ProspectoFilter } from '../../core/models/prospecto.model';
       <header class="page-header">
         <h1 class="page-title">Bandeja de Prospectos</h1>
         <div class="header-actions">
-          <button class="btn btn-primary" (click)="nuevoProspecto()">
+          <button class="btn btn-primary" 
+                  (click)="nuevoProspecto()" 
+                  [disabled]="isProcessing">
             <fa-icon [icon]="faPlus"></fa-icon>
-            Nuevo Prospecto
+            {{ isProcessing ? 'Procesando...' : 'Nuevo Prospecto' }}
           </button>
           <button class="btn btn-secondary" (click)="exportarExcel()">
             <fa-icon [icon]="faDownload"></fa-icon>
@@ -113,10 +115,16 @@ import { ProspectoFilter } from '../../core/models/prospecto.model';
                 <td data-label="Ciudad">{{ prospecto.ciudad || '-' }}</td>
                 <td data-label="Acciones">
                   <div class="action-buttons">
-                    <button class="btn btn-icon btn-edit" (click)="editarProspecto(prospecto.id)" title="Editar">
+                    <button class="btn btn-icon btn-edit" 
+                            (click)="editarProspecto(prospecto.id)" 
+                            [disabled]="isProcessing"
+                            title="Editar">
                       <fa-icon [icon]="faEdit"></fa-icon>
                     </button>
-                    <button class="btn btn-icon btn-delete" (click)="eliminarProspecto(prospecto.id)" title="Eliminar">
+                    <button class="btn btn-icon btn-delete" 
+                            (click)="eliminarProspecto(prospecto.id)" 
+                            [disabled]="isProcessing"
+                            title="Eliminar">
                       <fa-icon [icon]="faTrash"></fa-icon>
                     </button>
                   </div>
@@ -396,6 +404,12 @@ import { ProspectoFilter } from '../../core/models/prospecto.model';
       color: #ef4444;
     }
 
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .loading-indicator {
       padding: 2rem;
       text-align: center;
@@ -407,8 +421,8 @@ export class BandejaComponent implements OnInit {
   prospectos: Prospecto[] = [];
   filterForm: FormGroup;
   loading = false;
+  isProcessing = false;
 
-  // Font Awesome icons
   faPlus = faPlus;
   faEdit = faEdit;
   faTrash = faTrash;
@@ -433,6 +447,8 @@ export class BandejaComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Limpiar el prospecto seleccionado cuando llegamos a la bandeja
+    this.prospectosService.setSelectedProspecto(null);
     this.loadProspectos();
   }
 
@@ -465,16 +481,38 @@ export class BandejaComponent implements OnInit {
   }
 
   nuevoProspecto() {
-    this.prospectosService.setSelectedProspecto(null);
-    this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente']);
+    // Prevenir múltiples ejecuciones
+    if (this.isProcessing) {
+      return;
+    }
+    
+    this.isProcessing = true;
+    
+    // Navegar al formulario de creación SIN query parameters
+    this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente']).finally(() => {
+      // Resetear el flag después de un breve delay
+      setTimeout(() => {
+        this.isProcessing = false;
+      }, 1000);
+    });
   }
 
   editarProspecto(id: string) {
-    this.prospectosService.getProspectoById(id).subscribe(prospecto => {
-      if (prospecto) {
-        this.prospectosService.setSelectedProspecto(prospecto);
-        this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente']);
-      }
+    // Prevenir múltiples ejecuciones
+    if (this.isProcessing) {
+      return;
+    }
+    
+    this.isProcessing = true;
+    
+    // Navegar al formulario de edición con el ID como query parameter
+    this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente'], {
+      queryParams: { id: id }
+    }).finally(() => {
+      // Resetear el flag después de un breve delay
+      setTimeout(() => {
+        this.isProcessing = false;
+      }, 1000);
     });
   }
 

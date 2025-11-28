@@ -218,11 +218,25 @@ export class DatosClienteComponent implements OnInit {
         ...formData,
         id: this.prospectoId
       });
+      
+      // Mostrar mensaje de éxito y permitir al usuario decidir qué hacer
+      alert('Prospecto actualizado exitosamente');
+      // NO redirigir automáticamente - quedarse en el formulario
     } else {
       // Create new prospecto
       this.prospectosService.createProspecto(formData);
+      
+      // Para nuevo prospecto, preguntar al usuario qué quiere hacer
+      if (confirm('Prospecto creado exitosamente. ¿Desea volver a la bandeja?')) {
+        this.router.navigate(['/dashboard/bandeja']);
+      } else {
+        // Resetear formulario para crear otro
+        this.clientForm.reset();
+        this.submitted = false;
+        this.isPacienteExpanded = false;
+        this.isConyugueExpanded = false;
+      }
     }
-    this.router.navigate(['/bandeja']);
   }
 
   // Verificar si un objeto tiene todos sus valores vacíos
@@ -231,9 +245,13 @@ export class DatosClienteComponent implements OnInit {
     return Object.values(obj).every(x => x === null || x === '' || x === undefined);
   }
 
+  volverABandeja(): void {
+    this.router.navigate(['/dashboard/bandeja']);
+  }
+
   onCancel(): void {
     if (confirm('¿Estás seguro de que deseas cancelar? Los cambios no guardados se perderán.')) {
-      this.router.navigate(['/bandeja']);
+      this.router.navigate(['/dashboard/bandeja']);
     }
   }
 

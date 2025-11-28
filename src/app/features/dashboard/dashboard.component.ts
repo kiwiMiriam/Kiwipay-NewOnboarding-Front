@@ -73,8 +73,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // Handle initial route
     this.showNavigationTabs = this.router.url.includes('/nuevo-prospecto');
 
-    // If we're at the root dashboard path, redirect to bandeja
-    if (this.router.url === '/dashboard') {
+    // Only redirect to bandeja if we're exactly at /dashboard (no child route)
+    if (this.router.url === '/dashboard' || this.router.url === '/dashboard/') {
       this.router.navigate(['/dashboard/bandeja']);
     }
   }

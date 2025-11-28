@@ -332,7 +332,9 @@
         </div>
 
         <div class="form-buttons">
-          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="submit" class="btn-primary">
+            {{ editMode ? 'Actualizar' : 'Guardar' }}
+          </button>
           <button type="button" class="btn-secondary" (click)="onCancel()">Cancelar</button>
         </div>
       </form>

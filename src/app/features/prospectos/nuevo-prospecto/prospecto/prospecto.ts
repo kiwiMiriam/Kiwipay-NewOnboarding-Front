@@ -229,7 +229,6 @@ export default class Prospecto implements OnInit, OnDestroy {
       });
   }
 
-
   private validarDatosObligatorios(): { esValido: boolean; mensaje: string } {
     if (!this.prospectoData?.titular) {
       return {
