@@ -226,24 +226,18 @@ export class DatosClienteComponent implements OnInit {
     }
 
     if (this.editMode && this.prospectoId) {
-      // Update existing prospecto
       this.prospectosService.updateProspecto(this.prospectoId, {
         ...formData,
         id: this.prospectoId
       });
       
-      // Mostrar mensaje de éxito y permitir al usuario decidir qué hacer
       alert('Prospecto actualizado exitosamente');
-      // NO redirigir automáticamente - quedarse en el formulario
     } else {
-      // Create new prospecto
       this.prospectosService.createProspecto(formData);
       
-      // Para nuevo prospecto, preguntar al usuario qué quiere hacer
       if (confirm('Prospecto creado exitosamente. ¿Desea volver a la bandeja?')) {
         this.router.navigate(['/dashboard/bandeja']);
       } else {
-        // Resetear formulario para crear otro
         this.clientForm.reset();
         this.submitted = false;
         this.isPacienteExpanded = false;

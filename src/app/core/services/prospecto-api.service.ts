@@ -134,15 +134,11 @@ export interface CreateProspectRiesgoRequest {
 export class ProspectoApiService {
   private readonly API_URL = environment.kiwiPayApi;
   private readonly BACKOFFICE_URL = environment.Back_Office_BaseUrl;
-  //private readonly USE_MOCK = environment.useMockApi;
 
   constructor(private http: HttpClient) {}
 
   // Get prospecto riesgo data
   getProspectoRiesgoData(id?: string): Observable<ProspectoRiesgoData> {
-    /*if (this.USE_MOCK) {
-      return this.mockGetProspectoRiesgoData(id).pipe(delay(500));
-    }*/
 
     const options = id ? { params: { id } } : {};
     return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_PROSPECTO_RIESGO_DATA}`, options).pipe(
