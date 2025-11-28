@@ -55,8 +55,9 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['initialData'] && !changes['initialData'].firstChange) {
+    if (changes['initialData']) {
       const newData = changes['initialData'].currentValue;
+      console.log('ProspectoTitular.ngOnChanges initialData:', newData);
       if (newData && Object.keys(newData).length > 0) {
         this.editMode = true;
         this.loadInitialData(newData);

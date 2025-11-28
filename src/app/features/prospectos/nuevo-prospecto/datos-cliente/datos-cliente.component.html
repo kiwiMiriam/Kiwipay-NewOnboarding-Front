@@ -57,13 +57,13 @@
         <div class="form-row">
           <div class="form-group">
             <label for="estadoCivil">Estado Civil *</label>
-            <select id="estadoCivil" formControlName="estadoCivil">
+            <select id="estadoCivil" formControlName="estadoCivil" required>
               <option value="">Seleccione...</option>
-              <option value="SOLTERO">Soltero(a)</option>
-              <option value="CASADO">Casado(a)</option>
-              <option value="DIVORCIADO">Divorciado(a)</option>
-              <option value="VIUDO">Viudo(a)</option>
-              <option value="CONVIVIENTE">Conviviente</option>
+              <option value="SINGLE">Soltero(a)</option>
+              <option value="MARRIED">Casado(a)</option>
+              <option value="DIVORCED">Divorciado(a)</option>
+              <option value="WIDOWED">Viudo(a)</option>
+              <option value="COHABITANT">Conviviente</option>
             </select>
             @if (submitted && f['estadoCivil'].errors) {
               <div class="error-message">Este campo es requerido</div>
@@ -82,7 +82,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="sexo">Sexo *</label>
-            <select id="sexo" formControlName="sexo">
+            <select id="sexo" formControlName="sexo" required>
               <option value="">Seleccione...</option>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
