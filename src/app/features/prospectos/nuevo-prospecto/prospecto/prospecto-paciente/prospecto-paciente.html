@@ -71,7 +71,7 @@
                   <select id="pacienteDepartamento" formControlName="departamento" (change)="onPacienteDepartamentoChange()">
                     <option value="">Seleccione...</option>
                     @for (dep of departamentos; track dep.id) {
-                      <option [value]="dep.nombre">{{dep.nombre}}</option>
+                      <option [value]="dep.id">{{dep.name}}</option>
                     }
                   </select>
                 </div>
@@ -81,7 +81,7 @@
                   <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
                     <option value="">Seleccione...</option>
                     @for (prov of provincias; track prov.id) {
-                      <option [value]="prov.nombre">{{prov.nombre}}</option>
+                      <option [value]="prov.id">{{prov.name}}</option>
                     }
                   </select>
                 </div>
@@ -93,7 +93,7 @@
                   <select id="pacienteDistrito" formControlName="distrito">
                     <option value="">Seleccione...</option>
                     @for (dist of distritos; track dist.id) {
-                      <option [value]="dist.nombre">{{dist.nombre}}</option>
+                      <option [value]="dist.id">{{dist.name}}</option>
                     }
                   </select>
                 </div>

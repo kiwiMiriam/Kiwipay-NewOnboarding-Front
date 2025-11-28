@@ -7,86 +7,36 @@ import { EndPoints } from '@src/config/end_points';
 
 export interface Department {
   id: string;
-  nombre: string;
+  name: string;
 }
 
 export interface Province {
   id: string;
-  nombre: string;
-  departamentoId: string;
+  name: string;
+  departmentId: string;
 }
 
 export interface District {
   id: string;
-  nombre: string;
-  provinciaId: string;
+  name: string;
+  provinceId: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class LocationService {
-  private readonly API_URL = environment.kiwiPayApi;
-  private readonly USE_MOCK = environment.useMockApi;
+  private readonly API_URL = environment.kiwiPayApi + '/api/v1';
 
   constructor(private http: HttpClient) {}
-
-  // Mock data for departments
-  private mockDepartments: Department[] = [
-    { id: '1', nombre: 'Lima' },
-    { id: '2', nombre: 'Arequipa' },
-    { id: '3', nombre: 'Cusco' },
-    { id: '4', nombre: 'Trujillo' },
-    { id: '5', nombre: 'Piura' },
-    { id: '6', nombre: 'Chiclayo' }
-  ];
-
-  // Mock data for provinces
-  private mockProvinces: Province[] = [
-    { id: '1', nombre: 'Lima', departamentoId: '1' },
-    { id: '2', nombre: 'Callao', departamentoId: '1' },
-    { id: '3', nombre: 'Arequipa', departamentoId: '2' },
-    { id: '4', nombre: 'Cayma', departamentoId: '2' },
-    { id: '5', nombre: 'Cusco', departamentoId: '3' },
-    { id: '6', nombre: 'Sicuani', departamentoId: '3' },
-    { id: '7', nombre: 'Trujillo', departamentoId: '4' },
-    { id: '8', nombre: 'Chepén', departamentoId: '4' },
-    { id: '9', nombre: 'Piura', departamentoId: '5' },
-    { id: '10', nombre: 'Sullana', departamentoId: '5' },
-    { id: '11', nombre: 'Chiclayo', departamentoId: '6' },
-    { id: '12', nombre: 'Lambayeque', departamentoId: '6' }
-  ];
-
-  // Mock data for districts
-  private mockDistricts: District[] = [
-    { id: '1', nombre: 'Miraflores', provinciaId: '1' },
-    { id: '2', nombre: 'San Isidro', provinciaId: '1' },
-    { id: '3', nombre: 'Surco', provinciaId: '1' },
-    { id: '4', nombre: 'La Molina', provinciaId: '1' },
-    { id: '5', nombre: 'Callao', provinciaId: '2' },
-    { id: '6', nombre: 'Carmen de la Legua', provinciaId: '2' },
-    { id: '7', nombre: 'Arequipa', provinciaId: '3' },
-    { id: '8', nombre: 'Yanahuara', provinciaId: '3' },
-    { id: '9', nombre: 'Cayma', provinciaId: '4' },
-    { id: '10', nombre: 'Sicuani', provinciaId: '6' }
-  ];
 
   getDepartments(): Observable<Department[]> {
     /*if (this.USE_MOCK) {
       return of(this.mockDepartments).pipe(delay(300));
     }*/
 
-    return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_DEPARTMENTS}`).pipe(
-      map(response => {
-        // Adapt response based on API structure
-        if (Array.isArray(response)) {
-          return response;
-        }
-        if (response.data && Array.isArray(response.data)) {
-          return response.data;
-        }
-        return response.departments || [];
-      }),
+    return this.http.get<{ data: Department[] }>(`${this.API_URL}/departments`).pipe(
+      map(res => res.data),
       catchError(error => {
         console.error('Error fetching departments:', error);
         return throwError(() => error);
@@ -100,23 +50,14 @@ export class LocationService {
       return of(provinces).pipe(delay(300));
     }*/
 
-    return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_PROVINCES}`, {
-      params: { departamentoId }
-    }).pipe(
-      map(response => {
-        if (Array.isArray(response)) {
-          return response;
-        }
-        if (response.data && Array.isArray(response.data)) {
-          return response.data;
-        }
-        return response.provinces || [];
-      }),
-      catchError(error => {
-        console.error('Error fetching provinces:', error);
-        return throwError(() => error);
-      })
-    );
+    return this.http.get<{ data: Province[] }>(`${this.API_URL}/provinces?departmentId=${departamentoId}`)
+      .pipe(
+        map(res => res.data),
+        catchError(error => {
+          console.error('Error fetching provinces:', error);
+          return throwError(() => error);
+        })
+      );
   }
 
   getDistricts(provinciaId: string): Observable<District[]> {
@@ -125,23 +66,14 @@ export class LocationService {
       return of(districts).pipe(delay(300));
     }*/
 
-    return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_DISTRICTS}`, {
-      params: { provinciaId }
-    }).pipe(
-      map(response => {
-        if (Array.isArray(response)) {
-          return response;
-        }
-        if (response.data && Array.isArray(response.data)) {
-          return response.data;
-        }
-        return response.districts || [];
-      }),
-      catchError(error => {
-        console.error('Error fetching districts:', error);
-        return throwError(() => error);
-      })
-    );
+    return this.http.get<{ data: District[] }>(`${this.API_URL}/districts?provinceId=${provinciaId}`)
+      .pipe(
+        map(res => res.data),
+        catchError(error => {
+          console.error('Error fetching districts:', error);
+          return throwError(() => error);
+        })
+      );
   }
 }
 

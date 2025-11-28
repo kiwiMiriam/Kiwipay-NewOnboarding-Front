@@ -93,7 +93,7 @@
             >
               <option value="">Seleccione...</option>
               @for (dep of departamentos; track dep.id) {
-              <option [value]="dep.nombre">{{ dep.nombre }}</option>
+              <option [value]="dep.id">{{ dep.name }}</option>
               }
             </select>
           </div>
@@ -107,7 +107,7 @@
             >
               <option value="">Seleccione...</option>
               @for (prov of avalistaProvincias; track prov.id) {
-              <option [value]="prov.nombre">{{ prov.nombre }}</option>
+              <option [value]="prov.id">{{ prov.name }}</option>
               }
             </select>
           </div>
@@ -119,7 +119,7 @@
             <select id="avalistaDistrito" formControlName="distrito">
               <option value="">Seleccione...</option>
               @for (dist of avalistaDistritos; track dist.id) {
-              <option [value]="dist.nombre">{{ dist.nombre }}</option>
+              <option [value]="dist.id">{{ dist.name }}</option>
               }
             </select>
           </div>

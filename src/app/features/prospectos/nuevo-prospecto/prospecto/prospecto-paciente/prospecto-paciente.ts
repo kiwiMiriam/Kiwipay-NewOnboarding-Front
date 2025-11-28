@@ -103,12 +103,13 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
 
   private loadLocationData(data: PacienteData) {
     if (data.departamento) {
-      const dept = this.departamentos.find(d => d.nombre === data.departamento);
+      // Try to find by ID first, then by name for backwards compatibility
+      const dept = this.departamentos.find(d => d.id === data.departamento || d.name === data.departamento);
       if (dept) {
         this.selectedDepartamentoId = dept.id;
         this.loadProvinces(dept.id, () => {
           if (data.provincia) {
-            const prov = this.provincias.find(p => p.nombre === data.provincia);
+            const prov = this.provincias.find(p => p.id === data.provincia || p.name === data.provincia);
             if (prov) {
               this.selectedProvinciaId = prov.id;
               this.loadDistricts(prov.id);
@@ -146,12 +147,11 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
   }
 
   onPacienteDepartamentoChange(): void {
-    const deptName = this.pacienteForm.get('departamento')?.value;
-    const dept = this.departamentos.find(d => d.nombre === deptName);
+    const deptId = this.pacienteForm.get('departamento')?.value;
     
-    if (dept) {
-      this.selectedDepartamentoId = dept.id;
-      this.loadProvinces(dept.id);
+    if (deptId) {
+      this.selectedDepartamentoId = deptId;
+      this.loadProvinces(deptId);
       this.pacienteForm.patchValue({
         provincia: '',
         distrito: ''
@@ -176,12 +176,11 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
   }
 
   onPacienteProvinciaChange(): void {
-    const provName = this.pacienteForm.get('provincia')?.value;
-    const prov = this.provincias.find(p => p.nombre === provName);
+    const provId = this.pacienteForm.get('provincia')?.value;
     
-    if (prov) {
-      this.selectedProvinciaId = prov.id;
-      this.loadDistricts(prov.id);
+    if (provId) {
+      this.selectedProvinciaId = provId;
+      this.loadDistricts(provId);
       this.pacienteForm.patchValue({
         distrito: ''
       });

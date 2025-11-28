@@ -180,7 +180,7 @@
             >
               <option value="">Seleccione...</option>
               @for (dep of departamentos; track dep.id) {
-              <option [value]="dep.nombre">{{ dep.nombre }}</option>
+              <option [value]="dep.id">{{ dep.name }}</option>
               }
             </select>
             @if (submitted && f['departamento'].errors) {
@@ -193,7 +193,7 @@
             <select id="provincia" formControlName="provincia" (change)="onProvinciaChange()">
               <option value="">Seleccione...</option>
               @for (prov of provincias; track prov.id) {
-              <option [value]="prov.nombre">{{ prov.nombre }}</option>
+              <option [value]="prov.id">{{ prov.name }}</option>
               }
             </select>
             @if (submitted && f['provincia'].errors) {
@@ -208,7 +208,7 @@
             <select id="distrito" formControlName="distrito">
               <option value="">Seleccione...</option>
               @for (dist of distritos; track dist.id) {
-              <option [value]="dist.nombre">{{ dist.nombre }}</option>
+              <option [value]="dist.id">{{ dist.name }}</option>
               }
             </select>
             @if (submitted && f['distrito'].errors) {

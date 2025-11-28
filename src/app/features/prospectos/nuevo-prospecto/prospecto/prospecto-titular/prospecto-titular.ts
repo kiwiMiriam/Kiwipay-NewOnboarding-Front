@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -12,7 +12,7 @@ import { ProspectoApiService, ClienteData } from '@app/core/services/prospecto-a
   templateUrl: './prospecto-titular.html',
   styleUrls: ['./prospecto-titular.scss', '../prospecto.scss'],
 })
-export class ProspectoTitular implements OnInit, OnDestroy {
+export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
   @Input() initialData?: ClienteData;
   @Output() dataSaved = new EventEmitter<ClienteData>();
   @Output() dataUpdated = new EventEmitter<ClienteData>();
@@ -51,6 +51,16 @@ export class ProspectoTitular implements OnInit, OnDestroy {
       this.loadInitialData(this.initialData);
     } else {
       this.editMode = false;
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['initialData'] && !changes['initialData'].firstChange) {
+      const newData = changes['initialData'].currentValue;
+      if (newData && Object.keys(newData).length > 0) {
+        this.editMode = true;
+        this.loadInitialData(newData);
+      }
     }
   }
 
@@ -116,12 +126,12 @@ export class ProspectoTitular implements OnInit, OnDestroy {
   private loadLocationData(data: ClienteData) {
     // Find department by name - use address.departmentId or fallback to departamento
     const deptId = data.address?.departmentId || data.departamento;
-    const dept = this.departamentos.find(d => d.id === deptId || d.nombre === deptId);
+    const dept = this.departamentos.find(d => d.id === deptId || d.name === deptId);
     if (dept) {
       this.selectedDepartamentoId = dept.id;
       this.loadProvinces(dept.id, () => {
         const provId = data.address?.provinceId || data.provincia;
-        const prov = this.provincias.find(p => p.id === provId || p.nombre === provId);
+        const prov = this.provincias.find(p => p.id === provId || p.name === provId);
         if (prov) {
           this.selectedProvinciaId = prov.id;
           this.loadDistricts(prov.id);
@@ -158,12 +168,11 @@ export class ProspectoTitular implements OnInit, OnDestroy {
   get f() { return this.clientForm.controls; }
 
   onDepartamentoChange(): void {
-    const deptName = this.clientForm.get('departamento')?.value;
-    const dept = this.departamentos.find(d => d.nombre === deptName);
-
-    if (dept) {
-      this.selectedDepartamentoId = dept.id;
-      this.loadProvinces(dept.id);
+    const deptId = this.clientForm.get('departamento')?.value;
+    
+    if (deptId) {
+      this.selectedDepartamentoId = deptId;
+      this.loadProvinces(deptId);
       this.clientForm.patchValue({
         provincia: '',
         distrito: ''
@@ -188,12 +197,11 @@ export class ProspectoTitular implements OnInit, OnDestroy {
   }
 
   onProvinciaChange(): void {
-    const provName = this.clientForm.get('provincia')?.value;
-    const prov = this.provincias.find(p => p.nombre === provName);
-
-    if (prov) {
-      this.selectedProvinciaId = prov.id;
-      this.loadDistricts(prov.id);
+    const provId = this.clientForm.get('provincia')?.value;
+    
+    if (provId) {
+      this.selectedProvinciaId = provId;
+      this.loadDistricts(provId);
       this.clientForm.patchValue({
         distrito: ''
       });
@@ -267,29 +275,51 @@ export class ProspectoTitular implements OnInit, OnDestroy {
       direccion: formData.direccion
     };
 
+    console.log('=== DATOS A ENVIAR ===');
+    console.log('Edit Mode:', this.editMode);
+    console.log('Client ID:', this.initialData?.id);
+    console.log('Client Data:', clienteData);
+    console.log('Address:', clienteData.address);
+
     if (this.editMode && this.initialData?.id) {
+      console.log('Updating existing client, ID:', this.initialData.id);
       this.prospectoApiService.updateClient(this.initialData.id, clienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: () => {
+          next: (response) => {
+            console.log('Client updated successfully:', response);
             this.isLoading = false;
-            this.dataUpdated.emit(clienteData);
+            // Update with response data or merge with sent data
+            const updatedClient = { ...clienteData, id: this.initialData!.id };
+            console.log('Updated client data:', updatedClient);
+            this.dataUpdated.emit(updatedClient);
             alert('Titular actualizado exitosamente');
           },
           error: (error) => {
             this.isLoading = false;
             console.error('Error updating client:', error);
-            alert('Error al actualizar el titular');
+            console.error('Error details:', error.error);
+            alert('Error al actualizar el titular: ' + (error.error?.message || error.message));
           }
         });
     } else {
+      console.log('Creating new client...');
       this.prospectoApiService.createClient(clienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: () => {
+          next: (response) => {
+            console.log('Client created successfully:', response);
             this.isLoading = false;
             this.editMode = true;
-            this.dataSaved.emit(clienteData);
+            // Update the client data with the ID returned from backend
+            // Backend might return the full object or just { id: number }
+            const createdClient = { 
+              ...clienteData, 
+              id: response?.id || response
+            };
+            console.log('Created client with ID:', createdClient);
+            this.initialData = createdClient;
+            this.dataSaved.emit(createdClient);
             alert('Titular guardado exitosamente');
           },
           error: (error) => {

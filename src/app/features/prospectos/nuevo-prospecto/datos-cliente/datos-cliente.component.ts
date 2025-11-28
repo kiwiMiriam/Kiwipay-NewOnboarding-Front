@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 import { NavigationService } from '../../../../core/services/navigation.service';
-import  { ubicacionMap }  from '@app/shared/constants/ubicacionMap';
+import { LocationService } from '@src/app/core/services/location.service';
 
 @Component({
   selector: 'app-datos-cliente',
@@ -23,17 +23,31 @@ export class DatosClienteComponent implements OnInit {
   isPacienteExpanded = false;
   isConyugueExpanded = false;
 
+  // Datos para los dropdowns de ubicación
+  departamentos: any[] = [];
+  provincias: any[] = [];
+  distritos: any[] = [];
+  // Para paciente (opcional)
+  pacienteProvincias: any[] = [];
+  pacienteDistritos: any[] = [];
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
     private prospectosService: ProspectosService,
-    private navigationService: NavigationService
+    private navigationService: NavigationService,
+    private locationService: LocationService
+
   ) {
     this.initForm();
   }
 
   ngOnInit() {
+    // Cargar departamentos al iniciar
+    this.locationService.getDepartments().subscribe(deps => {
+      this.departamentos = deps;
+    });
     this.route.queryParams.subscribe(params => {
       this.prospectoId = params['id'];
       if (this.prospectoId) {
@@ -48,20 +62,21 @@ export class DatosClienteComponent implements OnInit {
       (prospectos: Prospecto[]) => {
         const prospecto = prospectos.find(p => p.id === id);
         if (prospecto) {
-          if (prospecto.paciente) {
-            this.isPacienteExpanded = true;
-          }
-          if (prospecto.conyugue) {
-            this.isConyugueExpanded = true;
-          }
+          if (prospecto.paciente) this.isPacienteExpanded = true;
+          if (prospecto.conyugue) this.isConyugueExpanded = true;
 
           this.clientForm.patchValue(prospecto);
 
+          // Cargar provincias y distritos por ID
           if (prospecto.departamento) {
-            this.onDepartamentoChange();
-          }
-          if (prospecto.provincia) {
-            this.onProvinciaChange();
+            this.locationService.getProvinces(prospecto.departamento).subscribe(provincias => {
+              this.provincias = provincias;
+              if (prospecto.provincia) {
+                this.locationService.getDistricts(prospecto.provincia).subscribe(distritos => {
+                  this.distritos = distritos;
+                });
+              }
+            });
           }
         }
       },
@@ -70,17 +85,6 @@ export class DatosClienteComponent implements OnInit {
       }
     );
   }
-
-  // Datos para los dropdowns de ubicación
-  departamentos = ['Lima', 'Arequipa', 'Cusco', 'Trujillo', 'Piura', 'Chiclayo'];
-  provincias: string[] = [];
-  distritos: string[] = [];
-  ubicacionMap = ubicacionMap;
-
-  // Datos para el paciente (opcional)
-  pacienteProvincias: string[] = [];
-  pacienteDistritos: string[] = [];
-
 
   private initForm(): void {
     // Crear el formulario con validación
@@ -133,50 +137,59 @@ export class DatosClienteComponent implements OnInit {
   // Manejo de cambios en las ubicaciones
   onDepartamentoChange(): void {
     const dpto = this.clientForm.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.provincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.patchValue({
-        provincia: '',
-        distrito: ''
+    if (dpto) {
+      this.locationService.getProvinces(dpto).subscribe(provincias => {
+        this.provincias = provincias;
+        this.clientForm.patchValue({ provincia: '', distrito: '' });
+        this.distritos = [];
       });
+    } else {
+      this.provincias = [];
       this.distritos = [];
     }
   }
 
   onProvinciaChange(): void {
-    const dpto = this.clientForm.get('departamento')?.value;
     const prov = this.clientForm.get('provincia')?.value;
-
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.distritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.patchValue({
-        distrito: ''
+    if (prov) {
+      this.locationService.getDistricts(prov).subscribe(distritos => {
+        this.distritos = distritos;
+        this.clientForm.patchValue({ distrito: '' });
       });
+    } else {
+      this.distritos = [];
     }
   }
 
   // Manejo de cambios en las ubicaciones para el paciente
   onPacienteDepartamentoChange(): void {
     const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
-    if (dpto && this.ubicacionMap[dpto]) {
-      this.pacienteProvincias = Object.keys(this.ubicacionMap[dpto]);
-      this.clientForm.get('paciente')?.patchValue({
-        provincia: '',
-        distrito: ''
+    if (dpto) {
+      this.locationService.getProvinces(dpto).subscribe(provincias => {
+        this.pacienteProvincias = provincias;
+        this.clientForm.get('paciente')?.patchValue({
+          provincia: '',
+          distrito: ''
+        });
+        this.pacienteDistritos = [];
       });
+    } else {
+      this.pacienteProvincias = [];
       this.pacienteDistritos = [];
     }
   }
 
   onPacienteProvinciaChange(): void {
-    const dpto = this.clientForm.get('paciente')?.get('departamento')?.value;
     const prov = this.clientForm.get('paciente')?.get('provincia')?.value;
-
-    if (dpto && prov && this.ubicacionMap[dpto] && this.ubicacionMap[dpto][prov]) {
-      this.pacienteDistritos = this.ubicacionMap[dpto][prov];
-      this.clientForm.get('paciente')?.patchValue({
-        distrito: ''
+    if (prov) {
+      this.locationService.getDistricts(prov).subscribe(distritos => {
+        this.pacienteDistritos = distritos;
+        this.clientForm.get('paciente')?.patchValue({
+          distrito: ''
+        });
       });
+    } else {
+      this.pacienteDistritos = [];
     }
   }
 

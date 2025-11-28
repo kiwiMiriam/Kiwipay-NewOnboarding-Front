@@ -148,6 +148,7 @@ export default class Prospecto implements OnInit, OnDestroy {
   }
 
   onTitularSaved(data: any) {
+    console.log('Titular saved, updating prospectoData:', data);
     if (!this.prospectoData) {
       this.prospectoData = {};
     }
@@ -155,6 +156,7 @@ export default class Prospecto implements OnInit, OnDestroy {
   }
 
   onTitularUpdated(data: any) {
+    console.log('Titular updated, updating prospectoData:', data);
     if (this.prospectoData) {
       this.prospectoData.titular = data;
     }

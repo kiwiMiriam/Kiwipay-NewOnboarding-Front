@@ -122,9 +122,7 @@
             <label for="departamento">Departamento *</label>
             <select id="departamento" formControlName="departamento" (change)="onDepartamentoChange()">
               <option value="">Seleccione...</option>
-              @for (dep of departamentos; track dep) {
-                <option [value]="dep">{{dep}}</option>
-              }
+              <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.name }}</option>
             </select>
             @if (submitted && f['departamento'].errors) {
               <div class="error-message">Este campo es requerido</div>
@@ -135,9 +133,7 @@
             <label for="provincia">Provincia *</label>
             <select id="provincia" formControlName="provincia" (change)="onProvinciaChange()">
               <option value="">Seleccione...</option>
-              @for (prov of provincias; track prov) {
-                <option [value]="prov">{{prov}}</option>
-              }
+              <option *ngFor="let prov of provincias" [value]="prov.id">{{ prov.name }}</option>
             </select>
             @if (submitted && f['provincia'].errors) {
               <div class="error-message">Este campo es requerido</div>
@@ -150,9 +146,7 @@
             <label for="distrito">Distrito *</label>
             <select id="distrito" formControlName="distrito">
               <option value="">Seleccione...</option>
-              @for (dist of distritos; track dist) {
-                <option [value]="dist">{{dist}}</option>
-              }
+              <option *ngFor="let dist of distritos" [value]="dist.id">{{ dist.name }}</option>
             </select>
             @if (submitted && f['distrito'].errors) {
               <div class="error-message">Este campo es requerido</div>
@@ -238,9 +232,7 @@
                   <label for="pacienteDepartamento">Departamento</label>
                   <select id="pacienteDepartamento" formControlName="departamento" (change)="onPacienteDepartamentoChange()">
                     <option value="">Seleccione...</option>
-                    @for (dep of departamentos; track dep) {
-                      <option [value]="dep">{{dep}}</option>
-                    }
+                    <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.nombre }}</option>
                   </select>
                 </div>
 
@@ -248,9 +240,7 @@
                   <label for="pacienteProvincia">Provincia</label>
                   <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
                     <option value="">Seleccione...</option>
-                    @for (prov of pacienteProvincias; track prov) {
-                      <option [value]="prov">{{prov}}</option>
-                    }
+                    <option *ngFor="let prov of pacienteProvincias" [value]="prov.id">{{ prov.nombre }}</option>
                   </select>
                 </div>
               </div>
@@ -260,9 +250,7 @@
                   <label for="pacienteDistrito">Distrito</label>
                   <select id="pacienteDistrito" formControlName="distrito">
                     <option value="">Seleccione...</option>
-                    @for (dist of pacienteDistritos; track dist) {
-                      <option [value]="dist">{{dist}}</option>
-                    }
+                    <option *ngFor="let dist of pacienteDistritos" [value]="dist.id">{{ dist.nombre }}</option>
                   </select>
                 </div>
 
