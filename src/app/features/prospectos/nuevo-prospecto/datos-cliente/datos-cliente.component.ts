@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { LocationService } from '@src/app/core/services/location.service';
+import { ProspectoApiService} from '../../../../core/services/prospecto-api.service';
+
 
 @Component({
   selector: 'app-datos-cliente',
@@ -35,6 +37,7 @@ export class DatosClienteComponent implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
+    private prospectoApiService: ProspectoApiService,
     private prospectosService: ProspectosService,
     private navigationService: NavigationService,
     private locationService: LocationService
@@ -225,16 +228,42 @@ export class DatosClienteComponent implements OnInit {
       delete formData.conyugue;
     }
 
+    const clienteData = {
+      documentType: formData.tipoDocumento,
+      documentNumber: formData.numeroDocumento,
+      firstNames: formData.nombres,
+      lastNames: formData.apellidos,
+      maritalStatus: formData.estadoCivil,
+      birthDate: formData.fechaNacimiento,
+      gender: formData.sexo,
+      email: formData.correo,
+      phone: formData.telefono,
+      address: {
+        departmentId: formData.departamento,
+        provinceId: formData.provincia,
+        districtId: formData.distrito,
+        line1: formData.direccion
+      }
+    };
+
     if (this.editMode && this.prospectoId) {
-      this.prospectosService.updateProspecto(this.prospectoId, {
-        ...formData,
-        id: this.prospectoId
+      // EDITAR
+      this.prospectoApiService.updateClient(Number(this.prospectoId), clienteData).subscribe({
+        next: () => alert('Prospecto actualizado exitosamente'),
+        error: (err: any) => {
+          alert('Error al actualizar prospecto');
+          console.error(err);
+        }
       });
-      
-      alert('Prospecto actualizado exitosamente');
     } else {
-      this.prospectosService.createProspecto(formData);
-      
+      // CREAR
+      this.prospectoApiService.createClient(clienteData).subscribe({
+        next: () => alert('Prospecto creado exitosamente'),
+        error: (err: any) => {
+          alert('Error al crear prospecto');
+          console.error(err);
+        }
+      });
       if (confirm('Prospecto creado exitosamente. ¿Desea volver a la bandeja?')) {
         this.router.navigate(['/dashboard/bandeja']);
       } else {
