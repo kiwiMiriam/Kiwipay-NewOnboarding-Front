@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { ProspectoFilter } from '../models/prospecto.model';
+import { HttpClient } from '@angular/common/http';
 
 export interface Prospecto {
   id: string;
@@ -11,6 +12,8 @@ export interface Prospecto {
   programa: string;
   grupo: string;
   ciudad: string;
+    // Otros campos de la bandeja,
+    //  si el backend no los envía, quedan en blanco
   // Add all the datos-cliente fields
   tipoDocumento?: string;
   numeroDocumento?: string;
@@ -64,58 +67,52 @@ export interface Prospecto {
   providedIn: 'root'
 })
 export class ProspectosService {
-  private prospectos = new BehaviorSubject<Prospecto[]>([
-    {
-      id: '1',
-      contrato: 'CNT001',
-      estado: 'Pendiente',
-      documento: 'DNI-12345678',
-      asociado: 'Juan Pérez',
-      programa: 'Programa A',
-      grupo: 'Grupo 1',
-      ciudad: 'Lima',
-      tipoDocumento: 'DNI',
-      numeroDocumento: '12345678',
-      nombres: 'Juan',
-      apellidos: 'Pérez',
-      estadoCivil: 'SOLTERO',
-      fechaNacimiento: '1990-01-01',
-      sexo: 'M',
-      correo: 'juan@example.com',
-      telefono: '999888777',
-      departamento: 'Lima',
-      provincia: 'Lima',
-      distrito: 'Miraflores',
-      direccion: 'Av. Principal 123'
-    },
-    {
-      id: '2',
-      contrato: 'CNT002',
-      estado: 'En Proceso',
-      documento: 'DNI-87654321',
-      asociado: 'María García',
-      programa: 'Programa B',
-      grupo: 'Grupo 2',
-      ciudad: 'Arequipa',
-      tipoDocumento: 'DNI',
-      numeroDocumento: '87654321',
-      nombres: 'María',
-      apellidos: 'García',
-      estadoCivil: 'CASADO',
-      fechaNacimiento: '1992-05-15',
-      sexo: 'F',
-      correo: 'maria@example.com',
-      telefono: '999777666',
-      departamento: 'Arequipa',
-      provincia: 'Arequipa',
-      distrito: 'Cayma',
-      direccion: 'Calle Secundaria 456'
-    }
-  ]);
+  private prospectos = new BehaviorSubject<Prospecto[]>([]);
+  prospectos$ = this.prospectos.asObservable();
+  constructor(private http: HttpClient) {}
 
+  // For selected prospecto details
   private selectedProspectoSubject = new BehaviorSubject<Prospecto | null>(null);
   selectedProspecto$ = this.selectedProspectoSubject.asObservable();
 
+  fetchAllClients(): void {
+    this.http.get<any[]>(`http://localhost:8080/api/v1/clients`).subscribe({
+      next: (clients) => {
+        const mapped = clients.map(c => ({
+          id: c.id?.toString() ?? '',
+          contrato: '', // No viene del backend - se mantiene vacío
+          estado: '',   // No viene del backend - se mantiene vacío
+          documento: `${c.documentType ?? ''}-${c.documentNumber ?? ''}`,
+          asociado: `${c.firstNames ?? ''} ${c.lastNames ?? ''}`.trim() || '', // Concatenamos nombres y apellidos
+          programa: '', // No viene del backend - se mantiene vacío
+          grupo: '',    // No viene del backend - se mantiene vacío
+          ciudad: '',   // No viene del backend - se mantiene vacío
+          tipoDocumento: c.documentType ?? '',
+          numeroDocumento: c.documentNumber ?? '',
+          nombres: c.firstNames ?? '',
+          apellidos: c.lastNames ?? '',
+          estadoCivil: c.maritalStatus ?? '',
+          fechaNacimiento: c.birthDate ?? '',
+          sexo: c.gender ?? '',
+          correo: c.email ?? '',
+          telefono: c.phone ?? '',
+          departamento: c.address?.departmentId ?? '',
+          provincia: c.address?.provinceId ?? '',
+          distrito: c.address?.districtId ?? '',
+          direccion: c.address?.line1 ?? '',
+          paciente: undefined,
+          avalista: undefined,
+          conyugue: undefined
+        }));
+        this.prospectos.next(mapped);
+      },
+      error: (error) => {
+        console.error('Error fetching clients:', error);
+        this.prospectos.next([]);
+      }
+    });
+  }
+  
   getProspectos(filter?: ProspectoFilter): Observable<Prospecto[]> {
     return this.prospectos.asObservable().pipe(
       map(prospectos => {

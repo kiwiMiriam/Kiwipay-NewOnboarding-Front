@@ -20,9 +20,9 @@ export class CotizadorService {
    * Obtiene una cotización del servidor o retorna datos mock según la configuración
    */
   getCotizacion(payload: CotizacionPayload): Observable<CotizacionResponse> {
-    if (environment.useMockApi) {
+    /*if (environment.useMockApi) {
       return this.getMockCotizacion(payload);
-    }
+    }*/
     return this.getRealCotizacion(payload);
   }
 

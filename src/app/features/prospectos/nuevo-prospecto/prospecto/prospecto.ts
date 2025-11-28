@@ -229,14 +229,8 @@ export default class Prospecto implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Valida que los datos obligatorios estén completos:
-   * - Form del titular (todos los campos requeridos)
-   * - Documentos del asociado (debe existir y no estar vacío)
-   * - Ficha de riesgo del asociado (debe existir y no estar vacío)
-   */
+
   private validarDatosObligatorios(): { esValido: boolean; mensaje: string } {
-    // 1. Validar titular
     if (!this.prospectoData?.titular) {
       return {
         esValido: false,
@@ -246,19 +240,16 @@ export default class Prospecto implements OnInit, OnDestroy {
 
     const titular = this.prospectoData.titular;
     const camposRequeridosTitular: (keyof ClienteData)[] = [
-      'tipoDocumento',
-      'numeroDocumento',
-      'nombres',
-      'apellidos',
-      'estadoCivil',
-      'fechaNacimiento',
-      'sexo',
-      'correo',
-      'telefono',
-      'departamento',
-      'provincia',
-      'distrito',
-      'direccion'
+      'documentType',
+      'documentNumber',
+      'firstNames',
+      'lastNames',
+      'maritalStatus',
+      'birthDate',
+      'gender',
+      'email',
+      'phone',
+      'address',
     ];
 
     const camposFaltantes: string[] = [];
@@ -276,7 +267,6 @@ export default class Prospecto implements OnInit, OnDestroy {
       };
     }
 
-    // 2. Validar documentos del asociado
     if (!this.prospectoData.documentos || this.prospectoData.documentos.length === 0) {
       return {
         esValido: false,
@@ -284,7 +274,6 @@ export default class Prospecto implements OnInit, OnDestroy {
       };
     }
 
-    // 3. Validar ficha de riesgo del asociado
     if (!this.documentosRiesgo || this.documentosRiesgo.length === 0) {
       return {
         esValido: false,
@@ -300,7 +289,6 @@ export default class Prospecto implements OnInit, OnDestroy {
       return;
     }
 
-    // Implementar lógica de desaprobación manual
     alert('Funcionalidad de desaprobación manual en desarrollo');
   }
 }

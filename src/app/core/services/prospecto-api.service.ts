@@ -15,24 +15,37 @@ export interface ProspectoRiesgoData {
 }
 
 export interface ClienteData {
-  tipoDocumento: string;
-  numeroDocumento: string;
-  nombres: string;
-  apellidos: string;
-  estadoCivil: string;
-  fechaNacimiento: string;
-  sexo: string;
-  correo: string;
-  telefono: string;
-  telefono2?: string;
-  departamento: string;
-  provincia: string;
-  distrito: string;
-  direccion: string;
-  tasaExperian?: number;
-  nuevaTasa?: number;
-  tasaAdicional?: number;
-  tasaFinal?: number;
+  id?: number;
+  documentType?: string;
+  documentNumber?: string;
+  firstNames?: string;
+  lastNames?: string;
+  maritalStatus?: string;
+  gender?: string;
+  birthDate?: string;
+  email?: string;
+  phone?: string;
+  address?: {
+    departmentId?: string;
+    provinceId?: string;
+    districtId?: string;
+    line1?: string;
+  };
+  createdAt?: string;
+  // Campos adicionales para compatibilidad con el frontend
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  nombres?: string;
+  apellidos?: string;
+  estadoCivil?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  correo?: string;
+  telefono?: string;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  direccion?: string;
 }
 
 export interface PacienteData {
@@ -121,15 +134,15 @@ export interface CreateProspectRiesgoRequest {
 export class ProspectoApiService {
   private readonly API_URL = environment.kiwiPayApi;
   private readonly BACKOFFICE_URL = environment.Back_Office_BaseUrl;
-  private readonly USE_MOCK = environment.useMockApi;
+  //private readonly USE_MOCK = environment.useMockApi;
 
   constructor(private http: HttpClient) {}
 
   // Get prospecto riesgo data
   getProspectoRiesgoData(id?: string): Observable<ProspectoRiesgoData> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return this.mockGetProspectoRiesgoData(id).pipe(delay(500));
-    }
+    }*/
 
     const options = id ? { params: { id } } : {};
     return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_PROSPECTO_RIESGO_DATA}`, options).pipe(
@@ -139,44 +152,37 @@ export class ProspectoApiService {
       }),
       catchError(error => {
         console.error('Error fetching prospecto riesgo data:', error);
-        // Fallback to mock on error
-        return this.mockGetProspectoRiesgoData(id);
+        return throwError(() => error);
       })
     );
   }
 
-  // Create/Update Client
+  // CRUD Client
+  getClientById(id: number): Observable<ClienteData> {
+    return this.http.get<ClienteData>(`http://localhost:8080/api/v1/clients/${id}`);
+  }
+
+  getAllClients(): Observable<ClienteData[]> {
+    return this.http.get<ClienteData[]>(`http://localhost:8080/api/v1/clients`);
+  }
+
   createClient(data: ClienteData): Observable<any> {
-    if (this.USE_MOCK) {
-      return of({ success: true, id: '1', ...data }).pipe(delay(500));
-    }
-
-    return this.http.post(`${this.API_URL}${EndPoints.KIWIPAY.POST_CREATE_CLIENT}`, data).pipe(
-      catchError(error => {
-        console.error('Error creating client:', error);
-        return throwError(() => error);
-      })
-    );
+    return this.http.post(`http://localhost:8080/api/v1/clients`, data);
   }
 
-  updateClient(data: ClienteData & { id?: string }): Observable<any> {
-    if (this.USE_MOCK) {
-      return of({ success: true, ...data }).pipe(delay(500));
-    }
+  updateClient(id: number, data: ClienteData): Observable<any> {
+    return this.http.put(`http://localhost:8080/api/v1/clients/${id}`, data);
+  }
 
-    return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_CLIENT}`, data).pipe(
-      catchError(error => {
-        console.error('Error updating client:', error);
-        return throwError(() => error);
-      })
-    );
+  deleteClient(id: number): Observable<any> {
+    return this.http.delete(`http://localhost:8080/api/v1/clients/${id}`);
   }
 
   // Create/Update Patient
   createPatient(data: PacienteData): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, id: '1', ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.post(`${this.API_URL}${EndPoints.KIWIPAY.POST_CREATE_PATIENT}`, data).pipe(
       catchError(error => {
@@ -187,9 +193,9 @@ export class ProspectoApiService {
   }
 
   updatePatient(data: PacienteData & { id?: string }): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_PATIENT}`, data).pipe(
       catchError(error => {
@@ -201,9 +207,9 @@ export class ProspectoApiService {
 
   // Create/Update Avalista
   createAvalista(data: AvalistaData): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, id: '1', ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.post(`${this.API_URL}${EndPoints.KIWIPAY.POST_CREATE_AVALISTA}`, data).pipe(
       catchError(error => {
@@ -214,9 +220,9 @@ export class ProspectoApiService {
   }
 
   updateAvalista(data: AvalistaData & { id?: string }): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_AVALISTA}`, data).pipe(
       catchError(error => {
@@ -228,9 +234,9 @@ export class ProspectoApiService {
 
   // Create/Update Documentos
   createDocumentos(data: DocumentoData[]): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, documentos: data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.post(`${this.API_URL}${EndPoints.KIWIPAY.POST_CREATE_DOCUMENTOS}`, { documentos: data }).pipe(
       catchError(error => {
@@ -241,9 +247,9 @@ export class ProspectoApiService {
   }
 
   updateDocumentos(data: DocumentoData[]): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, documentos: data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_DOCUMENTOS}`, { documentos: data }).pipe(
       catchError(error => {
@@ -255,9 +261,9 @@ export class ProspectoApiService {
 
   // Update Prospecto Riesgo
   updateProspectoRiesgo(data: ProspectoRiesgoData): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_PROSPECTO_RIESGO}`, data).pipe(
       catchError(error => {
@@ -269,9 +275,9 @@ export class ProspectoApiService {
 
   // Create Prospect Riesgo (Aprobación manual)
   createProspectRiesgo(data: CreateProspectRiesgoRequest): Observable<any> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of({ success: true, id: '1', ...data }).pipe(delay(500));
-    }
+    }*/
 
     return this.http.post(`${this.BACKOFFICE_URL}${EndPoints.BACKOFFICE.POST_CREATE_PROSPECT_RIESGO}`, data, {
       headers: {
@@ -285,111 +291,6 @@ export class ProspectoApiService {
     );
   }
 
-  // Mock data for testing
-  private mockGetProspectoRiesgoData(id?: string): Observable<ProspectoRiesgoData> {
-    const mockData: ProspectoRiesgoData = {
-      id: id || '1',
-      titular: {
-        tipoDocumento: 'DNI',
-        numeroDocumento: '004297536',
-        nombres: 'SUHAIL ADRIANA',
-        apellidos: 'ALDREY TABAREZ',
-        estadoCivil: 'SOLTERO',
-        fechaNacimiento: '1974-06-29',
-        sexo: 'F',
-        correo: 'suhailaldrey216@gmail.com',
-        telefono: '+51917950100',
-        departamento: 'Lima',
-        provincia: 'Lima',
-        distrito: 'Miraflores',
-        direccion: 'Av. Principal 123',
-        tasaExperian: 15.5,
-        nuevaTasa: 18.0,
-        tasaAdicional: 2.0,
-        tasaFinal: 20.0
-      },
-      paciente: {
-        tipoDocumento: 'DNI',
-        numeroDocumento: '12345678',
-        nombres: 'Juan',
-        apellidos: 'Pérez',
-        sexo: 'M',
-        telefono: '999888777',
-        correo: 'juan@example.com',
-        departamento: 'Lima',
-        provincia: 'Lima',
-        distrito: 'San Isidro',
-        direccion: 'Av. Ejemplo 456'
-      },
-      avalista: {
-        tipoDocumento: 'DNI',
-        numeroDocumento: '87654321',
-        nombres: 'María',
-        apellidos: 'García',
-        estadoCivil: 'CASADO',
-        sexo: 'F',
-        telefono: '999777666',
-        correo: 'maria@example.com',
-        ingresos: 5000,
-        departamento: 'Arequipa',
-        provincia: 'Arequipa',
-        distrito: 'Yanahuara',
-        direccion: 'Calle Ejemplo 789'
-      },
-      documentos: [
-        {
-          id: '1',
-          nombre: 'Contrato.pdf',
-          fechaCarga: new Date('2025-10-10'),
-          fechaRevision: new Date('2025-10-12'),
-          comentario: 'Pendiente de aprobación',
-          estadoRevision: 'Pendiente',
-          tipo: 'Contrato'
-        },
-        {
-          id: '2',
-          nombre: 'Factura_123.pdf',
-          fechaCarga: new Date('2025-10-15'),
-          fechaRevision: new Date('2025-10-16'),
-          comentario: 'Aprobado',
-          estadoRevision: 'Aprobado',
-          tipo: 'Factura'
-        }
-      ],
-      informacionProspecto: {
-        informacionPersonal: {
-          nombres: 'SUHAIL ADRIANA',
-          apellidos: 'ALDREY TABAREZ',
-          documento: '004297536',
-          telefono: '+51 917950100',
-          correo: 'suhailaldrey216@gmail.com',
-          fechaNacimiento: '1974-06-29',
-          edad: '51 años',
-          ingresosMensuales: 'S/ 3,000.00',
-          scoreExperian: 0,
-          grupo: '',
-          resultadoExperian: '',
-          calificacionExperian: 'Tabla de peor calificación experian',
-          segmento: '',
-          respuestaExperian: ''
-        },
-        informacionPrestamo: {
-          campana: 'Sin campaña',
-          fechaSolicitud: '2025-10-20',
-          estadoPrestamo: 'Crédito con QR Redimido',
-          prestamoSolicitado: 'S/ 15,000.00',
-          numeroCuotas: '12',
-          cuotaMensual: 'S/ 580.00'
-        },
-        informacionMedica: {
-          centroMedico: 'dr. luis coa',
-          sucursal: 'san clemente',
-          categoriaMedica: 'cirugía plástica y reconstructiva'
-        }
-      }
-    };
-
-    return of(mockData);
-  }
+  
 }
 

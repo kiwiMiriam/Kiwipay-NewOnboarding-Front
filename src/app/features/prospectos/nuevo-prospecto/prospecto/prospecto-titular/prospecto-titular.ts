@@ -90,36 +90,38 @@ export class ProspectoTitular implements OnInit, OnDestroy {
         });
     }
 
-    // Patch form values
+    // Patch form values - mapear desde la estructura del backend
     this.clientForm.patchValue({
-      tipoDocumento: data.tipoDocumento,
-      numeroDocumento: data.numeroDocumento,
-      nombres: data.nombres,
-      apellidos: data.apellidos,
-      estadoCivil: data.estadoCivil,
-      fechaNacimiento: data.fechaNacimiento,
-      sexo: data.sexo,
-      correo: data.correo,
-      telefono: data.telefono,
-      telefono2: data.telefono2 || '',
-      departamento: data.departamento,
-      provincia: data.provincia,
-      distrito: data.distrito,
-      direccion: data.direccion,
-      tasaExperian: data.tasaExperian || '',
-      nuevaTasa: data.nuevaTasa || '',
-      tasaAdicional: data.tasaAdicional || '',
-      tasaFinal: data.tasaFinal || ''
+      tipoDocumento: data.documentType || data.tipoDocumento,
+      numeroDocumento: data.documentNumber || data.numeroDocumento,
+      nombres: data.firstNames || data.nombres,
+      apellidos: data.lastNames || data.apellidos,
+      estadoCivil: data.maritalStatus || data.estadoCivil,
+      fechaNacimiento: data.birthDate || data.fechaNacimiento,
+      sexo: data.gender || data.sexo,
+      correo: data.email || data.correo,
+      telefono: data.phone || data.telefono,
+      telefono2: (data as any).telefono2 || '',
+      departamento: data.address?.departmentId || data.departamento,
+      provincia: data.address?.provinceId || data.provincia,
+      distrito: data.address?.districtId || data.distrito,
+      direccion: data.address?.line1 || data.direccion,
+      tasaExperian: (data as any).tasaExperian || '',
+      nuevaTasa: (data as any).nuevaTasa || '',
+      tasaAdicional: (data as any).tasaAdicional || '',
+      tasaFinal: (data as any).tasaFinal || ''
     });
   }
 
   private loadLocationData(data: ClienteData) {
-    // Find department by name
-    const dept = this.departamentos.find(d => d.nombre === data.departamento);
+    // Find department by name - use address.departmentId or fallback to departamento
+    const deptId = data.address?.departmentId || data.departamento;
+    const dept = this.departamentos.find(d => d.id === deptId || d.nombre === deptId);
     if (dept) {
       this.selectedDepartamentoId = dept.id;
       this.loadProvinces(dept.id, () => {
-        const prov = this.provincias.find(p => p.nombre === data.provincia);
+        const provId = data.address?.provinceId || data.provincia;
+        const prov = this.provincias.find(p => p.id === provId || p.nombre === provId);
         if (prov) {
           this.selectedProvinciaId = prov.id;
           this.loadDistricts(prov.id);
@@ -233,6 +235,23 @@ export class ProspectoTitular implements OnInit, OnDestroy {
     this.isLoading = true;
     const formData = this.clientForm.value;
     const clienteData: ClienteData = {
+      // Campos del backend
+      documentType: formData.tipoDocumento,
+      documentNumber: formData.numeroDocumento,
+      firstNames: formData.nombres,
+      lastNames: formData.apellidos,
+      maritalStatus: formData.estadoCivil,
+      birthDate: formData.fechaNacimiento,
+      gender: formData.sexo,
+      email: formData.correo,
+      phone: formData.telefono,
+      address: {
+        departmentId: formData.departamento,
+        provinceId: formData.provincia,
+        districtId: formData.distrito,
+        line1: formData.direccion
+      },
+      // Campos adicionales para compatibilidad
       tipoDocumento: formData.tipoDocumento,
       numeroDocumento: formData.numeroDocumento,
       nombres: formData.nombres,
@@ -242,19 +261,14 @@ export class ProspectoTitular implements OnInit, OnDestroy {
       sexo: formData.sexo,
       correo: formData.correo,
       telefono: formData.telefono,
-      telefono2: formData.telefono2,
       departamento: formData.departamento,
       provincia: formData.provincia,
       distrito: formData.distrito,
-      direccion: formData.direccion,
-      tasaExperian: formData.tasaExperian ? parseFloat(formData.tasaExperian) : undefined,
-      nuevaTasa: formData.nuevaTasa ? parseFloat(formData.nuevaTasa) : undefined,
-      tasaAdicional: formData.tasaAdicional ? parseFloat(formData.tasaAdicional) : undefined,
-      tasaFinal: formData.tasaFinal ? parseFloat(formData.tasaFinal) : undefined
+      direccion: formData.direccion
     };
 
-    if (this.editMode) {
-      this.prospectoApiService.updateClient(clienteData)
+    if (this.editMode && this.initialData?.id) {
+      this.prospectoApiService.updateClient(this.initialData.id, clienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {

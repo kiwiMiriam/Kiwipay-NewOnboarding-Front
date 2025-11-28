@@ -10,8 +10,8 @@ import {
   faSearch,
   faDownload
 } from '@fortawesome/free-solid-svg-icons';
-import { ProspectosService } from '../../core/services/prospectos.service';
-import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.model';
+import { ProspectosService, Prospecto } from '../../core/services/prospectos.service';
+import { ProspectoFilter } from '../../core/models/prospecto.model';
 
 @Component({
   selector: 'app-bandeja',
@@ -78,45 +78,58 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
       </div>
 
       <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Contrato</th>
-              <th>Estado</th>
-              <th>Documento</th>
-              <th>Asociado</th>
-              <th>Programa</th>
-              <th>Grupo</th>
-              <th>Ciudad</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let prospecto of prospectos">
-              <td>{{ prospecto.contrato }}</td>
-              <td>
-                <span class="estado-badge" [class]="'estado-' + prospecto.estado.toLowerCase()">
-                  {{ prospecto.estado }}
-                </span>
-              </td>
-              <td>{{ prospecto.documento }}</td>
-              <td>{{ prospecto.asociado }}</td>
-              <td>{{ prospecto.programa }}</td>
-              <td>{{ prospecto.grupo }}</td>
-              <td>{{ prospecto.ciudad }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn btn-icon btn-edit" (click)="editarProspecto(prospecto.id)" title="Editar">
-                    <fa-icon [icon]="faEdit"></fa-icon>
-                  </button>
-                  <button class="btn btn-icon btn-delete" (click)="eliminarProspecto(prospecto.id)" title="Eliminar">
-                    <fa-icon [icon]="faTrash"></fa-icon>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div *ngIf="loading" class="loading-indicator">
+          <p>Cargando datos...</p>
+        </div>
+        <div class="table-responsive">
+          <table class="table" *ngIf="!loading">
+            <thead>
+              <tr>
+                <th>Contrato</th>
+                <th>Estado</th>
+                <th>Documento</th>
+                <th>Asociado</th>
+                <th>Programa</th>
+                <th>Grupo</th>
+                <th>Ciudad</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let prospecto of prospectos">
+                <td data-label="Contrato">{{ prospecto.contrato || '-' }}</td>
+                <td data-label="Estado">
+                  <span class="estado-badge" 
+                        [class.estado-pendiente]="prospecto.estado === 'Pendiente'"
+                        [class.estado-en-proceso]="prospecto.estado === 'En Proceso'"
+                        [class.estado-completado]="prospecto.estado === 'Completado'">
+                    {{ prospecto.estado || 'Sin Estado' }}
+                  </span>
+                </td>
+                <td data-label="Documento">{{ prospecto.documento || '-' }}</td>
+                <td data-label="Asociado">{{ prospecto.asociado || '-' }}</td>
+                <td data-label="Programa">{{ prospecto.programa || '-' }}</td>
+                <td data-label="Grupo">{{ prospecto.grupo || '-' }}</td>
+                <td data-label="Ciudad">{{ prospecto.ciudad || '-' }}</td>
+                <td data-label="Acciones">
+                  <div class="action-buttons">
+                    <button class="btn btn-icon btn-edit" (click)="editarProspecto(prospecto.id)" title="Editar">
+                      <fa-icon [icon]="faEdit"></fa-icon>
+                    </button>
+                    <button class="btn btn-icon btn-delete" (click)="eliminarProspecto(prospecto.id)" title="Eliminar">
+                      <fa-icon [icon]="faTrash"></fa-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="!loading && prospectos.length === 0">
+                <td colspan="8" style="text-align: center; padding: 2rem;">
+                  No se encontraron registros
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   `,
@@ -218,9 +231,14 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
       overflow: hidden;
     }
 
+    .table-responsive {
+      overflow-x: auto;
+    }
+
     .table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 800px;
     }
 
     .table th,
@@ -234,6 +252,11 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
       background-color: #f8f9fa;
       font-weight: 600;
       color: #4a5568;
+      white-space: nowrap;
+    }
+
+    .table td {
+      vertical-align: middle;
     }
 
     .estado-badge {
@@ -242,6 +265,7 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     .estado-pendiente {
@@ -252,6 +276,100 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
     .estado-en-proceso {
       background-color: #e0f2fe;
       color: #0369a1;
+    }
+
+    .estado-completado {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      .table {
+        min-width: 600px;
+        font-size: 0.875rem;
+      }
+
+      .table th,
+      .table td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .bandeja-container {
+        padding: 10px;
+      }
+
+      .table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .table thead,
+      .table tbody,
+      .table th,
+      .table td,
+      .table tr {
+        display: block;
+      }
+
+      .table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      .table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        background-color: white;
+      }
+
+      .table td {
+        border: none;
+        position: relative;
+        padding-left: 50% !important;
+        white-space: normal;
+        text-align: right;
+      }
+
+      .table td:before {
+        content: attr(data-label) ": ";
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        text-align: left;
+        font-weight: bold;
+        color: #4a5568;
+      }
+
+      .action-buttons {
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+      }
     }
 
     .action-buttons {
@@ -277,11 +395,18 @@ import { ProspectoResponse, ProspectoFilter } from '../../core/models/prospecto.
     .btn-delete:hover {
       color: #ef4444;
     }
+
+    .loading-indicator {
+      padding: 2rem;
+      text-align: center;
+      color: #6c757d;
+    }
   `]
 })
 export class BandejaComponent implements OnInit {
-  prospectos: ProspectoResponse[] = [];
+  prospectos: Prospecto[] = [];
   filterForm: FormGroup;
+  loading = false;
 
   // Font Awesome icons
   faPlus = faPlus;
@@ -312,9 +437,21 @@ export class BandejaComponent implements OnInit {
   }
 
   loadProspectos(filter?: ProspectoFilter) {
-    this.prospectosService.getProspectos(filter).subscribe(
-      prospectos => this.prospectos = prospectos
-    );
+    this.loading = true;
+    // Primero cargar datos del backend
+    this.prospectosService.fetchAllClients();
+    
+    // Luego obtener los datos procesados
+    this.prospectosService.getProspectos(filter).subscribe({
+      next: (prospectos) => {
+        this.prospectos = prospectos;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando prospectos:', error);
+        this.loading = false;
+      }
+    });
   }
 
   applyFilters() {

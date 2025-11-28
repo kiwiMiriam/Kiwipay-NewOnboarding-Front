@@ -72,9 +72,9 @@ export class LocationService {
   ];
 
   getDepartments(): Observable<Department[]> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       return of(this.mockDepartments).pipe(delay(300));
-    }
+    }*/
 
     return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_DEPARTMENTS}`).pipe(
       map(response => {
@@ -89,17 +89,16 @@ export class LocationService {
       }),
       catchError(error => {
         console.error('Error fetching departments:', error);
-        // Fallback to mock on error
-        return of(this.mockDepartments);
+        return throwError(() => error);
       })
     );
   }
 
   getProvinces(departamentoId: string): Observable<Province[]> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       const provinces = this.mockProvinces.filter(p => p.departamentoId === departamentoId);
       return of(provinces).pipe(delay(300));
-    }
+    }*/
 
     return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_PROVINCES}`, {
       params: { departamentoId }
@@ -115,18 +114,16 @@ export class LocationService {
       }),
       catchError(error => {
         console.error('Error fetching provinces:', error);
-        // Fallback to mock on error
-        const provinces = this.mockProvinces.filter(p => p.departamentoId === departamentoId);
-        return of(provinces);
+        return throwError(() => error);
       })
     );
   }
 
   getDistricts(provinciaId: string): Observable<District[]> {
-    if (this.USE_MOCK) {
+    /*if (this.USE_MOCK) {
       const districts = this.mockDistricts.filter(d => d.provinciaId === provinciaId);
       return of(districts).pipe(delay(300));
-    }
+    }*/
 
     return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_DISTRICTS}`, {
       params: { provinciaId }
@@ -142,9 +139,7 @@ export class LocationService {
       }),
       catchError(error => {
         console.error('Error fetching districts:', error);
-        // Fallback to mock on error
-        const districts = this.mockDistricts.filter(d => d.provinciaId === provinciaId);
-        return of(districts);
+        return throwError(() => error);
       })
     );
   }

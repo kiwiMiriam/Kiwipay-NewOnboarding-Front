@@ -70,7 +70,6 @@ export class AuthService {
   }
 
   private mockLogin(credentials: LoginRequest): Observable<LoginResponse> {
-    // Simple mock for testing - in a real app, you might have more complex mocks
     return of({
       success: credentials.username === 'admin' && credentials.password === 'password',
       user: {
@@ -82,7 +81,6 @@ export class AuthService {
       },
       token: 'mock-jwt-token-would-be-here'
     }).pipe(
-      delay(1500), // Simulate network delay
       tap((response) => {
         if (response.success) {
           this.handleSuccessfulLogin(response);
@@ -142,18 +140,15 @@ export class AuthService {
   }
 
   logout(): void {
-    // Clear stored auth data
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
     localStorage.removeItem('token_expiration');
 
-    // Clear the token refresh timer
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
       this.tokenExpirationTimer = null;
     }
 
-    // Reset auth state
     this.authState.update(state => ({
       ...state,
       user: null,
@@ -161,17 +156,14 @@ export class AuthService {
       error: null
     }));
 
-    // Navigate to login
     this.router.navigate(['/login']);
   }
 
   private autoRefreshToken(expirationDuration: number): void {
-    // Clear any existing timer
     if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
     }
 
-    // Set timer to refresh token before expiration (refresh at 80% of expiration time)
     this.tokenExpirationTimer = setTimeout(() => {
       if (this.isAuthenticated()) {
         this.refreshToken().subscribe({
@@ -180,7 +172,6 @@ export class AuthService {
           },
           error: (error) => {
             console.error('Token refresh failed', error);
-            // If refresh fails, logout user
             this.logout();
           }
         });
@@ -289,5 +280,4 @@ export class AuthService {
     }
   }
 
-  // Additional methods for token refresh, validation, etc. would go here
 }
