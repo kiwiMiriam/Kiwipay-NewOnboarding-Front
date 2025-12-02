@@ -14,6 +14,8 @@ import { ProspectoApiService, PacienteData } from '@app/core/services/prospecto-
 })
 export class ProspectoPaciente implements OnInit, OnDestroy {
   @Input() initialData?: PacienteData;
+  @Input() clientId?: number;
+  @Input() patientId?: number;
   @Output() dataSaved = new EventEmitter<PacienteData>();
   @Output() dataUpdated = new EventEmitter<PacienteData>();
 
@@ -239,8 +241,8 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
       direccion: formData.direccion || undefined
     };
 
-    if (this.editMode) {
-      this.prospectoApiService.updatePatient(pacienteData)
+    if (this.editMode && this.clientId && this.patientId) {
+      this.prospectoApiService.updatePatient(this.clientId, this.patientId, pacienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -254,16 +256,20 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
             alert('Error al actualizar el paciente');
           }
         });
-    } else {
-      this.prospectoApiService.createPatient(pacienteData)
+    } else if (this.clientId) {
+      this.prospectoApiService.createPatient(this.clientId, pacienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: () => {
+          next: (res) => {
             this.isLoading = false;
             this.editMode = true;
             this.isPacienteExpanded = true;
             this.dataSaved.emit(pacienteData);
             alert('Paciente guardado exitosamente');
+            // Si el backend retorna el id del paciente, lo puedes guardar aquí
+            if (res && res.id) {
+              this.patientId = res.id;
+            }
           },
           error: (error) => {
             this.isLoading = false;
@@ -271,6 +277,9 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
             alert('Error al guardar el paciente');
           }
         });
+    } else {
+      alert('No se ha proporcionado clientId para guardar el paciente');
+      this.isLoading = false;
     }
   }
 }

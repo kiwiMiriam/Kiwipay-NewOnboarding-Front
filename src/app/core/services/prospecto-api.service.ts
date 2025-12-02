@@ -174,31 +174,14 @@ export class ProspectoApiService {
     return this.http.delete(`http://localhost:8080/api/v1/clients/${id}`);
   }
 
-  // Create/Update Patient
-  createPatient(data: PacienteData): Observable<any> {
-    /*if (this.USE_MOCK) {
-      return of({ success: true, id: '1', ...data }).pipe(delay(500));
-    }*/
-
-    return this.http.post(`${this.API_URL}${EndPoints.KIWIPAY.POST_CREATE_PATIENT}`, data).pipe(
-      catchError(error => {
-        console.error('Error creating patient:', error);
-        return throwError(() => error);
-      })
-    );
+  // Crear paciente
+  createPatient(clientId: number, data: PacienteData): Observable<any> {
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/patients`, data);
   }
 
-  updatePatient(data: PacienteData & { id?: string }): Observable<any> {
-    /*if (this.USE_MOCK) {
-      return of({ success: true, ...data }).pipe(delay(500));
-    }*/
-
-    return this.http.put(`${this.API_URL}${EndPoints.KIWIPAY.PUT_UPDATE_PATIENT}`, data).pipe(
-      catchError(error => {
-        console.error('Error updating patient:', error);
-        return throwError(() => error);
-      })
-    );
+// Editar paciente
+  updatePatient(clientId: number, patientId: number, data: PacienteData): Observable<any> {
+    return this.http.put(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`, data);
   }
 
   // Create/Update Avalista

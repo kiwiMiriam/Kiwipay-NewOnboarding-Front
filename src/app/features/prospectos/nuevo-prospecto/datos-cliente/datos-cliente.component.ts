@@ -16,6 +16,48 @@ import { ProspectoApiService} from '../../../../core/services/prospecto-api.serv
   styleUrls: ['./datos-cliente.component.scss']
 })
 export class DatosClienteComponent implements OnInit {
+    guardarPaciente(): void {
+      if (!this.prospectoId) return;
+
+      const pacienteForm = this.clientForm.get('paciente')?.value;
+      // PacienteData debe tener los siguientes campos:
+      // tipoDocumento, numeroDocumento, nombres, apellidos, sexo, telefono, correo, departamento, provincia, distrito, direccion
+      const pacienteData = {
+        tipoDocumento: pacienteForm.tipoDocumento,
+        numeroDocumento: pacienteForm.numeroDocumento,
+        nombres: pacienteForm.nombres,
+        apellidos: pacienteForm.apellidos,
+        sexo: pacienteForm.sexo,
+        telefono: pacienteForm.telefono,
+        correo: pacienteForm.correo,
+        departamento: pacienteForm.departamento,
+        provincia: pacienteForm.provincia,
+        distrito: pacienteForm.distrito,
+        direccion: pacienteForm.direccion
+      };
+
+      // Si hay un id de paciente, es edición; si no, es creación
+      if (pacienteForm.id) {
+        this.prospectoApiService.updatePatient(Number(this.prospectoId), Number(pacienteForm.id), pacienteData).subscribe({
+          next: () => alert('Paciente actualizado exitosamente'),
+          error: (err: any) => {
+            alert('Error al actualizar paciente');
+            console.error(err);
+          }
+        });
+      } else {
+        this.prospectoApiService.createPatient(Number(this.prospectoId), pacienteData).subscribe({
+          next: (res) => {
+            alert('Paciente creado exitosamente');
+            this.clientForm.get('paciente')?.patchValue({ id: res.id });
+          },
+          error: (err: any) => {
+            alert('Error al crear paciente');
+            console.error(err);
+          }
+        });
+      }
+    }
   clientForm!: FormGroup;
   submitted = false;
   editMode = false;
@@ -69,6 +111,25 @@ export class DatosClienteComponent implements OnInit {
           if (prospecto.conyugue) this.isConyugueExpanded = true;
 
           this.clientForm.patchValue(prospecto);
+
+          // Patch paciente si existe
+          if (prospecto.paciente) {
+            this.clientForm.get('paciente')?.patchValue({
+              // Si el backend devuelve un id de paciente, lo usamos
+              id: (prospecto.paciente as any).id,
+              tipoDocumento: prospecto.paciente.tipoDocumento,
+              numeroDocumento: prospecto.paciente.numeroDocumento,
+              nombres: prospecto.paciente.nombres,
+              apellidos: prospecto.paciente.apellidos,
+              sexo: prospecto.paciente.sexo,
+              telefono: prospecto.paciente.telefono,
+              correo: prospecto.paciente.correo,
+              departamento: prospecto.paciente.departamento,
+              provincia: prospecto.paciente.provincia,
+              distrito: prospecto.paciente.distrito,
+              direccion: prospecto.paciente.direccion
+            });
+          }
 
           // Cargar provincias y distritos por ID
           if (prospecto.departamento) {
@@ -300,4 +361,5 @@ export class DatosClienteComponent implements OnInit {
     console.log(this.router.url);
     console.log(newroute);
   }
+
 }
