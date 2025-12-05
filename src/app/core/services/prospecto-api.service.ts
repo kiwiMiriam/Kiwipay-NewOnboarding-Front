@@ -193,57 +193,134 @@ export class ProspectoApiService {
 
   // Obtener todos los pacientes de un cliente
   getPatients(clientId: number): Observable<PacienteData[]> {
-    return this.http.get<PacienteData[]>(`http://localhost:8080/api/v1/clients/${clientId}/patients`);
+    return this.http.get<PacienteData[]>(`http://localhost:8080/api/v1/clients/${clientId}/patients`).pipe(
+      map(patients => patients.map(p => ({
+        ...p,
+        tipoDocumento: p.documentType,
+        numeroDocumento: p.documentNumber,
+        nombres: p.firstNames,
+        apellidos: p.lastNames,
+        sexo: p.gender,
+        telefono: p.phone,
+        correo: p.email,
+        
+        departamento: p.address?.departmentId,
+        provincia: p.address?.provinceId,
+        distrito: p.address?.districtId,
+        direccion: p.address?.line1
+      })))
+    );
   }
 
   // Obtener un paciente específico
   getPatientById(clientId: number, patientId: number): Observable<PacienteData> {
-    return this.http.get<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`);
+    return this.http.get<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`).pipe(
+      map(response => ({
+        ...response,
+        tipoDocumento: response.documentType,
+        numeroDocumento: response.documentNumber,
+        nombres: response.firstNames,
+        apellidos: response.lastNames,
+        sexo: response.gender,
+        telefono: response.phone,
+        correo: response.email,
+        departamento: response.address?.departmentId,
+        provincia: response.address?.provinceId,
+        distrito: response.address?.districtId,
+        direccion: response.address?.line1
+      }))
+    );
   }
 
   // Crear paciente
   createPatient(clientId: number, data: PacienteData): Observable<PacienteData> {
     const requestData = {
-      documentType: data.documentType || data.tipoDocumento,
-      documentNumber: data.documentNumber || data.numeroDocumento,
-      firstNames: data.firstNames || data.nombres,
-      lastNames: data.lastNames || data.apellidos,
-      gender: data.gender || data.sexo,
-      phone: data.phone || data.telefono,
-      email: data.email || data.correo,
+      documentType: data.tipoDocumento || data.documentType,
+      documentNumber: data.numeroDocumento || data.documentNumber,
+      firstNames: data.nombres || data.firstNames,
+      lastNames: data.apellidos || data.lastNames,
+      gender: data.sexo || data.gender,
+      phone: data.telefono || data.phone,
+      email: data.correo || data.email,
       address: {
-        departmentId: data.address?.departmentId || data.departamento,
-        provinceId: data.address?.provinceId || data.provincia,
-        districtId: data.address?.districtId || data.distrito,
-        line1: data.address?.line1 || data.direccion
+        departmentId: data.departamento || data.address?.departmentId,
+        provinceId: data.provincia || data.address?.provinceId,
+        districtId: data.distrito || data.address?.districtId,
+        line1: data.direccion || data.address?.line1
       }
     };
     
-    console.log('=== DEBUG CREATE PATIENT API ===');
-    console.log('ClientId:', clientId);
-    console.log('Data recibida:', data);
-    console.log('Request data que se enviará:', requestData);
-    console.log('URL:', `http://localhost:8080/api/v1/clients/${clientId}/patients`);
-    
-    return this.http.post<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients`, requestData);
+    return this.http.post<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients`, requestData).pipe(
+      map(response => ({
+        ...response,
+        tipoDocumento: response.documentType,
+        numeroDocumento: response.documentNumber,
+        nombres: response.firstNames,
+        apellidos: response.lastNames,
+        sexo: response.gender,
+        telefono: response.phone,
+        correo: response.email,
+        departamento: response.address?.departmentId,
+        provincia: response.address?.provinceId,
+        distrito: response.address?.districtId,
+        direccion: response.address?.line1
+      }))
+    );
   }
 
   // Editar paciente
   updatePatient(clientId: number, patientId: number, data: PacienteData): Observable<PacienteData> {
     const requestData = {
-      firstNames: data.firstNames || data.nombres,
-      lastNames: data.lastNames || data.apellidos,
-      gender: data.gender || data.sexo,
-      phone: data.phone || data.telefono,
-      email: data.email || data.correo,
+      documentType: data.tipoDocumento || data.documentType,
+      documentNumber: data.numeroDocumento || data.documentNumber,
+      firstNames: data.nombres || data.firstNames,
+      lastNames: data.apellidos || data.lastNames,
+      gender: data.sexo || data.gender,
+      phone: data.telefono || data.phone,
+      email: data.correo || data.email,
       address: {
-        departmentId: data.address?.departmentId || data.departamento,
-        provinceId: data.address?.provinceId || data.provincia,
-        districtId: data.address?.districtId || data.distrito,
-        line1: data.address?.line1 || data.direccion
+        departmentId: data.departamento || data.address?.departmentId,
+        provinceId: data.provincia || data.address?.provinceId,
+        districtId: data.distrito || data.address?.districtId,
+        line1: data.direccion || data.address?.line1
       }
     };
-    return this.http.put<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`, requestData);
+
+    console.log('[UPDATE PATIENT] Request:', {
+      clientId,
+      patientId,
+      documentNumber: requestData.documentNumber,
+      gender: requestData.gender,
+      fullRequest: requestData
+    });
+    
+    return this.http.put<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`, requestData).pipe(
+      map(response => {
+        console.log('[UPDATE PATIENT] Response received:', {
+          gender: response.gender,
+          fullResponse: response
+        });
+        const normalized = {
+          ...response,
+          tipoDocumento: response.documentType,
+          numeroDocumento: response.documentNumber,
+          nombres: response.firstNames,
+          apellidos: response.lastNames,
+          sexo: response.gender,
+          telefono: response.phone,
+          correo: response.email,
+          departamento: response.address?.departmentId,
+          provincia: response.address?.provinceId,
+          distrito: response.address?.districtId,
+          direccion: response.address?.line1
+        };
+        console.log('[UPDATE PATIENT] Normalized:', {
+          sexo: normalized.sexo,
+          fullNormalized: normalized
+        });
+        return normalized;
+      })
+    );
   }
 
   // Eliminar paciente

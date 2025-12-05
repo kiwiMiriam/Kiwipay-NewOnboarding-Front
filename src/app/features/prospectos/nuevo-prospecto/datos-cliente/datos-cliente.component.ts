@@ -17,13 +17,6 @@ import { PacientesService } from '../../../../core/services/pacientes.service';
   styleUrls: ['./datos-cliente.component.scss']
 })
 export class DatosClienteComponent implements OnInit {
-  /**
-   * Método depreciado - ahora se usa el botón Guardar principal
-   */
-  guardarPaciente(): void {
-    console.log('Método guardarPaciente() depreciado - use el botón Guardar principal');
-    alert('Use el botón "Guardar" principal para guardar tanto cliente como paciente');
-  }
   clientForm!: FormGroup;
   submitted = false;
   editMode = false;
@@ -297,20 +290,18 @@ export class DatosClienteComponent implements OnInit {
   }
 
   private actualizarClienteYPaciente(clienteData: any, pacienteData: any): void {
-    console.log('Actualizando cliente y paciente...');
-    
     // Actualizar cliente primero
     this.prospectoApiService.updateClient(Number(this.prospectoId), clienteData).subscribe({
       next: () => {
-        console.log('Cliente actualizado exitosamente');
-        
         // Si hay datos de paciente, actualizar o crear paciente
         if (pacienteData) {
           this.guardarPacienteInterno(pacienteData, () => {
             alert('Cliente y paciente actualizados exitosamente');
+            this.volverABandeja();
           });
         } else {
           alert('Cliente actualizado exitosamente');
+          this.volverABandeja();
         }
       },
       error: (err) => {
@@ -321,13 +312,9 @@ export class DatosClienteComponent implements OnInit {
   }
 
   private crearClienteYPaciente(clienteData: any, pacienteData: any): void {
-    console.log('Creando cliente y paciente...');
-    
     // Crear cliente primero
     this.prospectoApiService.createClient(clienteData).subscribe({
       next: (response) => {
-        console.log('Cliente creado:', response);
-        
         // Actualizar el estado local
         this.editMode = true;
         this.prospectoId = response.id?.toString();
@@ -386,10 +373,49 @@ export class DatosClienteComponent implements OnInit {
 
     if (this.pacienteEditMode && this.pacienteId) {
       // Actualizar paciente existente
+      console.log('[COMPONENT] Actualizando paciente:', {
+        clientId: this.clientId,
+        pacienteId: this.pacienteId,
+        sexo: pacienteToSave.sexo,
+        data: pacienteToSave
+      });
+      
       this.pacientesService.actualizarPaciente(this.clientId, this.pacienteId, pacienteToSave).subscribe({
         next: (response) => {
-          console.log('Paciente actualizado:', response);
-          this.loadPacienteData(response);
+          console.log('[COMPONENT] Response recibida:', {
+            sexo: response.sexo,
+            fullResponse: response
+          });
+          
+          // Actualizar el formulario con los datos actualizados del backend
+          const pacienteForm = this.clientForm.get('paciente');
+          const newValues = {
+            tipoDocumento: response.tipoDocumento,
+            numeroDocumento: response.numeroDocumento,
+            nombres: response.nombres,
+            apellidos: response.apellidos,
+            sexo: response.sexo,
+            telefono: response.telefono,
+            correo: response.correo,
+            departamento: response.departamento,
+            provincia: response.provincia,
+            distrito: response.distrito,
+            direccion: response.direccion
+          };
+          
+          console.log('[COMPONENT] Actualizando formulario con:', {
+            sexo: newValues.sexo,
+            allValues: newValues
+          });
+          
+          pacienteForm?.patchValue(newValues, { emitEvent: true });
+          pacienteForm?.updateValueAndValidity();
+          
+          console.log('[COMPONENT] Valor del formulario después de patchValue:', {
+            sexo: pacienteForm?.get('sexo')?.value,
+            allFormValues: pacienteForm?.value
+          });
+          
           callback();
         },
         error: (error) => {
@@ -401,10 +427,24 @@ export class DatosClienteComponent implements OnInit {
       // Crear nuevo paciente
       this.pacientesService.crearPaciente(this.clientId, pacienteToSave).subscribe({
         next: (response) => {
-          console.log('Paciente creado:', response);
           this.pacienteId = response.id || null;
           this.pacienteEditMode = true;
-          this.loadPacienteData(response);
+          // Actualizar el formulario con los datos del backend
+          this.clientForm.get('paciente')?.patchValue({
+            tipoDocumento: response.tipoDocumento,
+            numeroDocumento: response.numeroDocumento,
+            nombres: response.nombres,
+            apellidos: response.apellidos,
+            sexo: response.sexo,
+            telefono: response.telefono,
+            correo: response.correo,
+            departamento: response.departamento,
+            provincia: response.provincia,
+            distrito: response.distrito,
+            direccion: response.direccion
+          });
+          // Recargar la lista de pacientes
+          this.loadExistingPacientes();
           callback();
         },
         error: (error) => {
@@ -435,25 +475,20 @@ export class DatosClienteComponent implements OnInit {
    * Navega hacia adelante (clinica) y actualiza el estado de la pestaña activa
    */
   navigateNext(): void {
-    // Usa el servicio de navegación para navegar hacia adelante desde la pestaña actual
-    const newroute = this.navigationService.navigateToTab('datos-clinica');
-    console.log(this.router.url);
-    console.log(newroute);
+    this.navigationService.navigateToTab('datos-clinica');
   }
 
   /**
    * Carga los datos de un paciente en el formulario
    */
   private loadPacienteData(paciente: PacienteData): void {
-    const normalizedPaciente = this.pacientesService.normalizarPacienteData(paciente);
-    
     // Cargar ubicación del paciente
-    if (normalizedPaciente.departamento) {
-      this.locationService.getProvinces(normalizedPaciente.departamento).subscribe(provincias => {
+    if (paciente.departamento) {
+      this.locationService.getProvinces(paciente.departamento).subscribe(provincias => {
         this.pacienteProvincias = provincias;
         
-        if (normalizedPaciente.provincia) {
-          this.locationService.getDistricts(normalizedPaciente.provincia).subscribe(distritos => {
+        if (paciente.provincia) {
+          this.locationService.getDistricts(paciente.provincia).subscribe(distritos => {
             this.pacienteDistritos = distritos;
           });
         }
@@ -462,17 +497,17 @@ export class DatosClienteComponent implements OnInit {
 
     // Llenar el formulario
     this.clientForm.get('paciente')?.patchValue({
-      tipoDocumento: normalizedPaciente.tipoDocumento,
-      numeroDocumento: normalizedPaciente.numeroDocumento,
-      nombres: normalizedPaciente.nombres,
-      apellidos: normalizedPaciente.apellidos,
-      sexo: normalizedPaciente.sexo,
-      telefono: normalizedPaciente.telefono,
-      correo: normalizedPaciente.correo,
-      departamento: normalizedPaciente.departamento,
-      provincia: normalizedPaciente.provincia,
-      distrito: normalizedPaciente.distrito,
-      direccion: normalizedPaciente.direccion
+      tipoDocumento: paciente.tipoDocumento,
+      numeroDocumento: paciente.numeroDocumento,
+      nombres: paciente.nombres,
+      apellidos: paciente.apellidos,
+      sexo: paciente.sexo,
+      telefono: paciente.telefono,
+      correo: paciente.correo,
+      departamento: paciente.departamento,
+      provincia: paciente.provincia,
+      distrito: paciente.distrito,
+      direccion: paciente.direccion
     });
   }
 

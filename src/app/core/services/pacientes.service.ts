@@ -38,24 +38,14 @@ export class PacientesService {
    * Crea un nuevo paciente
    */
   crearPaciente(clientId: number, pacienteData: PacienteData): Observable<PacienteData> {
-    return this.prospectoApiService.createPatient(clientId, pacienteData).pipe(
-      catchError(error => {
-        console.error('Error creating patient:', error);
-        throw error;
-      })
-    );
+    return this.prospectoApiService.createPatient(clientId, pacienteData);
   }
 
   /**
    * Actualiza un paciente existente
    */
   actualizarPaciente(clientId: number, patientId: number, pacienteData: PacienteData): Observable<PacienteData> {
-    return this.prospectoApiService.updatePatient(clientId, patientId, pacienteData).pipe(
-      catchError(error => {
-        console.error('Error updating patient:', error);
-        throw error;
-      })
-    );
+    return this.prospectoApiService.updatePatient(clientId, patientId, pacienteData);
   }
 
   /**
@@ -69,47 +59,5 @@ export class PacientesService {
         return of(false);
       })
     );
-  }
-
-  /**
-   * Normaliza los datos del paciente para el frontend
-   */
-  normalizarPacienteData(paciente: PacienteData): PacienteData {
-    return {
-      ...paciente,
-      // Mapear campos del backend al frontend
-      tipoDocumento: paciente.documentType || paciente.tipoDocumento,
-      numeroDocumento: paciente.documentNumber || paciente.numeroDocumento,
-      nombres: paciente.firstNames || paciente.nombres,
-      apellidos: paciente.lastNames || paciente.apellidos,
-      sexo: paciente.gender || paciente.sexo,
-      telefono: paciente.phone || paciente.telefono,
-      correo: paciente.email || paciente.correo,
-      departamento: paciente.address?.departmentId || paciente.departamento,
-      provincia: paciente.address?.provinceId || paciente.provincia,
-      distrito: paciente.address?.districtId || paciente.distrito,
-      direccion: paciente.address?.line1 || paciente.direccion
-    };
-  }
-
-  /**
-   * Prepara los datos del paciente para enviar al backend
-   */
-  prepararPacienteParaBackend(paciente: PacienteData): PacienteData {
-    return {
-      documentType: paciente.tipoDocumento || paciente.documentType,
-      documentNumber: paciente.numeroDocumento || paciente.documentNumber,
-      firstNames: paciente.nombres || paciente.firstNames,
-      lastNames: paciente.apellidos || paciente.lastNames,
-      gender: paciente.sexo || paciente.gender,
-      phone: paciente.telefono || paciente.phone,
-      email: paciente.correo || paciente.email,
-      address: {
-        departmentId: paciente.departamento || paciente.address?.departmentId,
-        provinceId: paciente.provincia || paciente.address?.provinceId,
-        districtId: paciente.distrito || paciente.address?.districtId,
-        line1: paciente.direccion || paciente.address?.line1
-      }
-    };
   }
 }
