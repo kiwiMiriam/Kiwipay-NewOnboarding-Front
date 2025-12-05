@@ -49,6 +49,23 @@ export interface ClienteData {
 }
 
 export interface PacienteData {
+  id?: number;
+  clientId?: number;
+  documentType?: string;
+  documentNumber?: string;
+  firstNames?: string;
+  lastNames?: string;
+  gender?: string;
+  phone?: string;
+  email?: string;
+  address?: {
+    departmentId?: string;
+    provinceId?: string;
+    districtId?: string;
+    line1?: string;
+  };
+  createdAt?: string;
+  // Campos adicionales para compatibilidad con el frontend
   tipoDocumento?: string;
   numeroDocumento?: string;
   nombres?: string;
@@ -174,14 +191,64 @@ export class ProspectoApiService {
     return this.http.delete(`http://localhost:8080/api/v1/clients/${id}`);
   }
 
-  // Crear paciente
-  createPatient(clientId: number, data: PacienteData): Observable<any> {
-    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/patients`, data);
+  // Obtener todos los pacientes de un cliente
+  getPatients(clientId: number): Observable<PacienteData[]> {
+    return this.http.get<PacienteData[]>(`http://localhost:8080/api/v1/clients/${clientId}/patients`);
   }
 
-// Editar paciente
-  updatePatient(clientId: number, patientId: number, data: PacienteData): Observable<any> {
-    return this.http.put(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`, data);
+  // Obtener un paciente específico
+  getPatientById(clientId: number, patientId: number): Observable<PacienteData> {
+    return this.http.get<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`);
+  }
+
+  // Crear paciente
+  createPatient(clientId: number, data: PacienteData): Observable<PacienteData> {
+    const requestData = {
+      documentType: data.documentType || data.tipoDocumento,
+      documentNumber: data.documentNumber || data.numeroDocumento,
+      firstNames: data.firstNames || data.nombres,
+      lastNames: data.lastNames || data.apellidos,
+      gender: data.gender || data.sexo,
+      phone: data.phone || data.telefono,
+      email: data.email || data.correo,
+      address: {
+        departmentId: data.address?.departmentId || data.departamento,
+        provinceId: data.address?.provinceId || data.provincia,
+        districtId: data.address?.districtId || data.distrito,
+        line1: data.address?.line1 || data.direccion
+      }
+    };
+    
+    console.log('=== DEBUG CREATE PATIENT API ===');
+    console.log('ClientId:', clientId);
+    console.log('Data recibida:', data);
+    console.log('Request data que se enviará:', requestData);
+    console.log('URL:', `http://localhost:8080/api/v1/clients/${clientId}/patients`);
+    
+    return this.http.post<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients`, requestData);
+  }
+
+  // Editar paciente
+  updatePatient(clientId: number, patientId: number, data: PacienteData): Observable<PacienteData> {
+    const requestData = {
+      firstNames: data.firstNames || data.nombres,
+      lastNames: data.lastNames || data.apellidos,
+      gender: data.gender || data.sexo,
+      phone: data.phone || data.telefono,
+      email: data.email || data.correo,
+      address: {
+        departmentId: data.address?.departmentId || data.departamento,
+        provinceId: data.address?.provinceId || data.provincia,
+        districtId: data.address?.districtId || data.distrito,
+        line1: data.address?.line1 || data.direccion
+      }
+    };
+    return this.http.put<PacienteData>(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`, requestData);
+  }
+
+  // Eliminar paciente
+  deletePatient(clientId: number, patientId: number): Observable<any> {
+    return this.http.delete(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`);
   }
 
   // Create/Update Avalista

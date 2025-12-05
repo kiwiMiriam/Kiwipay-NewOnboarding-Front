@@ -232,7 +232,7 @@
                   <label for="pacienteDepartamento">Departamento</label>
                   <select id="pacienteDepartamento" formControlName="departamento" (change)="onPacienteDepartamentoChange()">
                     <option value="">Seleccione...</option>
-                    <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.nombre }}</option>
+                    <option *ngFor="let dep of departamentos" [value]="dep.id">{{ dep.name }}</option>
                   </select>
                 </div>
 
@@ -240,7 +240,7 @@
                   <label for="pacienteProvincia">Provincia</label>
                   <select id="pacienteProvincia" formControlName="provincia" (change)="onPacienteProvinciaChange()">
                     <option value="">Seleccione...</option>
-                    <option *ngFor="let prov of pacienteProvincias" [value]="prov.id">{{ prov.nombre }}</option>
+                    <option *ngFor="let prov of pacienteProvincias" [value]="prov.id">{{ prov.name }}</option>
                   </select>
                 </div>
               </div>
@@ -250,7 +250,7 @@
                   <label for="pacienteDistrito">Distrito</label>
                   <select id="pacienteDistrito" formControlName="distrito">
                     <option value="">Seleccione...</option>
-                    <option *ngFor="let dist of pacienteDistritos" [value]="dist.id">{{ dist.nombre }}</option>
+                    <option *ngFor="let dist of pacienteDistritos" [value]="dist.id">{{ dist.name }}</option>
                   </select>
                 </div>
 
@@ -259,6 +259,8 @@
                   <input type="text" id="pacienteDireccion" formControlName="direccion">
                 </div>
               </div>
+
+
             </div>
           }
         </div>
@@ -321,7 +323,7 @@
 
         <div class="form-buttons">
           <button type="submit" class="btn-primary">
-            {{ editMode ? 'Actualizar' : 'Guardar' }}
+            {{ editMode ? 'Actualizar Cliente y Paciente' : 'Guardar Cliente y Paciente' }}
           </button>
           <button type="button" class="btn-secondary" (click)="onCancel()">Cancelar</button>
         </div>

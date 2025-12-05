@@ -5,7 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { LocationService } from '@src/app/core/services/location.service';
-import { ProspectoApiService} from '../../../../core/services/prospecto-api.service';
+import { ProspectoApiService, ClienteData, PacienteData } from '../../../../core/services/prospecto-api.service';
+import { PacientesService } from '../../../../core/services/pacientes.service';
 
 
 @Component({
@@ -16,52 +17,21 @@ import { ProspectoApiService} from '../../../../core/services/prospecto-api.serv
   styleUrls: ['./datos-cliente.component.scss']
 })
 export class DatosClienteComponent implements OnInit {
-    guardarPaciente(): void {
-      if (!this.prospectoId) return;
-
-      const pacienteForm = this.clientForm.get('paciente')?.value;
-      // PacienteData debe tener los siguientes campos:
-      // tipoDocumento, numeroDocumento, nombres, apellidos, sexo, telefono, correo, departamento, provincia, distrito, direccion
-      const pacienteData = {
-        tipoDocumento: pacienteForm.tipoDocumento,
-        numeroDocumento: pacienteForm.numeroDocumento,
-        nombres: pacienteForm.nombres,
-        apellidos: pacienteForm.apellidos,
-        sexo: pacienteForm.sexo,
-        telefono: pacienteForm.telefono,
-        correo: pacienteForm.correo,
-        departamento: pacienteForm.departamento,
-        provincia: pacienteForm.provincia,
-        distrito: pacienteForm.distrito,
-        direccion: pacienteForm.direccion
-      };
-
-      // Si hay un id de paciente, es edición; si no, es creación
-      if (pacienteForm.id) {
-        this.prospectoApiService.updatePatient(Number(this.prospectoId), Number(pacienteForm.id), pacienteData).subscribe({
-          next: () => alert('Paciente actualizado exitosamente'),
-          error: (err: any) => {
-            alert('Error al actualizar paciente');
-            console.error(err);
-          }
-        });
-      } else {
-        this.prospectoApiService.createPatient(Number(this.prospectoId), pacienteData).subscribe({
-          next: (res) => {
-            alert('Paciente creado exitosamente');
-            this.clientForm.get('paciente')?.patchValue({ id: res.id });
-          },
-          error: (err: any) => {
-            alert('Error al crear paciente');
-            console.error(err);
-          }
-        });
-      }
-    }
+  /**
+   * Método depreciado - ahora se usa el botón Guardar principal
+   */
+  guardarPaciente(): void {
+    console.log('Método guardarPaciente() depreciado - use el botón Guardar principal');
+    alert('Use el botón "Guardar" principal para guardar tanto cliente como paciente');
+  }
   clientForm!: FormGroup;
   submitted = false;
   editMode = false;
   prospectoId: string | null = null;
+  clientId: number | null = null;
+  pacienteId: number | null = null;
+  pacienteEditMode = false;
+  existingPacientes: PacienteData[] = [];
 
   // Control de secciones expandibles
   isPacienteExpanded = false;
@@ -82,8 +52,8 @@ export class DatosClienteComponent implements OnInit {
     private prospectoApiService: ProspectoApiService,
     private prospectosService: ProspectosService,
     private navigationService: NavigationService,
-    private locationService: LocationService
-
+    private locationService: LocationService,
+    private pacientesService: PacientesService
   ) {
     this.initForm();
   }
@@ -107,10 +77,18 @@ export class DatosClienteComponent implements OnInit {
       (prospectos: Prospecto[]) => {
         const prospecto = prospectos.find(p => p.id === id);
         if (prospecto) {
+          this.editMode = true;
+          this.clientId = Number(prospecto.id) || null; // Extraer clientId
+          
           if (prospecto.paciente) this.isPacienteExpanded = true;
           if (prospecto.conyugue) this.isConyugueExpanded = true;
 
           this.clientForm.patchValue(prospecto);
+          
+          // Cargar pacientes existentes del backend
+          if (this.clientId) {
+            this.loadExistingPacientes();
+          }
 
           // Patch paciente si existe
           if (prospecto.paciente) {
@@ -280,15 +258,7 @@ export class DatosClienteComponent implements OnInit {
 
     const formData = this.clientForm.value;
 
-    // Limpiamos secciones opcionales vacías
-    if (!this.isPacienteExpanded || this.isEmpty(formData.paciente)) {
-      delete formData.paciente;
-    }
-
-    if (!this.isConyugueExpanded || this.isEmpty(formData.conyugue)) {
-      delete formData.conyugue;
-    }
-
+    // Preparar datos del cliente
     const clienteData = {
       documentType: formData.tipoDocumento,
       documentNumber: formData.numeroDocumento,
@@ -307,32 +277,141 @@ export class DatosClienteComponent implements OnInit {
       }
     };
 
+    // Verificar si hay datos de paciente para guardar
+    const pacienteData = formData.paciente;
+    const tieneDatosPaciente = this.isPacienteExpanded && 
+      pacienteData && 
+      !this.isEmpty(pacienteData) && 
+      pacienteData.tipoDocumento && 
+      pacienteData.numeroDocumento && 
+      pacienteData.nombres && 
+      pacienteData.apellidos;
+
     if (this.editMode && this.prospectoId) {
-      // EDITAR
-      this.prospectoApiService.updateClient(Number(this.prospectoId), clienteData).subscribe({
-        next: () => alert('Prospecto actualizado exitosamente'),
-        error: (err: any) => {
-          alert('Error al actualizar prospecto');
-          console.error(err);
+      // Modo edición - actualizar cliente y paciente
+      this.actualizarClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null);
+    } else {
+      // Modo creación - crear cliente y luego paciente si aplica
+      this.crearClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null);
+    }
+  }
+
+  private actualizarClienteYPaciente(clienteData: any, pacienteData: any): void {
+    console.log('Actualizando cliente y paciente...');
+    
+    // Actualizar cliente primero
+    this.prospectoApiService.updateClient(Number(this.prospectoId), clienteData).subscribe({
+      next: () => {
+        console.log('Cliente actualizado exitosamente');
+        
+        // Si hay datos de paciente, actualizar o crear paciente
+        if (pacienteData) {
+          this.guardarPacienteInterno(pacienteData, () => {
+            alert('Cliente y paciente actualizados exitosamente');
+          });
+        } else {
+          alert('Cliente actualizado exitosamente');
+        }
+      },
+      error: (err) => {
+        console.error('Error actualizando cliente:', err);
+        alert('Error al actualizar cliente: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
+  private crearClienteYPaciente(clienteData: any, pacienteData: any): void {
+    console.log('Creando cliente y paciente...');
+    
+    // Crear cliente primero
+    this.prospectoApiService.createClient(clienteData).subscribe({
+      next: (response) => {
+        console.log('Cliente creado:', response);
+        
+        // Actualizar el estado local
+        this.editMode = true;
+        this.prospectoId = response.id?.toString();
+        this.clientId = response.id || null;
+        
+        // Crear prospecto en el servicio local
+        const formData = this.clientForm.value;
+        const newProspecto = {
+          ...formData,
+          id: response.id?.toString() || '',
+          contrato: '',
+          estado: 'Pendiente',
+          documento: `${formData.tipoDocumento}-${formData.numeroDocumento}`,
+          asociado: `${formData.nombres} ${formData.apellidos}`,
+          programa: '',
+          grupo: '',
+          ciudad: ''
+        };
+        this.prospectosService.createProspecto(newProspecto);
+        
+        // Si hay datos de paciente, crear paciente
+        if (pacienteData && this.clientId) {
+          this.guardarPacienteInterno(pacienteData, () => {
+            alert('Cliente y paciente creados exitosamente');
+          });
+        } else {
+          alert('Cliente creado exitosamente');
+        }
+      },
+      error: (err) => {
+        console.error('Error creando cliente:', err);
+        alert('Error al crear cliente: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
+  private guardarPacienteInterno(pacienteData: any, callback: () => void): void {
+    if (!this.clientId) {
+      console.error('No hay clientId para guardar paciente');
+      return;
+    }
+
+    const pacienteToSave: PacienteData = {
+      tipoDocumento: pacienteData.tipoDocumento,
+      numeroDocumento: pacienteData.numeroDocumento,
+      nombres: pacienteData.nombres,
+      apellidos: pacienteData.apellidos,
+      sexo: pacienteData.sexo,
+      telefono: pacienteData.telefono,
+      correo: pacienteData.correo,
+      departamento: pacienteData.departamento,
+      provincia: pacienteData.provincia,
+      distrito: pacienteData.distrito,
+      direccion: pacienteData.direccion
+    };
+
+    if (this.pacienteEditMode && this.pacienteId) {
+      // Actualizar paciente existente
+      this.pacientesService.actualizarPaciente(this.clientId, this.pacienteId, pacienteToSave).subscribe({
+        next: (response) => {
+          console.log('Paciente actualizado:', response);
+          this.loadPacienteData(response);
+          callback();
+        },
+        error: (error) => {
+          console.error('Error actualizando paciente:', error);
+          alert('Error al actualizar paciente: ' + (error.error?.message || error.message));
         }
       });
     } else {
-      // CREAR
-      this.prospectoApiService.createClient(clienteData).subscribe({
-        next: () => alert('Prospecto creado exitosamente'),
-        error: (err: any) => {
-          alert('Error al crear prospecto');
-          console.error(err);
+      // Crear nuevo paciente
+      this.pacientesService.crearPaciente(this.clientId, pacienteToSave).subscribe({
+        next: (response) => {
+          console.log('Paciente creado:', response);
+          this.pacienteId = response.id || null;
+          this.pacienteEditMode = true;
+          this.loadPacienteData(response);
+          callback();
+        },
+        error: (error) => {
+          console.error('Error creando paciente:', error);
+          alert('Error al crear paciente: ' + (error.error?.message || error.message));
         }
       });
-      if (confirm('Prospecto creado exitosamente. ¿Desea volver a la bandeja?')) {
-        this.router.navigate(['/dashboard/bandeja']);
-      } else {
-        this.clientForm.reset();
-        this.submitted = false;
-        this.isPacienteExpanded = false;
-        this.isConyugueExpanded = false;
-      }
     }
   }
 
@@ -360,6 +439,66 @@ export class DatosClienteComponent implements OnInit {
     const newroute = this.navigationService.navigateToTab('datos-clinica');
     console.log(this.router.url);
     console.log(newroute);
+  }
+
+  /**
+   * Carga los datos de un paciente en el formulario
+   */
+  private loadPacienteData(paciente: PacienteData): void {
+    const normalizedPaciente = this.pacientesService.normalizarPacienteData(paciente);
+    
+    // Cargar ubicación del paciente
+    if (normalizedPaciente.departamento) {
+      this.locationService.getProvinces(normalizedPaciente.departamento).subscribe(provincias => {
+        this.pacienteProvincias = provincias;
+        
+        if (normalizedPaciente.provincia) {
+          this.locationService.getDistricts(normalizedPaciente.provincia).subscribe(distritos => {
+            this.pacienteDistritos = distritos;
+          });
+        }
+      });
+    }
+
+    // Llenar el formulario
+    this.clientForm.get('paciente')?.patchValue({
+      tipoDocumento: normalizedPaciente.tipoDocumento,
+      numeroDocumento: normalizedPaciente.numeroDocumento,
+      nombres: normalizedPaciente.nombres,
+      apellidos: normalizedPaciente.apellidos,
+      sexo: normalizedPaciente.sexo,
+      telefono: normalizedPaciente.telefono,
+      correo: normalizedPaciente.correo,
+      departamento: normalizedPaciente.departamento,
+      provincia: normalizedPaciente.provincia,
+      distrito: normalizedPaciente.distrito,
+      direccion: normalizedPaciente.direccion
+    });
+  }
+
+  /**
+   * Carga la lista de pacientes existentes para un cliente
+   */
+  private loadExistingPacientes(): void {
+    if (!this.clientId) return;
+
+    this.pacientesService.getPacientesByClientId(this.clientId).subscribe({
+      next: (pacientes) => {
+        this.existingPacientes = pacientes;
+        
+        // Si hay pacientes existentes, cargar el primero por defecto
+        if (pacientes.length > 0) {
+          const primerPaciente = pacientes[0];
+          this.pacienteId = primerPaciente.id || null;
+          this.pacienteEditMode = true;
+          this.loadPacienteData(primerPaciente);
+          this.isPacienteExpanded = true;
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando pacientes existentes:', error);
+      }
+    });
   }
 
 }
