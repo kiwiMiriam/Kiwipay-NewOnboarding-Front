@@ -79,6 +79,25 @@ export interface PacienteData {
   direccion?: string;
 }
 
+export interface ConyugeData {
+  id?: number;
+  clientId?: number;
+  documentType?: string;
+  documentNumber?: string;
+  firstNames?: string;
+  lastNames?: string;
+  email?: string;
+  phone?: string;
+  createdAt?: string;
+  // Campos adicionales para compatibilidad con el frontend
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  nombres?: string;
+  apellidos?: string;
+  correo?: string;
+  telefono?: string;
+}
+
 export interface AvalistaData {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -326,6 +345,88 @@ export class ProspectoApiService {
   // Eliminar paciente
   deletePatient(clientId: number, patientId: number): Observable<any> {
     return this.http.delete(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`);
+  }
+
+  // ========== SPOUSE (CÓNYUGE) OPERATIONS ==========
+  
+  // Obtener cónyuge de un cliente
+  getSpouse(clientId: number): Observable<ConyugeData | null> {
+    return this.http.get<ConyugeData>(`http://localhost:8080/api/v1/clients/${clientId}/spouse`).pipe(
+      map(response => ({
+        ...response,
+        tipoDocumento: response.documentType,
+        numeroDocumento: response.documentNumber,
+        nombres: response.firstNames,
+        apellidos: response.lastNames,
+        correo: response.email,
+        telefono: response.phone
+      })),
+      catchError(error => {
+        // Si no existe cónyuge (404), retornar null
+        if (error.status === 404) {
+          return of(null);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Crear cónyuge
+  createSpouse(clientId: number, data: ConyugeData): Observable<ConyugeData> {
+    const requestData = {
+      documentType: data.tipoDocumento || data.documentType,
+      documentNumber: data.numeroDocumento || data.documentNumber,
+      firstNames: data.nombres || data.firstNames,
+      lastNames: data.apellidos || data.lastNames,
+      email: data.correo || data.email,
+      phone: data.telefono || data.phone
+    };
+    
+    console.log('[CREATE SPOUSE] ClientId:', clientId, 'Request:', requestData);
+    
+    return this.http.post<ConyugeData>(`http://localhost:8080/api/v1/clients/${clientId}/spouse`, requestData).pipe(
+      map(response => {
+        console.log('[CREATE SPOUSE] Response:', response);
+        return {
+          ...response,
+          tipoDocumento: response.documentType,
+          numeroDocumento: response.documentNumber,
+          nombres: response.firstNames,
+          apellidos: response.lastNames,
+          correo: response.email,
+          telefono: response.phone
+        };
+      })
+    );
+  }
+
+  // Actualizar cónyuge
+  updateSpouse(clientId: number, data: ConyugeData): Observable<ConyugeData> {
+    const requestData = {
+      documentType: data.tipoDocumento || data.documentType,
+      documentNumber: data.numeroDocumento || data.documentNumber,
+      firstNames: data.nombres || data.firstNames,
+      lastNames: data.apellidos || data.lastNames,
+      email: data.correo || data.email,
+      phone: data.telefono || data.phone
+    };
+
+    console.log('[UPDATE SPOUSE] ClientId:', clientId, 'Request:', requestData);
+    
+    return this.http.put<ConyugeData>(`http://localhost:8080/api/v1/clients/${clientId}/spouse`, requestData).pipe(
+      map(response => {
+        console.log('[UPDATE SPOUSE] Response:', response);
+        return {
+          ...response,
+          tipoDocumento: response.documentType,
+          numeroDocumento: response.documentNumber,
+          nombres: response.firstNames,
+          apellidos: response.lastNames,
+          correo: response.email,
+          telefono: response.phone
+        };
+      })
+    );
   }
 
   // Create/Update Avalista

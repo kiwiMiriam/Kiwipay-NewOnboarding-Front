@@ -5,8 +5,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { LocationService } from '@src/app/core/services/location.service';
-import { ProspectoApiService, ClienteData, PacienteData } from '../../../../core/services/prospecto-api.service';
+import { ProspectoApiService, ClienteData, PacienteData, ConyugeData } from '../../../../core/services/prospecto-api.service';
 import { PacientesService } from '../../../../core/services/pacientes.service';
+import { ConyugeService } from '../../../../core/services/conyuge.service';
 
 
 @Component({
@@ -25,6 +26,9 @@ export class DatosClienteComponent implements OnInit {
   pacienteId: number | null = null;
   pacienteEditMode = false;
   existingPacientes: PacienteData[] = [];
+  
+  // Control para cónyuge
+  conyugeEditMode = false;
 
   // Control de secciones expandibles
   isPacienteExpanded = false;
@@ -46,7 +50,8 @@ export class DatosClienteComponent implements OnInit {
     private prospectosService: ProspectosService,
     private navigationService: NavigationService,
     private locationService: LocationService,
-    private pacientesService: PacientesService
+    private pacientesService: PacientesService,
+    private conyugeService: ConyugeService
   ) {
     this.initForm();
   }
@@ -81,6 +86,7 @@ export class DatosClienteComponent implements OnInit {
           // Cargar pacientes existentes del backend
           if (this.clientId) {
             this.loadExistingPacientes();
+            this.loadExistingConyuge();
           }
 
           // Patch paciente si existe
@@ -280,26 +286,56 @@ export class DatosClienteComponent implements OnInit {
       pacienteData.nombres && 
       pacienteData.apellidos;
 
+    // Verificar si hay datos de cónyuge para guardar
+    const conyugeData = formData.conyugue;
+    const tieneDatosConyuge = this.isConyugueExpanded && 
+      conyugeData && 
+      !this.isEmpty(conyugeData) && 
+      conyugeData.tipoDocumento && 
+      conyugeData.numeroDocumento && 
+      conyugeData.nombres && 
+      conyugeData.apellidos;
+
     if (this.editMode && this.prospectoId) {
-      // Modo edición - actualizar cliente y paciente
-      this.actualizarClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null);
+      // Modo edición - actualizar cliente, paciente y cónyuge
+      this.actualizarClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null, tieneDatosConyuge ? conyugeData : null);
     } else {
-      // Modo creación - crear cliente y luego paciente si aplica
-      this.crearClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null);
+      // Modo creación - crear cliente y luego paciente/cónyuge si aplica
+      this.crearClienteYPaciente(clienteData, tieneDatosPaciente ? pacienteData : null, tieneDatosConyuge ? conyugeData : null);
     }
   }
 
-  private actualizarClienteYPaciente(clienteData: any, pacienteData: any): void {
+  private actualizarClienteYPaciente(clienteData: any, pacienteData: any, conyugeData: any): void {
     // Actualizar cliente primero
     this.prospectoApiService.updateClient(Number(this.prospectoId), clienteData).subscribe({
       next: () => {
-        // Si hay datos de paciente, actualizar o crear paciente
-        if (pacienteData) {
-          this.guardarPacienteInterno(pacienteData, () => {
-            alert('Cliente y paciente actualizados exitosamente');
+        let pendingOperations = 0;
+        let completedOperations = 0;
+        
+        // Contar operaciones pendientes
+        if (pacienteData) pendingOperations++;
+        if (conyugeData) pendingOperations++;
+        
+        const checkCompletion = () => {
+          completedOperations++;
+          if (completedOperations === pendingOperations) {
+            alert('Datos actualizados exitosamente');
             this.volverABandeja();
-          });
-        } else {
+          }
+        };
+        
+        // Si hay datos de paciente, guardar/actualizar
+        if (pacienteData) {
+          this.guardarPacienteInterno(pacienteData, checkCompletion);
+        }
+        
+        // Si hay datos de cónyuge, guardar/actualizar
+        if (conyugeData) {
+          this.guardarConyugeInterno(conyugeData, checkCompletion);
+        }
+        
+        // Si no hay operaciones adicionales
+        if (pendingOperations === 0) {
           alert('Cliente actualizado exitosamente');
           this.volverABandeja();
         }
@@ -311,7 +347,7 @@ export class DatosClienteComponent implements OnInit {
     });
   }
 
-  private crearClienteYPaciente(clienteData: any, pacienteData: any): void {
+  private crearClienteYPaciente(clienteData: any, pacienteData: any, conyugeData: any): void {
     // Crear cliente primero
     this.prospectoApiService.createClient(clienteData).subscribe({
       next: (response) => {
@@ -335,12 +371,32 @@ export class DatosClienteComponent implements OnInit {
         };
         this.prospectosService.createProspecto(newProspecto);
         
-        // Si hay datos de paciente, crear paciente
+        // Contar operaciones pendientes
+        let pendingOperations = 0;
+        let completedOperations = 0;
+        
+        if (pacienteData && this.clientId) pendingOperations++;
+        if (conyugeData && this.clientId) pendingOperations++;
+        
+        const checkCompletion = () => {
+          completedOperations++;
+          if (completedOperations === pendingOperations) {
+            alert('Todos los datos creados exitosamente');
+          }
+        };
+        
+        // Si hay datos de paciente, crear
         if (pacienteData && this.clientId) {
-          this.guardarPacienteInterno(pacienteData, () => {
-            alert('Cliente y paciente creados exitosamente');
-          });
-        } else {
+          this.guardarPacienteInterno(pacienteData, checkCompletion);
+        }
+        
+        // Si hay datos de cónyuge, crear
+        if (conyugeData && this.clientId) {
+          this.guardarConyugeInterno(conyugeData, checkCompletion);
+        }
+        
+        // Si no hay operaciones adicionales
+        if (pendingOperations === 0) {
           alert('Cliente creado exitosamente');
         }
       },
@@ -534,6 +590,118 @@ export class DatosClienteComponent implements OnInit {
         console.error('Error cargando pacientes existentes:', error);
       }
     });
+  }
+
+  /**
+   * Carga el cónyuge existente para un cliente
+   */
+  private loadExistingConyuge(): void {
+    if (!this.clientId) return;
+
+    this.conyugeService.getConyugeByClientId(this.clientId).subscribe({
+      next: (conyuge) => {
+        if (conyuge) {
+          this.conyugeEditMode = true;
+          this.loadConyugeData(conyuge);
+          this.isConyugueExpanded = true;
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando cónyuge existente:', error);
+      }
+    });
+  }
+
+  /**
+   * Carga los datos de un cónyuge en el formulario
+   */
+  private loadConyugeData(conyuge: ConyugeData): void {
+    this.clientForm.get('conyugue')?.patchValue({
+      tipoDocumento: conyuge.tipoDocumento,
+      numeroDocumento: conyuge.numeroDocumento,
+      nombres: conyuge.nombres,
+      apellidos: conyuge.apellidos,
+      correo: conyuge.correo,
+      telefono: conyuge.telefono
+    });
+  }
+
+  /**
+   * Guarda o actualiza un cónyuge
+   */
+  private guardarConyugeInterno(conyugeData: any, callback: () => void): void {
+    if (!this.clientId) {
+      console.error('No hay clientId para guardar cónyuge');
+      return;
+    }
+
+    const conyugeToSave: ConyugeData = {
+      tipoDocumento: conyugeData.tipoDocumento,
+      numeroDocumento: conyugeData.numeroDocumento,
+      nombres: conyugeData.nombres,
+      apellidos: conyugeData.apellidos,
+      correo: conyugeData.correo,
+      telefono: conyugeData.telefono
+    };
+
+    if (this.conyugeEditMode) {
+      // Actualizar cónyuge existente
+      console.log('[COMPONENT] Actualizando cónyuge:', {
+        clientId: this.clientId,
+        data: conyugeToSave
+      });
+      
+      this.conyugeService.actualizarConyuge(this.clientId, conyugeToSave).subscribe({
+        next: (response) => {
+          console.log('[COMPONENT] Cónyuge actualizado:', response);
+          
+          // Actualizar el formulario con los datos del backend
+          this.clientForm.get('conyugue')?.patchValue({
+            tipoDocumento: response.tipoDocumento,
+            numeroDocumento: response.numeroDocumento,
+            nombres: response.nombres,
+            apellidos: response.apellidos,
+            correo: response.correo,
+            telefono: response.telefono
+          }, { emitEvent: true });
+          
+          callback();
+        },
+        error: (error) => {
+          console.error('Error actualizando cónyuge:', error);
+          alert('Error al actualizar cónyuge: ' + (error.error?.message || error.message));
+        }
+      });
+    } else {
+      // Crear nuevo cónyuge
+      console.log('[COMPONENT] Creando cónyuge:', {
+        clientId: this.clientId,
+        data: conyugeToSave
+      });
+      
+      this.conyugeService.crearConyuge(this.clientId, conyugeToSave).subscribe({
+        next: (response) => {
+          console.log('[COMPONENT] Cónyuge creado:', response);
+          this.conyugeEditMode = true;
+          
+          // Actualizar el formulario con los datos del backend
+          this.clientForm.get('conyugue')?.patchValue({
+            tipoDocumento: response.tipoDocumento,
+            numeroDocumento: response.numeroDocumento,
+            nombres: response.nombres,
+            apellidos: response.apellidos,
+            correo: response.correo,
+            telefono: response.telefono
+          }, { emitEvent: true });
+          
+          callback();
+        },
+        error: (error) => {
+          console.error('Error creando cónyuge:', error);
+          alert('Error al crear cónyuge: ' + (error.error?.message || error.message));
+        }
+      });
+    }
   }
 
 }
