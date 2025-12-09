@@ -15,7 +15,7 @@ import {
 } from '../../../../core/models/document.model';
 import { 
   fileToBase64, 
-  downloadFileFromBase64 
+  downloadFileFromBlob
 } from '../../../../shared/utils/file.utils';
 
 // Interface local para documentos con archivos (antes de subir)
@@ -247,12 +247,8 @@ export default class DocumentosComponent implements OnInit {
    */
   descargarDocumento(documento: Document): void {
     this.documentoService.getDocumentContent(documento.id).subscribe({
-      next: (response) => {
-        downloadFileFromBase64(
-          response.contentBase64,
-          documento.filename,
-          documento.mimeType
-        );
+      next: (blob: Blob) => {
+        downloadFileFromBlob(blob, documento.filename);
       },
       error: (error) => {
         console.error('Error al descargar documento:', error);

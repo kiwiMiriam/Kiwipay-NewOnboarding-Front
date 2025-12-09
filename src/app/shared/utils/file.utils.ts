@@ -63,3 +63,24 @@ export function downloadFileFromBase64(base64: string, filename: string, mimeTyp
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Descarga un archivo desde un Blob
+ * @param blob Blob del archivo
+ * @param filename Nombre del archivo
+ */
+export function downloadFileFromBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  
+  document.body.appendChild(link);
+  link.click();
+  
+  // Cleanup
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

@@ -39,10 +39,12 @@ export class DocumentoService {
   }
 
   /**
-   * Obtener el contenido (Base64) de un documento
+   * Obtener el contenido de un documento como Blob (binario)
    */
-  getDocumentContent(documentId: string): Observable<DocumentContentResponse> {
-    return this.http.get<DocumentContentResponse>(`${this.baseUrl}/documents/${documentId}/content`);
+  getDocumentContent(documentId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/documents/${documentId}/content`, {
+      responseType: 'blob'
+    });
   }
 
   /**
