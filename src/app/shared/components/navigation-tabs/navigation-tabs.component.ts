@@ -14,7 +14,9 @@ import { filter, Subscription } from 'rxjs';
         <ul class="tabs-list">
           @for (tab of tabs; track tab.path) {
             <li [class.active]="tab.active">
-              <a [routerLink]="tab.path" routerLinkActive #rla="routerLinkActive"
+              <a [routerLink]="tab.path" 
+                 [queryParamsHandling]="'preserve'"
+                 routerLinkActive #rla="routerLinkActive"
                  (click)="setActiveTab(tab.id)">
                 {{ tab.label }}
               </a>

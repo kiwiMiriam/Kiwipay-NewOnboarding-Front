@@ -531,7 +531,17 @@ export class DatosClienteComponent implements OnInit {
    * Navega hacia adelante (clinica) y actualiza el estado de la pestaña activa
    */
   navigateNext(): void {
-    this.navigationService.navigateToTab('datos-clinica');
+    console.log('navigateNext llamado. ClientId actual:', this.clientId);
+    if (!this.clientId) {
+      alert('Debe guardar los datos del cliente antes de continuar');
+      return;
+    }
+    
+    // Navegar con el clientId en query params
+    console.log('Navegando a datos-clinica con id:', this.clientId);
+    this.router.navigate(['/dashboard/nuevo-prospecto/datos-clinica'], {
+      queryParams: { id: this.clientId }
+    });
   }
 
   /**

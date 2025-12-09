@@ -34,8 +34,8 @@ export class DatosClinicaComponent implements OnInit {
   ) {
     this.clinicaForm = this.fb.group({
       categoriaMedica: ['', Validators.required],
-      clinica: ['', Validators.required],
-      sede: ['', Validators.required]
+      clinica: [{ value: '', disabled: true }, Validators.required],
+      sede: [{ value: '', disabled: true }, Validators.required]
     });
   }
 
@@ -45,10 +45,15 @@ export class DatosClinicaComponent implements OnInit {
 
     // Obtener clientId de query params
     this.route.queryParams.subscribe(params => {
+      console.log('Query params recibidos en datos-clinica:', params);
       const id = params['id'];
+      console.log('ID extraído:', id);
       if (id) {
         this.clientId = Number(id);
+        console.log('ClientId asignado:', this.clientId);
         this.loadClinicalData();
+      } else {
+        console.warn('No se encontró el parámetro "id" en la URL');
       }
     });
   }
@@ -71,34 +76,60 @@ export class DatosClinicaComponent implements OnInit {
       next: (data) => {
         if (data) {
           this.editMode = true;
+          console.log('Datos clínicos cargados:', data);
           
-          // Cargar clínicas y sedes antes de aplicar valores
-          if (data.categoriaMedica) {
-            this.clinicalDataService.getClinicsByCategory(data.categoriaMedica).subscribe({
+          // El backend devuelve IDs, así que usamos esos directamente
+          const categoryId = data.medicalCategoryId;
+          const clinicId = data.clinicId;
+          const branchId = data.branchId;
+          
+          // Cargar clínicas basadas en la categoría
+          if (categoryId) {
+            this.clinicalDataService.getClinicsByCategory(categoryId).subscribe({
               next: (clinicas) => {
                 this.clinicas = clinicas;
+                this.clinicaForm.get('clinica')?.enable();
                 
-                if (data.clinica) {
-                  this.clinicalDataService.getBranchesByClinic(data.clinica).subscribe({
+                // Cargar sedes basadas en la clínica
+                if (clinicId) {
+                  this.clinicalDataService.getBranchesByClinic(clinicId).subscribe({
                     next: (sedes) => {
                       this.sedes = sedes;
+                      this.clinicaForm.get('sede')?.enable();
                       
-                      // Ahora aplicar valores al formulario
+                      // Aplicar valores al formulario
                       this.clinicaForm.patchValue({
-                        categoriaMedica: data.categoriaMedica,
-                        clinica: data.clinica,
-                        sede: data.sede
+                        categoriaMedica: categoryId,
+                        clinica: clinicId,
+                        sede: branchId
                       });
                     }
                   });
+                } else {
+                  // Solo cargar categoría y clínica
+                  this.clinicaForm.patchValue({
+                    categoriaMedica: categoryId,
+                    clinica: clinicId
+                  });
                 }
               }
+            });
+          } else {
+            // Solo aplicar la categoría
+            this.clinicaForm.patchValue({
+              categoriaMedica: categoryId
             });
           }
         }
       },
       error: (error) => {
-        console.error('Error loading clinical data:', error);
+        // 404 es esperado cuando no existen datos clínicos previos
+        if (error.status === 404) {
+          console.log('No se encontraron datos clínicos previos para este cliente');
+          this.editMode = false;
+        } else {
+          console.error('Error loading clinical data:', error);
+        }
       }
     });
   }
@@ -116,6 +147,10 @@ export class DatosClinicaComponent implements OnInit {
             sede: ''
           });
           this.sedes = [];
+          
+          // Habilitar el control de clínica
+          this.clinicaForm.get('clinica')?.enable();
+          this.clinicaForm.get('sede')?.disable();
         },
         error: (error) => {
           console.error('Error loading clinics:', error);
@@ -128,6 +163,10 @@ export class DatosClinicaComponent implements OnInit {
         clinica: '',
         sede: ''
       });
+      
+      // Deshabilitar controles dependientes
+      this.clinicaForm.get('clinica')?.disable();
+      this.clinicaForm.get('sede')?.disable();
     }
   }
 
@@ -142,6 +181,9 @@ export class DatosClinicaComponent implements OnInit {
           this.clinicaForm.patchValue({
             sede: ''
           });
+          
+          // Habilitar el control de sede
+          this.clinicaForm.get('sede')?.enable();
         },
         error: (error) => {
           console.error('Error loading branches:', error);
@@ -152,6 +194,9 @@ export class DatosClinicaComponent implements OnInit {
       this.clinicaForm.patchValue({
         sede: ''
       });
+      
+      // Deshabilitar sede
+      this.clinicaForm.get('sede')?.disable();
     }
   }
 
@@ -171,11 +216,15 @@ export class DatosClinicaComponent implements OnInit {
     }
 
     const formData = this.clinicaForm.value;
-    const clinicalData: ClinicalData = {
-      categoriaMedica: formData.categoriaMedica,
-      clinica: formData.clinica,
-      sede: formData.sede
+    
+    // Enviar los IDs directamente del formulario (que ya contienen los IDs)
+    const clinicalData = {
+      medicalCategoryId: formData.categoriaMedica,
+      clinicId: formData.clinica,
+      branchId: formData.sede
     };
+
+    console.log('Guardando datos clínicos:', clinicalData);
 
     if (this.editMode) {
       // Actualizar datos clínicos existentes
@@ -185,7 +234,7 @@ export class DatosClinicaComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating clinical data:', error);
-          alert('Error al actualizar datos clínicos');
+          alert('Error al actualizar datos clínicos: ' + (error.error?.message || error.message));
         }
       });
     } else {
@@ -197,7 +246,7 @@ export class DatosClinicaComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating clinical data:', error);
-          alert('Error al guardar datos clínicos');
+          alert('Error al guardar datos clínicos: ' + (error.error?.message || error.message));
         }
       });
     }
@@ -210,19 +259,31 @@ export class DatosClinicaComponent implements OnInit {
   }
 
   /**
-   * Navega hacia atrás (datos-clinicas) y actualiza el estado de la pestaña activa
+   * Navega hacia atrás (datos-cliente) y actualiza el estado de la pestaña activa
    */
   navigateBack(): void {
-    // Usa el servicio de navegación para navegar hacia atrás desde la pestaña actual
-    this.navigationService.navigateToTab('datos-cliente');
+    if (this.clientId) {
+      this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente'], {
+        queryParams: { id: this.clientId }
+      });
+    } else {
+      this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente']);
+    }
   }
 
   /**
-   * Navega hacia adelante (documentos) y actualiza el estado de la pestaña activa
+   * Navega hacia adelante (cotizador) y actualiza el estado de la pestaña activa
    */
   navigateNext(): void {
-    // Usa el servicio de navegación para navegar hacia adelante desde la pestaña actual
-    this.navigationService.navigateToTab('cotizador');
+    if (!this.clientId) {
+      alert('No se encontró el ID del cliente');
+      return;
+    }
+    
+    // Navegar con el clientId en query params
+    this.router.navigate(['/dashboard/nuevo-prospecto/cotizador'], {
+      queryParams: { id: this.clientId }
+    });
   }
 
 

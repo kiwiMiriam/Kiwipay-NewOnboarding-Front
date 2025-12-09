@@ -17,7 +17,7 @@
 
           <div class="form-group">
             <label for="clinica">Clínica *</label>
-            <select id="clinica" formControlName="clinica" (change)="onClinicaChange()" [disabled]="clinicas.length === 0">
+            <select id="clinica" formControlName="clinica" (change)="onClinicaChange()">
               <option value="">Seleccione...</option>
               <option *ngFor="let cli of clinicas" [value]="cli.id">{{ cli.name }}</option>
             </select>
@@ -30,7 +30,7 @@
         <div class="form-row">
           <div class="form-group">
             <label for="sede">Sede *</label>
-            <select id="sede" formControlName="sede" [disabled]="sedes.length === 0">
+            <select id="sede" formControlName="sede">
               <option value="">Seleccione...</option>
               <option *ngFor="let sed of sedes" [value]="sed.id">{{ sed.name }}</option>
             </select>
