@@ -98,6 +98,31 @@ export interface ConyugeData {
   telefono?: string;
 }
 
+export interface MedicalCategory {
+  id: string;
+  name: string;
+}
+
+export interface Clinic {
+  id: string;
+  name: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+}
+
+export interface ClinicalData {
+  medicalCategoryId?: string;
+  clinicId?: string;
+  branchId?: string;
+  // Campos para compatibilidad con el frontend
+  categoriaMedica?: string;
+  clinica?: string;
+  sede?: string;
+}
+
 export interface AvalistaData {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -424,6 +449,90 @@ export class ProspectoApiService {
           apellidos: response.lastNames,
           correo: response.email,
           telefono: response.phone
+        };
+      })
+    );
+  }
+
+  // ========== CLINICAL DATA OPERATIONS ==========
+  
+  // Obtener categorías médicas
+  getMedicalCategories(): Observable<MedicalCategory[]> {
+    return this.http.get<MedicalCategory[]>('http://localhost:8080/api/v1/medical-categories');
+  }
+
+  // Obtener clínicas por categoría médica
+  getClinicsByCategory(categoryId: string): Observable<Clinic[]> {
+    return this.http.get<Clinic[]>('http://localhost:8080/api/v1/clinics', {
+      params: { categoryId }
+    });
+  }
+
+  // Obtener sedes por clínica
+  getBranchesByClinic(clinicId: string): Observable<Branch[]> {
+    return this.http.get<Branch[]>(`http://localhost:8080/api/v1/clinics/${clinicId}/branches`);
+  }
+
+  // Obtener datos clínicos de un cliente
+  getClinicalData(clientId: number): Observable<ClinicalData | null> {
+    return this.http.get<ClinicalData>(`http://localhost:8080/api/v1/clients/${clientId}/clinical-data`).pipe(
+      map(response => ({
+        ...response,
+        categoriaMedica: response.medicalCategoryId,
+        clinica: response.clinicId,
+        sede: response.branchId
+      })),
+      catchError(error => {
+        // Si no existe datos clínicos (404), retornar null
+        if (error.status === 404) {
+          return of(null);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Crear datos clínicos
+  createClinicalData(clientId: number, data: ClinicalData): Observable<ClinicalData> {
+    const requestData = {
+      medicalCategoryId: data.categoriaMedica || data.medicalCategoryId,
+      clinicId: data.clinica || data.clinicId,
+      branchId: data.sede || data.branchId
+    };
+
+    console.log('[CREATE CLINICAL DATA] ClientId:', clientId, 'Request:', requestData);
+
+    return this.http.post<ClinicalData>(`http://localhost:8080/api/v1/clients/${clientId}/clinical-data`, requestData).pipe(
+      map(response => {
+        console.log('[CREATE CLINICAL DATA] Response:', response);
+        return {
+          ...response,
+          categoriaMedica: response.medicalCategoryId,
+          clinica: response.clinicId,
+          sede: response.branchId
+        };
+      })
+    );
+  }
+
+  // Actualizar datos clínicos
+  updateClinicalData(clientId: number, data: ClinicalData): Observable<ClinicalData> {
+    const requestData = {
+      medicalCategoryId: data.categoriaMedica || data.medicalCategoryId,
+      clinicId: data.clinica || data.clinicId,
+      branchId: data.sede || data.branchId
+    };
+
+    console.log('[UPDATE CLINICAL DATA] ClientId:', clientId, 'Request:', requestData);
+
+    return this.http.put<ClinicalData>(`http://localhost:8080/api/v1/clients/${clientId}/clinical-data`, requestData).pipe(
+      map(response => {
+        console.log('[UPDATE CLINICAL DATA] Response:', response);
+        return {
+          ...response,
+          categoriaMedica: response.medicalCategoryId,
+          clinica: response.clinicId,
+          sede: response.branchId
         };
       })
     );

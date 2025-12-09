@@ -64,6 +64,8 @@
         border: 1px solid colors.$border-light;
         border-radius: 4px;
         font-size: 1rem;
+        background-color: white;
+        cursor: pointer;
 
         &:focus {
           outline: none;
@@ -78,7 +80,20 @@
         &.ng-invalid.ng-touched {
           border-color: colors.$error;
         }
+
+        &:disabled {
+          background-color: colors.$neutral-100;
+          color: colors.$text-secondary;
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
       }
+
+    .error-message {
+      color: colors.$error;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
 
     .form-buttons {
       display: flex;
