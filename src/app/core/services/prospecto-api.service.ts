@@ -123,6 +123,15 @@ export interface ClinicalData {
   sede?: string;
 }
 
+export interface QuoteData {
+  id?: number;
+  documentType: string;
+  documentNumber: string;
+  monthlyIncome: number;
+  branchId: string;
+  clientId?: number;
+}
+
 export interface AvalistaData {
   tipoDocumento: string;
   numeroDocumento: string;
@@ -624,6 +633,47 @@ export class ProspectoApiService {
     );
   }
 
+  // ============================================
+  // QUOTES ENDPOINTS
+  // ============================================
+
+  /**
+   * Obtener todas las cotizaciones de un cliente
+   */
+  getQuotesByClientId(clientId: number): Observable<QuoteData[]> {
+    return this.http.get<QuoteData[]>(`${this.API_URL}/clients/${clientId}/quotes`).pipe(
+      catchError(error => {
+        console.error('[GET QUOTES] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Crear una nueva cotización para un cliente
+   */
+  createQuote(clientId: number, quoteData: Omit<QuoteData, 'id' | 'clientId'>): Observable<QuoteData> {
+    return this.http.post<QuoteData>(`${this.API_URL}/clients/${clientId}/quotes`, quoteData).pipe(
+      catchError(error => {
+        console.error('[CREATE QUOTE] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Actualizar una cotización existente
+   */
+  updateQuote(quoteId: number, quoteData: Omit<QuoteData, 'id' | 'clientId'>): Observable<QuoteData> {
+    return this.http.put<QuoteData>(`${this.API_URL}/quotes/${quoteId}`, quoteData).pipe(
+      catchError(error => {
+        console.error('[UPDATE QUOTE] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   
 }
+
 

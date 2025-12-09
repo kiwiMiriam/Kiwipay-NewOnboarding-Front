@@ -45,15 +45,10 @@ export class DatosClinicaComponent implements OnInit {
 
     // Obtener clientId de query params
     this.route.queryParams.subscribe(params => {
-      console.log('Query params recibidos en datos-clinica:', params);
       const id = params['id'];
-      console.log('ID extraído:', id);
       if (id) {
         this.clientId = Number(id);
-        console.log('ClientId asignado:', this.clientId);
         this.loadClinicalData();
-      } else {
-        console.warn('No se encontró el parámetro "id" en la URL');
       }
     });
   }
@@ -76,7 +71,6 @@ export class DatosClinicaComponent implements OnInit {
       next: (data) => {
         if (data) {
           this.editMode = true;
-          console.log('Datos clínicos cargados:', data);
           
           // El backend devuelve IDs, así que usamos esos directamente
           const categoryId = data.medicalCategoryId;
@@ -125,7 +119,6 @@ export class DatosClinicaComponent implements OnInit {
       error: (error) => {
         // 404 es esperado cuando no existen datos clínicos previos
         if (error.status === 404) {
-          console.log('No se encontraron datos clínicos previos para este cliente');
           this.editMode = false;
         } else {
           console.error('Error loading clinical data:', error);
@@ -223,8 +216,6 @@ export class DatosClinicaComponent implements OnInit {
       clinicId: formData.clinica,
       branchId: formData.sede
     };
-
-    console.log('Guardando datos clínicos:', clinicalData);
 
     if (this.editMode) {
       // Actualizar datos clínicos existentes

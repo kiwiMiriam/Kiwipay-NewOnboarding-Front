@@ -66,10 +66,10 @@
         class="btn-primary"
         (click)="agregarDocumento()"
         [disabled]="
-          !archivoSeleccionado || !tipoDocumentoSeleccionado || documentos.length >= MAX_DOCUMENTOS
+          !archivoSeleccionado || !tipoDocumentoSeleccionado || documentos.length >= MAX_DOCUMENTOS || isUploadingDocument
         "
       >
-        Agregar
+        {{ isUploadingDocument ? 'Subiendo...' : 'Agregar' }}
       </button>
     </div>
   </div>
@@ -81,9 +81,14 @@
       <div class="column archivo-column">Archivo</div>
       <div class="column comentario-column">Comentario</div>
       <div class="column estado-column">Estado</div>
-      <div class="column accion-column">Acción</div>
+      <div class="column accion-column">Acciones</div>
     </div>
-    @if (documentos.length === 0) {
+    @if (isLoading) {
+      <div class="empty-state">
+        <p>Cargando documentos...</p>
+      </div>
+    }
+    @if (!isLoading && documentos.length === 0) {
       <div class="empty-state">
         <span class="icon-file empty-icon"></span>
         <p>No hay documentos cargados</p>
@@ -93,27 +98,27 @@
     <div class="table-body">
       @for (documento of documentos; track documento.id) {
         <div class="table-row">
-        <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.tipo) }}</div>
+        <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.documentTypeId) }}</div>
         <div class="column archivo-column">
           <div class="file-info">
-            <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.archivo)"></span>
+            <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.mimeType)"></span>
             <div class="file-details">
-              <span class="file-name">{{ documento.archivo.name }}</span>
-              <span class="file-size">{{ formatearTamanoArchivo(documento.archivo.size) }}</span>
+              <span class="file-name">{{ documento.filename }}</span>
+              <span class="file-size">{{ formatearTamanoArchivo(documento.sizeBytes) }}</span>
             </div>
           </div>
         </div>
-        <div class="column comentario-column">{{ documento.comentario || '-' }}</div>
+        <div class="column comentario-column">{{ documento.comment || '-' }}</div>
         <div class="column estado-column">
-          <span [class]="obtenerClaseIconoEstado(documento.estadoAprobacion)"></span>
+          <span [class]="obtenerClaseIconoEstado(documento.status)" [title]="obtenerTextoEstado(documento.status)"></span>
         </div>
         <div class="column accion-column">
           <button
-            class="btn-icon estado-btn"
-            (click)="abrirModalEstado(documento)"
-            title="Establecer Estado"
+            class="btn-icon download-btn"
+            (click)="descargarDocumento(documento)"
+            title="Descargar"
           >
-            <fa-icon [icon]="faGear"></fa-icon>
+            <fa-icon [icon]="faDownload"></fa-icon>
           </button>
           <button
             class="btn-icon delete-btn"
@@ -132,15 +137,4 @@
   <div class="navigation-buttons">
     <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
   </div>
-
-  <!-- Al final del template -->
-  @if (mostrarModal) {
-    <app-modal-estado
-      [mostrarModal]="mostrarModal"
-      [documento]="documentoSeleccionado"
-      (cerrar)="onCerrarModal()"
-      (guardar)="onGuardarEstado($event)"
-    >
-    </app-modal-estado>
-  }
 </div>

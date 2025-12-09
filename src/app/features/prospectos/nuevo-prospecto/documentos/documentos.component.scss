@@ -266,6 +266,7 @@
     .accion-column {
       flex: 0 0 15%;
       min-width: 100px;
+      display: flex;
       gap: 0.5rem;
     }
 
@@ -345,6 +346,10 @@
 
           &.delete-btn:hover {
             color: colors.$error;
+          }
+
+          &.download-btn:hover {
+            color: colors.$primary-900;
           }
         }
       }

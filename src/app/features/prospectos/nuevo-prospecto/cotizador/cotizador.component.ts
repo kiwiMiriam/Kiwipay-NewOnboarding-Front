@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { NavigationService } from '../../../../core/services/navigation.service';
+import { QuoteService } from '../../../../core/services/quote.service';
 import { Subject, takeUntil } from 'rxjs';
 import { CotizadorService } from './services/cotizador.service';
 import { CuotasCalculatorService } from './services/cuotas-calculator.service';
@@ -18,6 +19,11 @@ import { CotizacionResponse, CuotaOption, FormularioCotizador } from './models/c
 export class CotizadorComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Client tracking
+  clientId: number | null = null;
+  quoteId: number | null = null;
+  editMode = false;
 
   // Formularios
   cotizadorForm!: FormGroup;
@@ -63,9 +69,11 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
+    private route: ActivatedRoute,
     private navigationService: NavigationService,
     private cotizadorService: CotizadorService,
     private cuotasCalculator: CuotasCalculatorService,
+    private quoteService: QuoteService
   ) {}
 
   ngOnInit(): void {
@@ -74,6 +82,15 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     this.montoForm = this.initMontoForm();
     this.setupMontoFormSubscription();
     this.setupCampaniaSubscription();
+
+    // Obtener clientId de query params
+    this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const clientIdParam = params['clientId'];
+      if (clientIdParam) {
+        this.clientId = Number(clientIdParam);
+        this.loadExistingQuote();
+      }
+    });
   }
 
   private initCotizadorForm(): FormGroup {
@@ -100,6 +117,37 @@ export class CotizadorComponent implements OnInit, OnDestroy {
         this.actualizarMaximoYValidadores();
         this.actualizarListaOpciones();
       });
+  }
+
+  private loadExistingQuote(): void {
+    if (!this.clientId) return;
+
+    this.quoteService.getQuotesByClientId(this.clientId).subscribe({
+      next: (quotes) => {
+        if (quotes && quotes.length > 0) {
+          // Cargar la primera cotización (o la más reciente)
+          const quote = quotes[0];
+          this.quoteId = quote.id || null;
+          this.editMode = true;
+
+          // Llenar el formulario con los datos existentes
+          this.cotizadorForm.patchValue({
+            tipoDocumento: quote.documentType,
+            numeroDocumento: quote.documentNumber,
+            ingresos: quote.monthlyIncome,
+            sede: quote.branchId
+          });
+        }
+      },
+      error: (error) => {
+        // 404 es esperado cuando no hay cotizaciones previas
+        if (error.status === 404) {
+          this.editMode = false;
+        } else {
+          console.error('Error loading quotes:', error);
+        }
+      }
+    });
   }
 
   private setupMontoFormSubscription(): void {
@@ -377,6 +425,53 @@ export class CotizadorComponent implements OnInit, OnDestroy {
     opcion.selected = true;
     this.opcionSeleccionada = opcion;
   }
+
+  guardarQuote(): void {
+    if (!this.clientId) {
+      alert('No se encontró el ID del cliente');
+      return;
+    }
+
+    if (!this.cotizadorForm.valid) {
+      alert('Por favor complete todos los campos del formulario');
+      return;
+    }
+
+    const formData = this.cotizadorForm.value;
+    const quoteData = {
+      documentType: formData.tipoDocumento,
+      documentNumber: formData.numeroDocumento,
+      monthlyIncome: formData.ingresos,
+      branchId: formData.sede
+    };
+
+    if (this.editMode && this.quoteId) {
+      // Actualizar quote existente
+      this.quoteService.actualizarQuote(this.quoteId, quoteData).subscribe({
+        next: () => {
+          alert('Cotización actualizada exitosamente');
+        },
+        error: (error) => {
+          console.error('Error updating quote:', error);
+          alert('Error al actualizar cotización: ' + (error.error?.message || error.message));
+        }
+      });
+    } else {
+      // Crear nueva quote
+      this.quoteService.crearQuote(this.clientId, quoteData).subscribe({
+        next: (response) => {
+          this.quoteId = response.id || null;
+          this.editMode = true;
+          alert('Cotización guardada exitosamente');
+        },
+        error: (error) => {
+          console.error('Error creating quote:', error);
+          alert('Error al guardar cotización: ' + (error.error?.message || error.message));
+        }
+      });
+    }
+  }
+
    ngOnDestroy(): void {
     // Limpiar el debounce timer si existe
     if (this.debounceTimer) {
@@ -452,10 +547,23 @@ export class CotizadorComponent implements OnInit, OnDestroy {
   }
 
   navigateBack(): void {
-    this.navigationService.navigateToTab('datos-clinica');
+    if (this.clientId) {
+      this.router.navigate(['/dashboard/nuevo-prospecto/datos-clinica'], {
+        queryParams: { clientId: this.clientId }
+      });
+    } else {
+      this.router.navigate(['/dashboard/nuevo-prospecto/datos-clinica']);
+    }
   }
 
   navigateNext(): void {
-    this.navigationService.navigateToTab('documento');
+    if (!this.clientId) {
+      alert('No se encontró el ID del cliente');
+      return;
+    }
+
+    this.router.navigate(['/dashboard/nuevo-prospecto/documentos'], {
+      queryParams: { clientId: this.clientId }
+    });
   }
 }

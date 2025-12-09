@@ -175,7 +175,9 @@
       </ng-container>
     </div>
     <div class="form-buttons">
-          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn-primary" (click)="guardarQuote()">
+            {{ editMode ? 'Actualizar Cotización' : 'Guardar Cotización' }}
+          </button>
     </div>
   </div>
 

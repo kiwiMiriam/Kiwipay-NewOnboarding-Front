@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DocumentoLocal } from '../documentos.component';
+import { DocumentoLocal } from '../../documentos/documentos.component';
 
 @Component({
   selector: 'app-modal-estado',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  styleUrls: ['./modal-estado.component.scss'],
-  templateUrl: './modal-estado.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './modal-estado.component.html',
+  styleUrls: ['./modal-estado.component.scss']
 })
 export class ModalEstadoComponent implements OnChanges {
   @Input() mostrarModal = false;

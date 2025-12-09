@@ -2,35 +2,54 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@src/environments/environment';
-import { DocumentoData } from './prospecto-api.service';
+import { 
+  DocumentType, 
+  Document, 
+  CreateDocumentRequest, 
+  DocumentContentResponse 
+} from '../models/document.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DocumentoService {
-  private baseUrl = `${environment.kiwiPayApi}/documentos`;
+  private baseUrl = `${environment.kiwiPayApi}/api/v1`;
 
   constructor(private http: HttpClient) {}
 
-  subirDocumento(documentoId: string, archivo: File): Observable<DocumentoData> {
-    const formData = new FormData();
-    formData.append('archivo', archivo);
-
-    return this.http.post<DocumentoData>(`${this.baseUrl}/${documentoId}/upload`, formData);
+  /**
+   * Obtener todos los tipos de documentos disponibles
+   */
+  getDocumentTypes(): Observable<DocumentType[]> {
+    return this.http.get<DocumentType[]>(`${this.baseUrl}/document-types`);
   }
 
-  descargarDocumento(documentoId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/${documentoId}/download`, {
-      responseType: 'blob'
-    });
+  /**
+   * Obtener todos los documentos de un cliente
+   */
+  getClientDocuments(clientId: number): Observable<Document[]> {
+    return this.http.get<Document[]>(`${this.baseUrl}/clients/${clientId}/documents`);
   }
 
-  aprobarDocumento(documentoId: string, comentario: string): Observable<DocumentoData> {
-    return this.http.put<DocumentoData>(`${this.baseUrl}/${documentoId}/aprobar`, { comentario });
+  /**
+   * Crear un nuevo documento para un cliente
+   */
+  createDocument(clientId: number, request: CreateDocumentRequest): Observable<Document> {
+    return this.http.post<Document>(`${this.baseUrl}/clients/${clientId}/documents`, request);
   }
 
-  rechazarDocumento(documentoId: string, comentario: string): Observable<DocumentoData> {
-    return this.http.put<DocumentoData>(`${this.baseUrl}/${documentoId}/rechazar`, { comentario });
+  /**
+   * Obtener el contenido (Base64) de un documento
+   */
+  getDocumentContent(documentId: string): Observable<DocumentContentResponse> {
+    return this.http.get<DocumentContentResponse>(`${this.baseUrl}/documents/${documentId}/content`);
+  }
+
+  /**
+   * Eliminar un documento
+   */
+  deleteDocument(documentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/documents/${documentId}`);
   }
 }
 
