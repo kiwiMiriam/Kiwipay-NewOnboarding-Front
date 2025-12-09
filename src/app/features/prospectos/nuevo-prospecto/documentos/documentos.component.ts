@@ -259,7 +259,7 @@ export default class DocumentosComponent implements OnInit {
 
   obtenerNombreTipoDocumento(tipoId: string): string {
     const tipo = this.TIPOS_PERMITIDOS.find(t => t.id === tipoId);
-    return tipo ? tipo.nombre : tipoId;
+    return tipo ? tipo.name : tipoId;
   }
 
   obtenerClaseIconoArchivo(mimeType: string): string {

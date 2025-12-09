@@ -17,7 +17,7 @@
         >
           <option value="">Seleccionar...</option>
           @for (tipo of TIPOS_PERMITIDOS; track tipo.id) {
-            <option [value]="tipo.id">{{ tipo.nombre }}</option>
+            <option [value]="tipo.id">{{ tipo.name }}</option>
           }
         </select>
       </div>

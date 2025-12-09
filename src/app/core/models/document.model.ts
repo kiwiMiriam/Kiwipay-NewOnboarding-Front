@@ -3,7 +3,7 @@
  */
 export interface DocumentType {
   id: string;
-  nombre: string;
+  name: string;
   descripcion?: string;
 }
 
