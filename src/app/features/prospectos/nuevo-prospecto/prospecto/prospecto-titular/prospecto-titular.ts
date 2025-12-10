@@ -137,26 +137,33 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
     }
 
     // Patch form values - mapear desde la estructura del backend
+    console.log('Mapping maritalStatus:', data.maritalStatus);
+    console.log('Mapping estadoCivil:', data.estadoCivil);
+    
     this.clientForm.patchValue({
-      tipoDocumento: data.documentType || data.tipoDocumento,
-      numeroDocumento: data.documentNumber || data.numeroDocumento,
-      nombres: data.firstNames || data.nombres,
-      apellidos: data.lastNames || data.apellidos,
-      estadoCivil: data.maritalStatus || data.estadoCivil,
-      fechaNacimiento: data.birthDate || data.fechaNacimiento,
-      sexo: data.gender || data.sexo,
-      correo: data.email || data.correo,
-      telefono: data.phone || data.telefono,
+      tipoDocumento: data.documentType || data.tipoDocumento || '',
+      numeroDocumento: data.documentNumber || data.numeroDocumento || '',
+      nombres: data.firstNames || data.nombres || '',
+      apellidos: data.lastNames || data.apellidos || '',
+      estadoCivil: data.maritalStatus || data.estadoCivil || '',
+      fechaNacimiento: data.birthDate || data.fechaNacimiento || '',
+      sexo: data.gender || data.sexo || '',
+      correo: data.email || data.correo || '',
+      telefono: data.phone || data.telefono || '',
       telefono2: (data as any).telefono2 || '',
-      departamento: data.address?.departmentId || data.departamento,
-      provincia: data.address?.provinceId || data.provincia,
-      distrito: data.address?.districtId || data.distrito,
-      direccion: data.address?.line1 || data.direccion,
+      departamento: data.address?.departmentId || data.departamento || '',
+      provincia: data.address?.provinceId || data.provincia || '',
+      distrito: data.address?.districtId || data.distrito || '',
+      direccion: data.address?.line1 || data.direccion || '',
       tasaExperian: (data as any).tasaExperian || '',
       nuevaTasa: (data as any).nuevaTasa || '',
       tasaAdicional: (data as any).tasaAdicional || '',
-      tasaFinal: (data as any).tasaFinal || ''
+      tasaFinal: (data as any).tasaFinal || '',
+      resultadoModelo: (data as any).resultadoModelo || '',
+      puntajeModelo: (data as any).puntajeModelo || ''
     });
+    
+    console.log('Form value after patch:', this.clientForm.value);
   }
 
   private loadLocationData(data: ClienteData) {
@@ -186,8 +193,8 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
       fechaNacimiento: ['', Validators.required],
       sexo: ['', Validators.required],
       correo: ['', [Validators.required, Validators.email]],
-      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9,12}$')]],
-      telefono2: ['', Validators.pattern('^[0-9]{9,12}$')],
+      telefono: ['', Validators.required],
+      telefono2: [''],
       departamento: ['', Validators.required],
       provincia: ['', Validators.required],
       distrito: ['', Validators.required],
@@ -195,9 +202,9 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
       tasaExperian: ['', Validators.min(0)],
       nuevaTasa: ['', Validators.min(0)],
       tasaAdicional: ['', Validators.min(0)],
-      tasaFinal: ['', [Validators.required, Validators.min(0)]],
-      resultadoModelo: ['', Validators.required],
-      puntajeModelo: ['', [Validators.required, Validators.min(0), Validators.max(100)]]
+      tasaFinal: ['', Validators.min(0)],
+      resultadoModelo: [''],
+      puntajeModelo: ['', [Validators.min(0), Validators.max(100)]]
     });
   }
 

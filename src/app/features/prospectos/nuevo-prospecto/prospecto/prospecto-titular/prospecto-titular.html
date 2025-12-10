@@ -111,11 +111,11 @@
             <label for="estadoCivil">Estado Civil *</label>
             <select id="estadoCivil" formControlName="estadoCivil">
               <option value="">Seleccione...</option>
-              <option value="SOLTERO">Soltero(a)</option>
-              <option value="CASADO">Casado(a)</option>
-              <option value="DIVORCIADO">Divorciado(a)</option>
-              <option value="VIUDO">Viudo(a)</option>
-              <option value="CONVIVIENTE">Conviviente</option>
+              <option value="SINGLE">Soltero(a)</option>
+              <option value="MARRIED">Casado(a)</option>
+              <option value="DIVORCED">Divorciado(a)</option>
+              <option value="WIDOWED">Viudo(a)</option>
+              <option value="COHABITANT">Conviviente</option>
             </select>
             @if (submitted && f['estadoCivil'].errors) {
             <div class="error-message">Este campo es requerido</div>
