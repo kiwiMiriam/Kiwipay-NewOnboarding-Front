@@ -43,13 +43,10 @@
                   }
                 </div>
                 <div class="form-group">
-                  <label for="tasaFinal">Tasa Final *</label>
-                  <input type="number" id="tasaFinal" formControlName="tasaFinal" step="0.01" required (click)="$event.stopPropagation()" />
-                  @if (submitted && f['tasaFinal'].errors) {
-                  <div class="error-message">
-                    @if (f['tasaFinal'].errors['required']) { La tasa final es requerida }
-                    @else if (f['tasaFinal'].errors['min']) { La tasa debe ser mayor o igual a 0 }
-                  </div>
+                  <label for="tasaFinal">Tasa Final</label>
+                  <input type="number" id="tasaFinal" formControlName="tasaFinal" step="0.01" (click)="$event.stopPropagation()" />
+                  @if (submitted && f['tasaFinal'].errors?.['min']) {
+                  <div class="error-message">La tasa debe ser mayor o igual a 0</div>
                   }
                 </div>
               </div>
