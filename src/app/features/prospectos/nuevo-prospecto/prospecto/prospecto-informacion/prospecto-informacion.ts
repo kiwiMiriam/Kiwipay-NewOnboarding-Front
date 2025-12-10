@@ -145,11 +145,33 @@ export class ProspectoInformacion implements OnInit, OnDestroy {
       .subscribe({
         next: (clinicalData: ClinicalData | null) => {
           if (clinicalData) {
+            // Inicializar con los IDs mientras se cargan los nombres
             this.informacionMedica = {
               'Categoría médica': clinicalData.medicalCategoryId || clinicalData.categoriaMedica || '-',
               'Clínica': clinicalData.clinicId || clinicalData.clinica || '-',
               'Sede': clinicalData.branchId || clinicalData.sede || '-',
             };
+
+            // Cargar el nombre de la categoría médica
+            if (clinicalData.medicalCategoryId || clinicalData.categoriaMedica) {
+              this.loadMedicalCategoryName(clinicalData.medicalCategoryId || clinicalData.categoriaMedica || '');
+            }
+
+            // Cargar el nombre de la clínica
+            if (clinicalData.clinicId || clinicalData.clinica) {
+              this.loadClinicName(
+                clinicalData.medicalCategoryId || clinicalData.categoriaMedica || '',
+                clinicalData.clinicId || clinicalData.clinica || ''
+              );
+            }
+
+            // Cargar el nombre de la sede
+            if (clinicalData.branchId || clinicalData.sede) {
+              this.loadBranchName(
+                clinicalData.clinicId || clinicalData.clinica || '',
+                clinicalData.branchId || clinicalData.sede || ''
+              );
+            }
           } else {
             // Si no hay datos clínicos, mostrar valores vacíos
             this.informacionMedica = {
@@ -167,6 +189,63 @@ export class ProspectoInformacion implements OnInit, OnDestroy {
             'Clínica': '-',
             'Sede': '-',
           };
+        }
+      });
+  }
+
+  /**
+   * Cargar el nombre de la categoría médica por su ID
+   */
+  private loadMedicalCategoryName(categoryId: string): void {
+    this.prospectoApiService.getMedicalCategories()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categories) => {
+          const category = categories.find(c => c.id === categoryId);
+          if (category) {
+            this.informacionMedica['Categoría médica'] = category.name;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading medical category name:', error);
+        }
+      });
+  }
+
+  /**
+   * Cargar el nombre de la clínica por su ID
+   */
+  private loadClinicName(categoryId: string, clinicId: string): void {
+    this.prospectoApiService.getClinicsByCategory(categoryId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (clinics) => {
+          const clinic = clinics.find(c => c.id === clinicId);
+          if (clinic) {
+            this.informacionMedica['Clínica'] = clinic.name;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading clinic name:', error);
+        }
+      });
+  }
+
+  /**
+   * Cargar el nombre de la sede por su ID
+   */
+  private loadBranchName(clinicId: string, branchId: string): void {
+    this.prospectoApiService.getBranchesByClinic(clinicId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (branches) => {
+          const branch = branches.find(b => b.id === branchId);
+          if (branch) {
+            this.informacionMedica['Sede'] = branch.name;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading branch name:', error);
         }
       });
   }
