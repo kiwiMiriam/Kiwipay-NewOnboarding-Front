@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -12,10 +12,9 @@ import { ProspectoApiService, PacienteData } from '@app/core/services/prospecto-
   templateUrl: './prospecto-paciente.html',
   styleUrls: ['../prospecto.scss']
 })
-export class ProspectoPaciente implements OnInit, OnDestroy {
+export class ProspectoPaciente implements OnInit, OnDestroy, OnChanges {
   @Input() initialData?: PacienteData;
   @Input() clientId?: number;
-  @Input() patientId?: number;
   @Output() dataSaved = new EventEmitter<PacienteData>();
   @Output() dataUpdated = new EventEmitter<PacienteData>();
 
@@ -23,6 +22,7 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
   submitted = false;
   isLoading = false;
   editMode = false;
+  patientId?: number;
 
   // Control de secciones expandibles
   isPacienteExpanded = false;
@@ -47,16 +47,69 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadDepartments();
     
-    if (this.initialData) {
+    // Si hay clientId, cargar paciente desde el backend
+    if (this.clientId) {
+      this.loadPatientFromBackend(this.clientId);
+    } else if (this.initialData) {
       this.isPacienteExpanded = true;
       this.editMode = true;
       this.loadInitialData(this.initialData);
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['clientId'] && !changes['clientId'].firstChange) {
+      const newClientId = changes['clientId'].currentValue;
+      console.log('ProspectoPaciente.ngOnChanges clientId:', newClientId);
+      if (newClientId) {
+        this.loadPatientFromBackend(newClientId);
+      }
+    }
+  }
+
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Cargar paciente desde el backend
+   */
+  private loadPatientFromBackend(clientId: number): void {
+    this.isLoading = true;
+    console.log('Loading patients for clientId:', clientId);
+    
+    this.prospectoApiService.getPatients(clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (patients) => {
+          console.log('Patients loaded from backend:', patients);
+          
+          if (patients && patients.length > 0) {
+            // Tomar el primer paciente
+            const patient = patients[0];
+            this.patientId = patient.id;
+            this.editMode = true;
+            this.isPacienteExpanded = true;
+            this.loadInitialData(patient);
+          } else {
+            // No hay paciente, formulario vacío
+            this.editMode = false;
+            this.patientId = undefined;
+          }
+          
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading patients:', error);
+          this.isLoading = false;
+          // Si hay error 404, significa que no hay pacientes
+          if (error.status === 404) {
+            this.editMode = false;
+            this.patientId = undefined;
+          }
+        }
+      });
   }
 
   private loadDepartments() {
@@ -73,6 +126,14 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
   }
 
   private loadInitialData(data: PacienteData) {
+    console.log('Loading initial patient data:', data);
+    
+    // Actualizar patientId si viene del backend
+    if (data.id) {
+      this.patientId = data.id;
+      this.editMode = true;
+    }
+    
     // Wait for departments to load
     if (this.departamentos.length > 0) {
       this.loadLocationData(data);
@@ -87,31 +148,35 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
         });
     }
 
-    // Patch form values
+    // Patch form values - mapear desde la estructura del backend
     this.pacienteForm.patchValue({
-      tipoDocumento: data.tipoDocumento || '',
-      numeroDocumento: data.numeroDocumento || '',
-      nombres: data.nombres || '',
-      apellidos: data.apellidos || '',
-      sexo: data.sexo || '',
-      telefono: data.telefono || '',
-      correo: data.correo || '',
-      departamento: data.departamento || '',
-      provincia: data.provincia || '',
-      distrito: data.distrito || '',
-      direccion: data.direccion || ''
+      tipoDocumento: data.documentType || data.tipoDocumento || '',
+      numeroDocumento: data.documentNumber || data.numeroDocumento || '',
+      nombres: data.firstNames || data.nombres || '',
+      apellidos: data.lastNames || data.apellidos || '',
+      sexo: data.gender || data.sexo || '',
+      telefono: data.phone || data.telefono || '',
+      correo: data.email || data.correo || '',
+      departamento: data.address?.departmentId || data.departamento || '',
+      provincia: data.address?.provinceId || data.provincia || '',
+      distrito: data.address?.districtId || data.distrito || '',
+      direccion: data.address?.line1 || data.direccion || ''
     });
+    
+    console.log('Form value after patch:', this.pacienteForm.value);
   }
 
   private loadLocationData(data: PacienteData) {
-    if (data.departamento) {
+    const deptId = data.address?.departmentId || data.departamento;
+    if (deptId) {
       // Try to find by ID first, then by name for backwards compatibility
-      const dept = this.departamentos.find(d => d.id === data.departamento || d.name === data.departamento);
+      const dept = this.departamentos.find(d => d.id === deptId || d.name === deptId);
       if (dept) {
         this.selectedDepartamentoId = dept.id;
         this.loadProvinces(dept.id, () => {
-          if (data.provincia) {
-            const prov = this.provincias.find(p => p.id === data.provincia || p.name === data.provincia);
+          const provId = data.address?.provinceId || data.provincia;
+          if (provId) {
+            const prov = this.provincias.find(p => p.id === provId || p.name === provId);
             if (prov) {
               this.selectedProvinciaId = prov.id;
               this.loadDistricts(prov.id);
@@ -225,61 +290,85 @@ export class ProspectoPaciente implements OnInit, OnDestroy {
       return; // Don't save if form is empty
     }
 
+    if (!this.clientId) {
+      alert('No se ha proporcionado clientId para guardar el paciente');
+      return;
+    }
+
     this.isLoading = true;
     const formData = this.pacienteForm.value;
+    
+    // Preparar datos en formato del backend
     const pacienteData: PacienteData = {
-      tipoDocumento: formData.tipoDocumento || undefined,
-      numeroDocumento: formData.numeroDocumento || undefined,
-      nombres: formData.nombres || undefined,
-      apellidos: formData.apellidos || undefined,
-      sexo: formData.sexo || undefined,
-      telefono: formData.telefono || undefined,
-      correo: formData.correo || undefined,
-      departamento: formData.departamento || undefined,
-      provincia: formData.provincia || undefined,
-      distrito: formData.distrito || undefined,
-      direccion: formData.direccion || undefined
+      documentType: formData.tipoDocumento || undefined,
+      documentNumber: formData.numeroDocumento || undefined,
+      firstNames: formData.nombres || undefined,
+      lastNames: formData.apellidos || undefined,
+      gender: formData.sexo || undefined,
+      phone: formData.telefono || undefined,
+      email: formData.correo || undefined,
+      address: {
+        departmentId: formData.departamento || undefined,
+        provinceId: formData.provincia || undefined,
+        districtId: formData.distrito || undefined,
+        line1: formData.direccion || undefined
+      }
     };
 
-    if (this.editMode && this.clientId && this.patientId) {
+    console.log('=== DATOS DEL PACIENTE A ENVIAR ===');
+    console.log('Edit Mode:', this.editMode);
+    console.log('Client ID:', this.clientId);
+    console.log('Patient ID:', this.patientId);
+    console.log('Patient Data:', pacienteData);
+
+    if (this.editMode && this.patientId) {
+      // Actualizar paciente existente
+      console.log('Updating existing patient...');
+      
       this.prospectoApiService.updatePatient(this.clientId, this.patientId, pacienteData)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
-          next: () => {
+          next: (response) => {
+            console.log('Patient updated successfully:', response);
             this.isLoading = false;
-            this.dataUpdated.emit(pacienteData);
-            alert('Paciente actualizado exitosamente');
+            this.submitted = false;
+            
+            alert('Datos del paciente actualizados exitosamente');
+            this.dataUpdated.emit(response);
           },
           error: (error) => {
-            this.isLoading = false;
             console.error('Error updating patient:', error);
-            alert('Error al actualizar el paciente');
-          }
-        });
-    } else if (this.clientId) {
-      this.prospectoApiService.createPatient(this.clientId, pacienteData)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (res) => {
             this.isLoading = false;
-            this.editMode = true;
-            this.isPacienteExpanded = true;
-            this.dataSaved.emit(pacienteData);
-            alert('Paciente guardado exitosamente');
-            // Si el backend retorna el id del paciente, lo puedes guardar aquí
-            if (res && res.id) {
-              this.patientId = res.id;
-            }
-          },
-          error: (error) => {
-            this.isLoading = false;
-            console.error('Error creating patient:', error);
-            alert('Error al guardar el paciente');
+            alert('Error al actualizar el paciente: ' + (error.error?.message || error.message));
           }
         });
     } else {
-      alert('No se ha proporcionado clientId para guardar el paciente');
-      this.isLoading = false;
+      // Crear nuevo paciente
+      console.log('Creating new patient...');
+      
+      this.prospectoApiService.createPatient(this.clientId, pacienteData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            console.log('Patient created successfully:', response);
+            this.isLoading = false;
+            this.submitted = false;
+            this.editMode = true;
+            
+            // Guardar el ID del paciente retornado
+            if (response && response.id) {
+              this.patientId = response.id;
+            }
+            
+            alert('Datos del paciente guardados exitosamente');
+            this.dataSaved.emit(response);
+          },
+          error: (error) => {
+            console.error('Error creating patient:', error);
+            this.isLoading = false;
+            alert('Error al guardar el paciente: ' + (error.error?.message || error.message));
+          }
+        });
     }
   }
 }

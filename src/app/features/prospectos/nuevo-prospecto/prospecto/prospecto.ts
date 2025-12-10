@@ -36,6 +36,7 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
         </app-prospecto-titular>
 
         <app-prospecto-paciente
+          [clientId]="getClientId()"
           [initialData]="prospectoData?.paciente"
           (dataSaved)="onPacienteSaved($event)"
           (dataUpdated)="onPacienteUpdated($event)">
@@ -103,6 +104,10 @@ export default class Prospecto implements OnInit, OnDestroy {
   get documentosAsociado(): any[] {
     const docs = this.prospectoData?.documentos || [];
     return docs.map(d => ({ ...d, id: (d as any).id ?? '' }));
+  }
+
+  getClientId(): number | undefined {
+    return this.prospectoId ? Number(this.prospectoId) : undefined;
   }
 
   private destroy$ = new Subject<void>();
