@@ -166,12 +166,12 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Downloading non-risk document:', doc.id);
-    // Usar el servicio de documentos para descargar como Blob
     this.documentoService.getDocumentContent(doc.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob: Blob) => {
-          downloadFileFromBlob(blob, doc.nombre || 'documento');
+          const fileName = doc.nombre || 'documento-sin-nombre';
+          downloadFileFromBlob(blob, fileName);
           console.log('Document downloaded successfully');
         },
         error: (error) => {
@@ -277,7 +277,8 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob: Blob) => {
-          downloadFileFromBlob(blob, doc.nombre || 'documento');
+          const fileName = doc.nombre || 'documento-sin-nombre';
+          downloadFileFromBlob(blob, fileName);
           console.log('Document downloaded successfully');
         },
         error: (error) => {

@@ -50,8 +50,8 @@ export enum DocumentoEstado {
               </button>
               <button
                 (click)="onDescargar(doc)"
-                [disabled]="isEstadoPendiente(doc)"
-                [class.disabled]="isEstadoPendiente(doc)"
+                [disabled]="!doc.id"
+                [class.disabled]="!doc.id"
                 title="Descargar archivo">
                 <fa-icon [icon]="faDownload"></fa-icon>
               </button>
@@ -190,7 +190,8 @@ export class DocumentTableComponent {
   }
 
   protected onDescargar(doc: DocumentoData): void {
-    if (!this.isAccionDisabled(doc)) {
+    // Permitir descarga si el documento tiene ID, independientemente del estado o URL
+    if (doc.id) {
       this.descargar.emit(doc);
     }
   }

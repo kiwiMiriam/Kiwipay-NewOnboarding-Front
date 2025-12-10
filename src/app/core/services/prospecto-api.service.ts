@@ -168,15 +168,15 @@ export interface AvalistaData {
 }
 
 export interface DocumentoData {
-  id?: string;
+  id: string;
   nombre: string;
-  url?: string;
+  url: string;
   fechaCarga: Date | string;
-  fechaRevision?: Date | string;
+  fechaRevision: Date | string;
   comentario?: string;
-  estadoRevision?: string;
-  tipo?: string;
-  documentTypeId?: string;
+  estadoRevision: string;
+  tipo: string;
+  documentTypeId: string;
 }
 
 export interface InformacionProspecto {
