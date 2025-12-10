@@ -97,6 +97,15 @@ export class ProspectoInformacion implements OnInit, OnDestroy {
               'Teléfono celular': patient.phone || patient.telefono || '-',
               'Correo electrónico': patient.email || patient.correo || '-',
               'Género': patient.gender || patient.sexo || '-',
+              'Calificación Experian': patient.experianRating || patient.calificacionExperian || '-',
+              'Edad': patient.age || patient.edad || '-',
+              'Fecha de nacimiento': patient.birthDate || patient.fechaNacimiento || '-',
+              'Grupo': patient.group || patient.grupo || '-',
+              'Ingresos mensuales': patient.monthlyIncome || patient.ingresosMensuales || '-',
+              'Respuesta Experian': patient.experianResponse || patient.respuestaExperian || '-',
+              'Resultado Experian': patient.experianResult || patient.resultadoExperian || '-',
+              'Score Experian': patient.experianScore || patient.scoreExperian || '-',
+              'Segmento': patient.segment || patient.segmento || '-'
             };
           } else {
             // Si no hay paciente, mostrar valores vacíos

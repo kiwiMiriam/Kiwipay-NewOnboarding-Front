@@ -77,6 +77,25 @@ export interface PacienteData {
   provincia?: string;
   distrito?: string;
   direccion?: string;
+  // Campos de información adicional (futuros en el backend)
+  experianRating?: string;
+  calificacionExperian?: string;
+  age?: number | string;
+  edad?: number | string;
+  birthDate?: string;
+  fechaNacimiento?: string;
+  group?: string;
+  grupo?: string;
+  monthlyIncome?: number | string;
+  ingresosMensuales?: number | string;
+  experianResponse?: string;
+  respuestaExperian?: string;
+  experianResult?: string;
+  resultadoExperian?: string;
+  experianScore?: number | string;
+  scoreExperian?: number | string;
+  segment?: string;
+  segmento?: string;
 }
 
 export interface ConyugeData {
