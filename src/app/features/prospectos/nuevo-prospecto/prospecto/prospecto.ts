@@ -88,6 +88,7 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
         </div>
 
         <app-prospecto-informacion
+          [clientId]="getClientId()"
           [informacion]="prospectoData?.informacionProspecto">
         </app-prospecto-informacion>
       }
