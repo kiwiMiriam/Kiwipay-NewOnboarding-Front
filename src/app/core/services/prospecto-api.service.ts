@@ -677,6 +677,56 @@ export class ProspectoApiService {
     );
   }
 
+  // ========== DOCUMENT OPERATIONS ==========
+  
+  // Obtener documentos NO riesgo del cliente
+  getNonRiskDocuments(clientId: number): Observable<DocumentoData[]> {
+    return this.http.get<any[]>(`http://localhost:8080/api/v1/clients/${clientId}/documents/non-risk`).pipe(
+      map((docs) => docs.map((doc) => ({
+        id: doc.id?.toString() || '',
+        nombre: doc.name || '',
+        url: doc.url || '',
+        fechaCarga: doc.createdAt || new Date().toISOString(),
+        fechaRevision: doc.reviewedAt || undefined,
+        comentario: doc.comment || '',
+        estadoRevision: doc.reviewStatus || 'Pendiente',
+        tipo: doc.type || ''
+      })))
+    );
+  }
+
+  // Obtener documentos de riesgo del cliente
+  getRiskDocuments(clientId: number): Observable<DocumentoData[]> {
+    return this.http.get<any[]>(`http://localhost:8080/api/v1/clients/${clientId}/documents/risk`).pipe(
+      map((docs) => docs.map((doc) => ({
+        id: doc.id?.toString() || '',
+        nombre: doc.name || '',
+        url: doc.url || '',
+        fechaCarga: doc.createdAt || new Date().toISOString(),
+        fechaRevision: doc.reviewedAt || undefined,
+        comentario: doc.comment || '',
+        estadoRevision: doc.reviewStatus || 'Pendiente',
+        tipo: doc.type || ''
+      })))
+    );
+  }
+
+  // Obtener contenido del documento (base64)
+  getDocumentContent(documentId: string): Observable<string> {
+    return this.http.get(`http://localhost:8080/api/v1/documents/${documentId}/content`, {
+      responseType: 'text'
+    });
+  }
+
+  // Aprobar o rechazar documento
+  reviewDocument(documentId: string, reviewStatus: 'APPROVED' | 'REJECTED'): Observable<any> {
+    return this.http.patch(`http://localhost:8080/api/v1/documents/${documentId}/review`, {
+      reviewStatus
+    });
+  }
+
+  // ========== DEPRECATED METHODS (for backwards compatibility) ==========
+
   updateDocumentos(data: DocumentoData[]): Observable<any> {
     /*if (this.USE_MOCK) {
       return of({ success: true, documentos: data }).pipe(delay(500));

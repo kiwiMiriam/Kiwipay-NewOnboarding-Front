@@ -51,6 +51,7 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
         </app-prospecto-aval>
 
         <app-prospecto-documentos
+          [clientId]="getClientId()"
           [documentosAsociado]="prospectoData?.documentos"
           [documentosRiesgo]="documentosRiesgo">
         </app-prospecto-documentos>
