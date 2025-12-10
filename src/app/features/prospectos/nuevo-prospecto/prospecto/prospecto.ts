@@ -100,8 +100,6 @@ export default class Prospecto implements OnInit, OnDestroy {
   prospectoId?: string;
   mostrarModalConfirmacion = false;
 
-  // Normaliza los documentos para asegurar que el campo `id` siempre sea una cadena,
-  // evitando incompatibilidades de tipos entre distintas definiciones de DocumentoData.
   get documentosAsociado(): any[] {
     const docs = this.prospectoData?.documentos || [];
     return docs.map(d => ({ ...d, id: (d as any).id ?? '' }));
@@ -130,14 +128,30 @@ export default class Prospecto implements OnInit, OnDestroy {
   }
 
   private loadProspectoData() {
+    if (!this.prospectoId) {
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
-    this.prospectoApiService.getProspectoRiesgoData(this.prospectoId)
+    const clientId = Number(this.prospectoId);
+    
+    this.prospectoApiService.getProspectoRiesgoData(clientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          this.prospectoData = data;
-          this.documentosRiesgo = data.documentos || [];
+          console.log('Data loaded from backend:', data);
+          // El endpoint devuelve ClienteData directamente, no ProspectoRiesgoData
+          // Necesitamos estructurar correctamente los datos
+          this.prospectoData = {
+            titular: data,
+            documentos: [],
+            paciente: undefined,
+            avalista: undefined
+          };
+          this.documentosRiesgo = [];
           this.isLoading = false;
+          console.log('ProspectoData structured:', this.prospectoData);
         },
         error: (error) => {
           console.error('Error loading prospecto data:', error);

@@ -6,7 +6,7 @@ import { environment } from '@src/environments/environment';
 import { EndPoints } from '@src/config/end_points';
 
 export interface ProspectoRiesgoData {
-  id?: string;
+  id?: number | string;
   titular?: ClienteData;
   paciente?: PacienteData;
   avalista?: AvalistaData;
@@ -208,19 +208,11 @@ export class ProspectoApiService {
   constructor(private http: HttpClient) {}
 
   // Get prospecto riesgo data
-  getProspectoRiesgoData(id?: string): Observable<ProspectoRiesgoData> {
-
-    const options = id ? { params: { id } } : {};
-    return this.http.get<any>(`${this.API_URL}${EndPoints.KIWIPAY.GET_PROSPECTO_RIESGO_DATA}`, options).pipe(
-      map(response => {
-        if (response.data) return response.data;
-        return response;
-      }),
-      catchError(error => {
-        console.error('Error fetching prospecto riesgo data:', error);
-        return throwError(() => error);
-      })
-    );
+  getProspectoRiesgoData(id: number): Observable<ClienteData> {
+    return this.http.get<ClienteData>(`http://localhost:8080/api/v1/clients/${id}`);
+  }
+  updateProspectoRiesgoData(id: number, data: ProspectoRiesgoData): Observable<ProspectoRiesgoData> {
+    return this.http.put<ProspectoRiesgoData>(`http://localhost:8080/api/v1/clients/${id}`, data);
   }
 
   // CRUD Client

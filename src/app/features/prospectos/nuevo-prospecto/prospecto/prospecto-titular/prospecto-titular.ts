@@ -46,7 +46,11 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
   ngOnInit() {
     this.loadDepartments();
 
-    if (this.initialData && Object.keys(this.initialData).length > 0) {
+    // Si hay initialData con ID, cargar desde el backend
+    if (this.initialData?.id) {
+      this.editMode = true;
+      this.loadClientFromBackend(this.initialData.id);
+    } else if (this.initialData && Object.keys(this.initialData).length > 0) {
       this.editMode = true;
       this.loadInitialData(this.initialData);
     } else {
@@ -58,7 +62,10 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
     if (changes['initialData']) {
       const newData = changes['initialData'].currentValue;
       console.log('ProspectoTitular.ngOnChanges initialData:', newData);
-      if (newData && Object.keys(newData).length > 0) {
+      if (newData?.id) {
+        this.editMode = true;
+        this.loadClientFromBackend(newData.id);
+      } else if (newData && Object.keys(newData).length > 0) {
         this.editMode = true;
         this.loadInitialData(newData);
       }
@@ -79,6 +86,27 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
         },
         error: (error) => {
           console.error('Error loading departments:', error);
+        }
+      });
+  }
+
+  /**
+   * Cargar datos del cliente desde el backend
+   */
+  private loadClientFromBackend(clientId: number): void {
+    this.isLoading = true;
+    this.prospectoApiService.getClientById(clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          console.log('Client data loaded from backend:', data);
+          this.loadInitialData(data);
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading client data:', error);
+          this.isLoading = false;
+          alert('Error al cargar los datos del cliente');
         }
       });
   }
@@ -284,49 +312,91 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
 
     if (this.editMode && this.initialData?.id) {
       console.log('Updating existing client, ID:', this.initialData.id);
-      this.prospectoApiService.updateClient(this.initialData.id, clienteData)
+      
+      // Preparar el body exacto para el PUT
+      const updateRequest = {
+        documentType: formData.tipoDocumento,
+        documentNumber: formData.numeroDocumento,
+        firstNames: formData.nombres,
+        lastNames: formData.apellidos,
+        maritalStatus: formData.estadoCivil,
+        gender: formData.sexo,
+        birthDate: formData.fechaNacimiento,
+        email: formData.correo,
+        phone: formData.telefono,
+        address: {
+          departmentId: formData.departamento,
+          provinceId: formData.provincia,
+          districtId: formData.distrito,
+          line1: formData.direccion
+        }
+      };
+
+      console.log('Update request body:', updateRequest);
+
+      this.prospectoApiService.updateClient(this.initialData.id, updateRequest)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
             console.log('Client updated successfully:', response);
             this.isLoading = false;
-            // Update with response data or merge with sent data
-            const updatedClient = { ...clienteData, id: this.initialData!.id };
-            console.log('Updated client data:', updatedClient);
-            this.dataUpdated.emit(updatedClient);
-            alert('Titular actualizado exitosamente');
+            this.submitted = false;
+            
+            // Actualizar initialData con la respuesta
+            this.initialData = response;
+            
+            alert('Datos del titular actualizados exitosamente');
+            this.dataUpdated.emit(response);
           },
           error: (error) => {
-            this.isLoading = false;
             console.error('Error updating client:', error);
-            console.error('Error details:', error.error);
-            alert('Error al actualizar el titular: ' + (error.error?.message || error.message));
+            this.isLoading = false;
+            alert('Error al actualizar los datos del cliente: ' + (error.error?.message || error.message));
           }
         });
     } else {
       console.log('Creating new client...');
-      this.prospectoApiService.createClient(clienteData)
+      
+      // Preparar el body para el POST
+      const createRequest = {
+        documentType: formData.tipoDocumento,
+        documentNumber: formData.numeroDocumento,
+        firstNames: formData.nombres,
+        lastNames: formData.apellidos,
+        maritalStatus: formData.estadoCivil,
+        gender: formData.sexo,
+        birthDate: formData.fechaNacimiento,
+        email: formData.correo,
+        phone: formData.telefono,
+        address: {
+          departmentId: formData.departamento,
+          provinceId: formData.provincia,
+          districtId: formData.distrito,
+          line1: formData.direccion
+        }
+      };
+
+      console.log('Create request body:', createRequest);
+
+      this.prospectoApiService.createClient(createRequest)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (response) => {
             console.log('Client created successfully:', response);
             this.isLoading = false;
+            this.submitted = false;
             this.editMode = true;
-            // Update the client data with the ID returned from backend
-            // Backend might return the full object or just { id: number }
-            const createdClient = { 
-              ...clienteData, 
-              id: response?.id || response
-            };
-            console.log('Created client with ID:', createdClient);
-            this.initialData = createdClient;
-            this.dataSaved.emit(createdClient);
-            alert('Titular guardado exitosamente');
+            
+            // Actualizar initialData con el nuevo cliente
+            this.initialData = response;
+            
+            alert('Datos del titular guardados exitosamente');
+            this.dataSaved.emit(response);
           },
           error: (error) => {
-            this.isLoading = false;
             console.error('Error creating client:', error);
-            alert('Error al guardar el titular');
+            this.isLoading = false;
+            alert('Error al guardar los datos del cliente: ' + (error.error?.message || error.message));
           }
         });
     }
