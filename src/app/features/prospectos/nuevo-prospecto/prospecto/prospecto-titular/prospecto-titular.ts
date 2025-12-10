@@ -100,6 +100,9 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
       .subscribe({
         next: (data) => {
           console.log('Client data loaded from backend:', data);
+          // Actualizar initialData con los datos del backend
+          this.initialData = data;
+          this.editMode = true;
           this.loadInitialData(data);
           this.isLoading = false;
         },
@@ -112,7 +115,11 @@ export class ProspectoTitular implements OnInit, OnDestroy, OnChanges {
   }
 
   private loadInitialData(data: ClienteData) {
-    this.editMode = true;
+    // Asegurarse de que initialData esté actualizado
+    if (data.id) {
+      this.initialData = data;
+      this.editMode = true;
+    }
 
     // Wait for departments to load, then load provinces and districts
     if (this.departamentos.length > 0) {
