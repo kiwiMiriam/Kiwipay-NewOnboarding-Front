@@ -43,6 +43,7 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
         </app-prospecto-paciente>
 
         <app-prospecto-aval
+          [clientId]="getClientId()"
           [initialData]="prospectoData?.avalista"
           [documentos]="documentosAsociado"
           (dataSaved)="onAvalistaSaved($event)"

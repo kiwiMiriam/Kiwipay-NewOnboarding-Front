@@ -133,19 +133,38 @@ export interface QuoteData {
 }
 
 export interface AvalistaData {
-  tipoDocumento: string;
-  numeroDocumento: string;
-  nombres: string;
-  apellidos: string;
-  estadoCivil: string;
-  sexo: string;
-  telefono: string;
+  id?: number;
+  clientId?: number;
+  documentType?: string;
+  documentNumber?: string;
+  monthlyIncome?: number;
+  firstNames?: string;
+  lastNames?: string;
+  gender?: string;
+  maritalStatus?: string;
+  email?: string;
+  phone?: string;
+  address?: {
+    departmentId?: string;
+    provinceId?: string;
+    districtId?: string;
+    line1?: string;
+  };
+  createdAt?: string;
+  // Campos adicionales para compatibilidad con el frontend
+  tipoDocumento?: string;
+  numeroDocumento?: string;
+  ingresos?: number;
+  nombres?: string;
+  apellidos?: string;
+  estadoCivil?: string;
+  sexo?: string;
+  telefono?: string;
   correo?: string;
-  ingresos: number;
-  departamento: string;
-  provincia: string;
-  distrito: string;
-  direccion: string;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  direccion?: string;
 }
 
 export interface DocumentoData {
@@ -371,6 +390,84 @@ export class ProspectoApiService {
   // Eliminar paciente
   deletePatient(clientId: number, patientId: number): Observable<any> {
     return this.http.delete(`http://localhost:8080/api/v1/clients/${clientId}/patients/${patientId}`);
+  }
+
+  // ========== GUARANTOR (AVAL) OPERATIONS ==========
+  
+  // Obtener aval de un cliente
+  getGuarantor(clientId: number): Observable<AvalistaData | null> {
+    return this.http.get<any>(`http://localhost:8080/api/v1/clients/${clientId}/guarantor`).pipe(
+      map((data) => {
+        if (!data) return null;
+        return {
+          id: data.id,
+          clientId: data.clientId,
+          documentType: data.documentType,
+          documentNumber: data.documentNumber,
+          monthlyIncome: data.monthlyIncome,
+          firstNames: data.firstNames,
+          lastNames: data.lastNames,
+          gender: data.gender,
+          maritalStatus: data.maritalStatus,
+          email: data.email,
+          phone: data.phone,
+          address: data.address,
+          createdAt: data.createdAt
+        };
+      }),
+      catchError((error) => {
+        if (error.status === 404) {
+          return of(null);
+        }
+        throw error;
+      })
+    );
+  }
+
+  // Crear o actualizar aval (PUT)
+  updateGuarantor(clientId: number, data: AvalistaData): Observable<AvalistaData> {
+    const requestBody = {
+      documentType: data.documentType || data.tipoDocumento,
+      documentNumber: data.documentNumber || data.numeroDocumento,
+      monthlyIncome: data.monthlyIncome || data.ingresos,
+      firstNames: data.firstNames || data.nombres,
+      lastNames: data.lastNames || data.apellidos,
+      gender: data.gender || data.sexo,
+      maritalStatus: data.maritalStatus || data.estadoCivil,
+      email: data.email || data.correo,
+      phone: data.phone || data.telefono,
+      address: {
+        departmentId: data.address?.departmentId || data.departamento,
+        provinceId: data.address?.provinceId || data.provincia,
+        districtId: data.address?.districtId || data.distrito,
+        line1: data.address?.line1 || data.direccion
+      }
+    };
+
+    console.log('=== UPDATING GUARANTOR ===');
+    console.log('Client ID:', clientId);
+    console.log('Request Body:', requestBody);
+
+    return this.http.put<any>(`http://localhost:8080/api/v1/clients/${clientId}/guarantor`, requestBody).pipe(
+      map((response) => {
+        console.log('Guarantor update response:', response);
+        return {
+          id: response.id,
+          clientId: response.clientId,
+          documentType: response.documentType,
+          documentNumber: response.documentNumber,
+          monthlyIncome: response.monthlyIncome,
+          firstNames: response.firstNames,
+          lastNames: response.lastNames,
+          gender: response.gender,
+          maritalStatus: response.maritalStatus,
+          email: response.email,
+          phone: response.phone,
+          address: response.address,
+          createdAt: response.createdAt
+        };
+      })
+    );
   }
 
   // ========== SPOUSE (CÓNYUGE) OPERATIONS ==========

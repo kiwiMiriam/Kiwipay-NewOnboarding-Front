@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -26,8 +26,9 @@ import {
   templateUrl: './prospecto-aval.html',
   styleUrls: ['../prospecto.scss'],
 })
-export class ProspectoAval implements OnInit, OnDestroy {
+export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
   @Input() initialData?: AvalistaData;
+  @Input() clientId?: number;
   @Input() documentos?: DocumentoData[];
   @Output() dataSaved = new EventEmitter<AvalistaData>();
   @Output() dataUpdated = new EventEmitter<AvalistaData>();
@@ -172,13 +173,27 @@ export class ProspectoAval implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     this.loadDepartments();
-    if (this.initialData) {
+    
+    // Si hay clientId, cargar aval desde el backend
+    if (this.clientId) {
+      this.loadGuarantorFromBackend(this.clientId);
+    } else if (this.initialData) {
       this.isAvalistaExpanded = true;
       this.editMode = true;
       this.loadInitialData(this.initialData);
     }
+    
     if (this.documentos && this.documentos.length) {
       this.documentosList = [...this.documentos];
+    }
+  }
+
+  public ngOnChanges(changes: SimpleChanges): void {
+    if (changes['clientId'] && !changes['clientId'].firstChange) {
+      const newClientId = changes['clientId'].currentValue;
+      if (newClientId) {
+        this.loadGuarantorFromBackend(newClientId);
+      }
     }
   }
 
@@ -187,7 +202,37 @@ export class ProspectoAval implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  //
+  /**
+   * Cargar aval desde el backend
+   */
+  private loadGuarantorFromBackend(clientId: number): void {
+    this.isLoading = true;
+    console.log('Loading guarantor for clientId:', clientId);
+    
+    this.prospectoApiService.getGuarantor(clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (guarantor) => {
+          this.isLoading = false;
+          if (guarantor) {
+            console.log('Guarantor found:', guarantor);
+            this.editMode = true;
+            this.isAvalistaExpanded = true;
+            this.loadInitialData(guarantor);
+          } else {
+            console.log('No guarantor found for this client');
+            this.editMode = false;
+            this.isAvalistaExpanded = false;
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Error loading guarantor:', error);
+          this.editMode = false;
+          this.isAvalistaExpanded = false;
+        }
+      });
+  }
 
   private loadDepartments(): void {
     this.locationService
@@ -222,44 +267,54 @@ export class ProspectoAval implements OnInit, OnDestroy {
     }
   }
 
-  // ...existing code...
   private patchAvalistaForm(data: AvalistaData): void {
     const avalistaFormObject = this.clientForm.get('avalista');
     if (avalistaFormObject) {
+      // Mapear desde la estructura del backend a los campos del formulario
       avalistaFormObject.patchValue({
-        tipoDocumento: data.tipoDocumento,
-        numeroDocumento: data.numeroDocumento,
-        estadoCivil: data.estadoCivil,
-        nombres: data.nombres,
-        apellidos: data.apellidos,
-        sexo: data.sexo,
-        telefono: data.telefono,
-        correo: data.correo || '',
-        ingresos: data.ingresos,
-        departamento: data.departamento,
-        provincia: data.provincia,
-        distrito: data.distrito,
-        direccion: data.direccion
+        tipoDocumento: data.documentType || data.tipoDocumento || '',
+        numeroDocumento: data.documentNumber || data.numeroDocumento || '',
+        estadoCivil: data.maritalStatus || data.estadoCivil || '',
+        nombres: data.firstNames || data.nombres || '',
+        apellidos: data.lastNames || data.apellidos || '',
+        sexo: data.gender || data.sexo || '',
+        telefono: data.phone || data.telefono || '',
+        correo: data.email || data.correo || '',
+        ingresos: data.monthlyIncome || data.ingresos || '',
+        departamento: data.address?.departmentId || data.departamento || '',
+        provincia: data.address?.provinceId || data.provincia || '',
+        distrito: data.address?.districtId || data.distrito || '',
+        direccion: data.address?.line1 || data.direccion || ''
       });
     }
+    console.log('Form patched with guarantor data:', avalistaFormObject?.value);
   }
 
   private loadLocationData(data: AvalistaData): void {
-    if (data.departamento) {
-      // Try to find by ID first, then by name for backwards compatibility
-      const dept = this.departamentos.find((d) => d.id === data.departamento || d.name === data.departamento);
+    // Usar address object del backend o campos planos de compatibilidad
+    const deptId = data.address?.departmentId || data.departamento;
+    if (deptId) {
+      const dept = this.departamentos.find((d) => d.id === deptId || d.name === deptId);
       if (dept) {
         this.selectedDepartamentoId = dept.id;
         this.loadProvinces(dept.id, () => {
-          if (data.provincia) {
-            const prov = this.avalistaProvincias.find((p) => p.id === data.provincia || p.name === data.provincia);
+          const provId = data.address?.provinceId || data.provincia;
+          if (provId) {
+            const prov = this.avalistaProvincias.find((p) => p.id === provId || p.name === provId);
             if (prov) {
               this.selectedProvinciaId = prov.id;
-              this.loadDistricts(prov.id);
+              this.loadDistricts(prov.id, () => {
+                // Patch form after all location data is loaded
+                this.patchAvalistaForm(data);
+              });
             }
+          } else {
+            this.patchAvalistaForm(data);
           }
         });
       }
+    } else {
+      this.patchAvalistaForm(data);
     }
   }
 
@@ -333,13 +388,14 @@ export class ProspectoAval implements OnInit, OnDestroy {
     }
   }
 
-  private loadDistricts(provinciaId: string): void {
+  private loadDistricts(provinciaId: string, callback?: () => void): void {
     this.locationService
       .getDistricts(provinciaId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (districts) => {
           this.avalistaDistritos = districts;
+          if (callback) callback();
         },
         error: (error) => {
           console.error('Error loading districts:', error);
@@ -357,7 +413,12 @@ export class ProspectoAval implements OnInit, OnDestroy {
 
     this.submitted = true;
 
-    if (this.avalistaForm.invalid) {
+    // Validate only if form has values
+    const formValue = this.avalistaForm.value;
+    const hasValues = Object.values(formValue).some(v => v !== '' && v !== null);
+
+    if (hasValues && this.avalistaForm.invalid) {
+      console.warn('Form is invalid:', this.avalistaForm.errors);
       const firstError = document.querySelector('.error-message');
       if (firstError) {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -365,61 +426,83 @@ export class ProspectoAval implements OnInit, OnDestroy {
       return;
     }
 
+    if (!hasValues) {
+      console.log('Form has no values, skipping submission');
+      return;
+    }
+
+    if (!this.clientId) {
+      console.error('No clientId available for guarantor submission');
+      return;
+    }
+
     this.isLoading = true;
     const formData = this.avalistaForm.value;
+    
+    // Preparar datos en formato del backend
     const avalistaData: AvalistaData = {
-      tipoDocumento: formData.tipoDocumento,
-      numeroDocumento: formData.numeroDocumento,
-      estadoCivil: formData.estadoCivil,
-      nombres: formData.nombres,
-      apellidos: formData.apellidos,
-      sexo: formData.sexo,
-      telefono: formData.telefono,
-      correo: formData.correo,
-      ingresos: parseFloat(formData.ingresos),
-      departamento: formData.departamento,
-      provincia: formData.provincia,
-      distrito: formData.distrito,
-      direccion: formData.direccion,
+      documentType: formData.tipoDocumento || undefined,
+      documentNumber: formData.numeroDocumento || undefined,
+      monthlyIncome: formData.ingresos ? parseFloat(formData.ingresos) : undefined,
+      firstNames: formData.nombres || undefined,
+      lastNames: formData.apellidos || undefined,
+      gender: formData.sexo || undefined,
+      maritalStatus: formData.estadoCivil || undefined,
+      email: formData.correo || undefined,
+      phone: formData.telefono || undefined,
+      address: {
+        departmentId: formData.departamento || undefined,
+        provinceId: formData.provincia || undefined,
+        districtId: formData.distrito || undefined,
+        line1: formData.direccion || undefined
+      }
     };
 
-    const saveAvalista$ = this.editMode
-      ? this.prospectoApiService.updateAvalista(avalistaData)
-      : this.prospectoApiService.createAvalista(avalistaData);
+    console.log('=== DATOS DEL AVAL A ENVIAR ===');
+    console.log('Client ID:', this.clientId);
+    console.log('Guarantor Data:', avalistaData);
 
-    saveAvalista$.pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => {
-        this.isLoading = false;
-        if (this.editMode) {
-          this.dataUpdated.emit(avalistaData);
-          alert('Avalista actualizado exitosamente');
-        } else {
-          this.editMode = true;
-          this.isAvalistaExpanded = true;
-          this.dataSaved.emit(avalistaData);
-          alert('Avalista guardado exitosamente');
+    // Siempre usar PUT (crea o actualiza según exista o no)
+    this.prospectoApiService.updateGuarantor(this.clientId, avalistaData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          console.log('Guarantor saved successfully:', response);
+          
+          if (this.editMode) {
+            this.dataUpdated.emit(response);
+            alert('Aval actualizado exitosamente');
+          } else {
+            this.editMode = true;
+            this.dataSaved.emit(response);
+            alert('Aval registrado exitosamente');
+          }
+          
+          // Recargar los datos actualizados
+          this.loadGuarantorFromBackend(this.clientId!);
+          
+          // Si hay documentos, actualizarlos también
+          if (this.documentosList.length) {
+            this.prospectoApiService
+              .updateDocumentos(this.documentosList)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: () => {
+                  this.documentosUpdated.emit(this.documentosList);
+                },
+                error: (error) => {
+                  console.error('Error actualizando documentos:', error);
+                  alert('Error al actualizar los documentos');
+                },
+              });
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Error en operación de aval:', error);
+          alert(`Error al ${this.editMode ? 'actualizar' : 'registrar'} el aval`);
         }
-        // Si hay documentos, actualizarlos también
-        if (this.documentosList.length) {
-          this.prospectoApiService
-            .updateDocumentos(this.documentosList)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-              next: () => {
-                this.documentosUpdated.emit(this.documentosList);
-              },
-              error: (error) => {
-                console.error('Error actualizando documentos:', error);
-                alert('Error al actualizar los documentos');
-              },
-            });
-        }
-      },
-      error: (error) => {
-        this.isLoading = false;
-        console.error('Error en operación de avalista:', error);
-        alert(`Error al ${this.editMode ? 'actualizar' : 'guardar'} el avalista`);
-      },
-    });
+      });
   }
 }
