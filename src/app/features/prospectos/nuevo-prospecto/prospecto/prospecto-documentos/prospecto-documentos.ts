@@ -2,6 +2,9 @@ import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@
 import { CommonModule } from '@angular/common';
 import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
 import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto-api.service';
+import { DocumentoService } from '@app/core/services/documento.service';
+import { DocumentType } from '@app/core/models/document.model';
+import { downloadFileFromBlob } from '@src/app/shared/utils/file.utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -14,6 +17,7 @@ import { takeUntil } from 'rxjs/operators';
       <h2>Documentos del Asociado</h2>
       <app-document-table
         [documentos]="documentosAsociadoList"
+        [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
         (subir)="onSubirAsociado($event)"
         (descargar)="onDescargarAsociado($event)"
         (aprobar)="onAprobarAsociado($event)"
@@ -24,6 +28,7 @@ import { takeUntil } from 'rxjs/operators';
       <h2>Ficha de riesgo del Asociado</h2>
       <app-document-table
         [documentos]="documentosRiesgoList"
+        [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
         (subir)="onSubirRiesgo($event)"
         (descargar)="onDescargarRiesgo($event)"
         (aprobar)="onAprobarRiesgo($event)"
@@ -42,11 +47,18 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   documentosAsociadoList: DocumentoData[] = [];
   documentosRiesgoList: DocumentoData[] = [];
   isLoading = false;
+  documentTypes: DocumentType[] = [];
   private destroy$ = new Subject<void>();
 
-  constructor(private prospectoApiService: ProspectoApiService) {}
+  constructor(
+    private prospectoApiService: ProspectoApiService,
+    private documentoService: DocumentoService
+  ) {}
 
   ngOnInit(): void {
+    // Cargar tipos de documentos
+    this.loadDocumentTypes();
+    
     // Si hay clientId, cargar documentos desde el backend
     if (this.clientId) {
       this.loadDocumentsFromBackend(this.clientId);
@@ -69,6 +81,23 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Cargar los tipos de documentos desde el backend
+   */
+  private loadDocumentTypes(): void {
+    this.documentoService.getDocumentTypes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (types) => {
+          this.documentTypes = types;
+          console.log('Document types loaded:', types);
+        },
+        error: (error) => {
+          console.error('Error loading document types:', error);
+        }
+      });
   }
 
   /**
@@ -137,35 +166,13 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Downloading non-risk document:', doc.id);
-    this.prospectoApiService.getDocumentContent(doc.id)
+    // Usar el servicio de documentos para descargar como Blob
+    this.documentoService.getDocumentContent(doc.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (base64Content) => {
-          try {
-            // Convertir base64 a blob
-            const byteCharacters = atob(base64Content);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-
-            // Crear URL temporal y descargar
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = doc.nombre || 'documento';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            
-            console.log('Document downloaded successfully');
-          } catch (error) {
-            console.error('Error converting base64 to blob:', error);
-            alert('Error al procesar el documento');
-          }
+        next: (blob: Blob) => {
+          downloadFileFromBlob(blob, doc.nombre || 'documento');
+          console.log('Document downloaded successfully');
         },
         error: (error) => {
           console.error('Error downloading document:', error);
@@ -265,35 +272,13 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Downloading risk document:', doc.id);
-    this.prospectoApiService.getDocumentContent(doc.id)
+    // Usar el servicio de documentos para descargar como Blob
+    this.documentoService.getDocumentContent(doc.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (base64Content) => {
-          try {
-            // Convertir base64 a blob
-            const byteCharacters = atob(base64Content);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
-
-            // Crear URL temporal y descargar
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = doc.nombre || 'documento';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            
-            console.log('Document downloaded successfully');
-          } catch (error) {
-            console.error('Error converting base64 to blob:', error);
-            alert('Error al procesar el documento');
-          }
+        next: (blob: Blob) => {
+          downloadFileFromBlob(blob, doc.nombre || 'documento');
+          console.log('Document downloaded successfully');
         },
         error: (error) => {
           console.error('Error downloading document:', error);
@@ -370,5 +355,14 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           alert('Error al rechazar el documento');
         }
       });
+  }
+
+  /**
+   * Obtener el nombre del tipo de documento
+   */
+  obtenerNombreTipoDocumento(tipoId: string | undefined): string {
+    if (!tipoId) return 'Sin tipo';
+    const tipo = this.documentTypes.find(t => t.id === tipoId);
+    return tipo ? tipo.name : tipoId;
   }
 }

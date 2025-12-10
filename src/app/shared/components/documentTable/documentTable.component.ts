@@ -34,7 +34,12 @@ export enum DocumentoEstado {
       <tbody>
         <tr *ngFor="let doc of documentos; let i = index">
            <td>{{ i + 1 }}</td>
-            <td>{{ doc.nombre }}</td>
+            <td>
+              <div class="document-info">
+                <div class="document-type">{{ obtenerNombreTipo(doc) }}</div>
+                <div class="document-name">{{ doc.nombre }}</div>
+              </div>
+            </td>
             <td>{{ doc.fechaCarga | date: 'shortDate' }}</td>
             <td>{{ doc.fechaRevision ? (doc.fechaRevision | date: 'shortDate') : '-' }}</td>
             <td>{{ doc.comentario || '-' }}</td>
@@ -133,6 +138,7 @@ export enum DocumentoEstado {
 })
 export class DocumentTableComponent {
   @Input() documentos: DocumentoData[] = [];
+  @Input() obtenerNombreTipoDocumento?: (tipoId: string | undefined) => string;
   @Output() private readonly subir = new EventEmitter<{ documento: DocumentoData; archivo: File }>();
   @Output() private readonly descargar = new EventEmitter<DocumentoData>();
   @Output() private readonly aprobar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();
@@ -274,6 +280,13 @@ export class DocumentTableComponent {
   private isValidFileType(file: File): boolean {
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
     return allowedTypes.includes(file.type);
+  }
+
+  protected obtenerNombreTipo(doc: DocumentoData): string {
+    if (this.obtenerNombreTipoDocumento && doc.documentTypeId) {
+      return this.obtenerNombreTipoDocumento(doc.documentTypeId);
+    }
+    return doc.tipo || 'Sin tipo';
   }
 
   private isValidFileSize(file: File): boolean {

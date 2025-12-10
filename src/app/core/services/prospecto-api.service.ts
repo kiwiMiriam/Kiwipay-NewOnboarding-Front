@@ -176,6 +176,7 @@ export interface DocumentoData {
   comentario?: string;
   estadoRevision?: string;
   tipo?: string;
+  documentTypeId?: string;
 }
 
 export interface InformacionProspecto {
@@ -684,13 +685,14 @@ export class ProspectoApiService {
     return this.http.get<any[]>(`http://localhost:8080/api/v1/clients/${clientId}/documents/non-risk`).pipe(
       map((docs) => docs.map((doc) => ({
         id: doc.id?.toString() || '',
-        nombre: doc.name || '',
+        nombre: doc.name || doc.filename || '',
         url: doc.url || '',
         fechaCarga: doc.createdAt || new Date().toISOString(),
         fechaRevision: doc.reviewedAt || undefined,
         comentario: doc.comment || '',
         estadoRevision: doc.reviewStatus || 'Pendiente',
-        tipo: doc.type || ''
+        tipo: doc.type || '',
+        documentTypeId: doc.documentTypeId || ''
       })))
     );
   }
@@ -700,13 +702,14 @@ export class ProspectoApiService {
     return this.http.get<any[]>(`http://localhost:8080/api/v1/clients/${clientId}/documents/risk`).pipe(
       map((docs) => docs.map((doc) => ({
         id: doc.id?.toString() || '',
-        nombre: doc.name || '',
+        nombre: doc.name || doc.filename || '',
         url: doc.url || '',
         fechaCarga: doc.createdAt || new Date().toISOString(),
         fechaRevision: doc.reviewedAt || undefined,
         comentario: doc.comment || '',
         estadoRevision: doc.reviewStatus || 'Pendiente',
-        tipo: doc.type || ''
+        tipo: doc.type || '',
+        documentTypeId: doc.documentTypeId || ''
       })))
     );
   }

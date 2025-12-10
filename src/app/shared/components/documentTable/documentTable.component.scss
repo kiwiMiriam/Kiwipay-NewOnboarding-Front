@@ -69,6 +69,25 @@
       font-weight: 600;
     }
   }
+
+  // Estilos para la información del documento
+  .document-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .document-type {
+      font-size: 0.85rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+
+    .document-name {
+      font-size: 0.95rem;
+      color: #212529;
+    }
+  }
+
   @media (max-width:768px) {
     overflow-x: auto;
   }
