@@ -56,6 +56,35 @@
           }
         }
       }
+
+      // Estilos para pestañas deshabilitadas
+      &.disabled {
+        a {
+          color: #c0c0c0 !important; // Gris claro
+          cursor: default !important;
+          pointer-events: none;
+          opacity: 0.6;
+
+          &:hover {
+            color: #c0c0c0 !important;
+            background-color: transparent !important;
+          }
+
+          &::after {
+            background-color: transparent !important;
+          }
+        }
+      }
+
+      // Estilos para pestañas habilitadas (estado normal)
+      &.enabled {
+        a {
+          &:hover {
+            color: colors.$primary-700;
+            background-color: rgba(colors.$primary-100, 0.1);
+          }
+        }
+      }
     }
   }
 

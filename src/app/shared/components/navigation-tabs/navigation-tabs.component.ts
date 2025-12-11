@@ -2,6 +2,7 @@ import { Component, Input, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-navigation-tabs',
@@ -13,11 +14,15 @@ import { filter, Subscription } from 'rxjs';
       <div class="tabs-container">
         <ul class="tabs-list">
           @for (tab of tabs; track tab.path) {
-            <li [class.active]="tab.active">
-              <a [routerLink]="tab.path" 
+            <li [class.active]="tab.active" 
+                [class.disabled]="!canAccessTab(tab.id)"
+                [class.enabled]="canAccessTab(tab.id)">
+              <a [routerLink]="canAccessTab(tab.id) ? tab.path : null" 
                  [queryParamsHandling]="'preserve'"
                  routerLinkActive #rla="routerLinkActive"
-                 (click)="setActiveTab(tab.id)">
+                 (click)="onTabClick(tab)"
+                 [style.pointer-events]="canAccessTab(tab.id) ? 'auto' : 'none'"
+                 [style.cursor]="canAccessTab(tab.id) ? 'pointer' : 'default'">
                 {{ tab.label }}
               </a>
             </li>
@@ -38,7 +43,8 @@ export class NavigationTabsComponent implements OnInit, OnDestroy {
 
   constructor(
     private elementRef: ElementRef,
-    private router: Router
+    private router: Router,
+    public authService: AuthService
   ) {
     // Define the event listener function
     this.updateTabListener = (event: Event) => {
@@ -47,6 +53,35 @@ export class NavigationTabsComponent implements OnInit, OnDestroy {
         this.setActiveTab(customEvent.detail.tabId);
       }
     };
+  }
+
+  /**
+   * Verificar si el usuario puede acceder a una pestaña específica
+   */
+  canAccessTab(tabId: string): boolean {
+    // Mapeo de IDs de pestañas a secciones de permisos
+    const sectionMap: {[key: string]: string} = {
+      'cliente': 'CLIENTES',
+      'clinica': 'CLINICAS', 
+      'cotizador': 'COTIZADOR',
+      'documento': 'DOCUMENTOS',
+      'prospecto': 'PROSPECTO'
+    };
+
+    const section = sectionMap[tabId];
+    return section ? this.authService.canAccessSection(section) : false;
+  }
+
+  /**
+   * Manejar click en pestaña con verificación de permisos
+   */
+  onTabClick(tab: any): void {
+    if (this.canAccessTab(tab.id)) {
+      this.setActiveTab(tab.id);
+    } else {
+      // Prevenir navegación si no tiene permisos
+      event?.preventDefault();
+    }
   }
 
   ngOnInit(): void {

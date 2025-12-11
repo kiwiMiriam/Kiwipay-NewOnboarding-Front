@@ -13,6 +13,7 @@ import {
 import { ProspectosService, Prospecto } from '../../core/services/prospectos.service';
 import { ProspectoFilter } from '../../core/models/prospecto.model';
 import { ProspectoApiService } from '@src/app/core/services/prospecto-api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-bandeja',
@@ -435,7 +436,8 @@ export class BandejaComponent implements OnInit {
     private prospectoApiService: ProspectoApiService,
     private router: Router,
     private route: ActivatedRoute,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private authService: AuthService
   ) {
     this.filterForm = this.fb.group({
       contrato: [''],
@@ -507,8 +509,11 @@ export class BandejaComponent implements OnInit {
     
     this.isProcessing = true;
     
+    // Obtener la ruta permitida según el rol del usuario
+    const allowedRoute = this.authService.getFirstAllowedRoute();
+    
     // Navegar al formulario de edición con el ID como query parameter
-    this.router.navigate(['/dashboard/nuevo-prospecto/datos-cliente'], {
+    this.router.navigate([allowedRoute], {
       queryParams: { id: id }
     }).finally(() => {
       // Resetear el flag después de un breve delay

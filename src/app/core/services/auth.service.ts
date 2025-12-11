@@ -1,283 +1,216 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
-import { catchError, delay, map, tap } from 'rxjs/operators';
+import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 
-import { User } from '../models/user.model';
-import { AuthState, LoginRequest, LoginResponse } from '../models/auth.model';
-import { environment } from '../../../environments/environment';
-
-// Auth API configuration from environment
-const API_URL = environment.kiwiPayApi;
-const USE_MOCK_API = environment.useMockApi;
-const TOKEN_EXPIRATION_TIME = environment.tokenExpirationTime;
+import { LoginRequest, LoginResponse, User } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // Use Angular's signal API for reactive state management
-  private authState = signal<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: false,
-    error: null
-  });
+  private readonly TOKEN_KEY = 'kiwipay_token';
+  private readonly USER_KEY = 'kiwipay_user';
+  private readonly API_URL = 'http://localhost:8080/api/v1';
+  
+  private currentUserSubject = new BehaviorSubject<User | null>(this.getUserFromStorage());
+  public currentUser$ = this.currentUserSubject.asObservable();
 
-  // Public read-only computed signals
-  public user = computed(() => this.authState().user);
-  public isAuthenticated = computed(() => this.authState().isAuthenticated);
-  public isLoading = computed(() => this.authState().isLoading);
-  public error = computed(() => this.authState().error);
+  // Signals para el estado
+  isLoading = signal(false);
+  user = signal<User | null>(this.getUserFromStorage());
 
-  // For token refresh
-  private tokenExpirationTimer: any;
+  // Mapeo de permisos por sección
+  private sectionPermissions = {
+    DASHBOARD: ['SUPERADMIN', 'COMERCIAL', 'ADV', 'RIESGOS'], // SIEMPRE habilitado
+    CLIENTES: ['SUPERADMIN', 'COMERCIAL'],
+    CLINICAS: ['SUPERADMIN', 'COMERCIAL'],
+    COTIZADOR: ['SUPERADMIN', 'COMERCIAL'],
+    DOCUMENTOS: ['SUPERADMIN', 'ADV'],
+    PROSPECTO: ['SUPERADMIN', 'RIESGOS']
+  };
 
   constructor(
     private http: HttpClient,
     private router: Router
   ) {
-    this.checkToken();
+    // Validar token al iniciar si existe
+    if (this.getToken()) {
+      this.validateToken().subscribe({
+        next: () => {}, // Token válido
+        error: () => this.logout() // Token inválido, logout
+      });
+    }
   }
 
+  /**
+   * Login usando el endpoint real POST /api/v1/auth/login
+   */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    this.authState.update(state => ({ ...state, isLoading: true, error: null }));
+    this.isLoading.set(true);
+    
+    return this.http.post<LoginResponse>(`${this.API_URL}/auth/login`, credentials)
+      .pipe(
+        tap(response => {
+          // Guardar token y datos del usuario
+          this.setToken(response.token);
+          const user: User = {
+            username: response.username,
+            firstName: response.firstName,
+            lastName: response.lastName,
+            email: response.email,
+            roles: response.roles,
+            fullName: `${response.firstName} ${response.lastName}`
+          };
+          this.setUser(user);
+          this.currentUserSubject.next(user);
+          this.user.set(user);
+          this.isLoading.set(false);
+        }),
+        catchError(error => {
+          this.isLoading.set(false);
+          console.error('Login error:', error);
+          return throwError(() => error);
+        })
+      );
+  }
 
-    if (USE_MOCK_API) {
-      return this.mockLogin(credentials);
-    } else {
-      return this.apiLogin(credentials);
+  /**
+   * Validar token usando GET /api/v1/auth/validate
+   */
+  validateToken(): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
     }
+
+    return this.http.get(`${this.API_URL}/auth/validate`)
+      .pipe(
+        catchError(error => {
+          console.error('Token validation failed:', error);
+          return throwError(() => error);
+        })
+      );
   }
 
-  private apiLogin(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${API_URL}/login`, credentials).pipe(
-      tap((response) => {
-        if (response.success && response.token) {
-          this.handleSuccessfulLogin(response);
-        }
-      }),
-      catchError(error => {
-        this.handleLoginError(error);
-        return throwError(() => error);
-      }),
-      map(response => {
-        this.authState.update(state => ({ ...state, isLoading: false }));
-        return response;
-      })
-    );
-  }
-
-  private mockLogin(credentials: LoginRequest): Observable<LoginResponse> {
-    return of({
-      success: credentials.username === 'admin' && credentials.password === 'password',
-      user: {
-        id: '1',
-        username: credentials.username,
-        fullName: 'Admin User',
-        email: 'admin@kiwiplan.com',
-        role: 'admin'
-      },
-      token: 'mock-jwt-token-would-be-here'
-    }).pipe(
-      tap((response) => {
-        if (response.success) {
-          this.handleSuccessfulLogin(response);
-        } else {
-          this.authState.update(state => ({
-            ...state,
-            isLoading: false,
-            error: 'Invalid username or password'
-          }));
-        }
-      }),
-      catchError(error => {
-        this.handleLoginError(error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  private handleSuccessfulLogin(response: LoginResponse): void {
-    const user: User = {
-      ...response.user,
-      token: response.token
-    };
-
-    // Store token in localStorage
-    localStorage.setItem('auth_token', response.token);
-    localStorage.setItem('user', JSON.stringify(user));
-
-    // Set expiration time
-    const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
-    localStorage.setItem('token_expiration', expirationDate.toISOString());
-
-    // Update state
-    this.authState.update(state => ({
-      ...state,
-      user,
-      isAuthenticated: true,
-      isLoading: false,
-      error: null
-    }));
-
-    // Setup auto refresh
-    this.autoRefreshToken(TOKEN_EXPIRATION_TIME);
-
-    // Navigate to dashboard or home
-    this.router.navigate(['/dashboard']);
-  }
-
-  private handleLoginError(error: any): void {
-    console.error('Login error', error);
-
-    this.authState.update(state => ({
-      ...state,
-      isLoading: false,
-      error: error.error?.message || error.message || 'Login failed. Please try again.'
-    }));
-  }
-
+  /**
+   * Logout - eliminar token y datos del usuario
+   */
   logout(): void {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token_expiration');
-
-    if (this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-      this.tokenExpirationTimer = null;
-    }
-
-    this.authState.update(state => ({
-      ...state,
-      user: null,
-      isAuthenticated: false,
-      error: null
-    }));
-
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.currentUserSubject.next(null);
+    this.user.set(null);
     this.router.navigate(['/login']);
   }
 
-  private autoRefreshToken(expirationDuration: number): void {
-    if (this.tokenExpirationTimer) {
-      clearTimeout(this.tokenExpirationTimer);
-    }
-
-    this.tokenExpirationTimer = setTimeout(() => {
-      if (this.isAuthenticated()) {
-        this.refreshToken().subscribe({
-          next: (response) => {
-            console.log('Token refreshed successfully');
-          },
-          error: (error) => {
-            console.error('Token refresh failed', error);
-            this.logout();
-          }
-        });
-      }
-    }, expirationDuration * 0.8);
+  /**
+   * Obtener roles del usuario actual
+   */
+  getUserRoles(): string[] {
+    const user = this.getUserFromStorage();
+    return user ? user.roles : [];
   }
 
-  refreshToken(): Observable<LoginResponse> {
-    // In mock mode, simulate a successful refresh
-    if (USE_MOCK_API) {
-      return of({
-        success: true,
-        user: this.user() as any,
-        token: 'new-mock-jwt-token-' + new Date().getTime()
-      }).pipe(
-        delay(300),
-        tap((response) => {
-          if (response.success) {
-            // Update token
-            const user = this.user() as User;
-            user.token = response.token;
-
-            localStorage.setItem('auth_token', response.token);
-            localStorage.setItem('user', JSON.stringify(user));
-
-            // Update expiration
-            const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
-            localStorage.setItem('token_expiration', expirationDate.toISOString());
-
-            // Setup next auto refresh
-            this.autoRefreshToken(TOKEN_EXPIRATION_TIME);
-
-            this.authState.update(state => ({
-              ...state,
-              user
-            }));
-          }
-        })
-      );
-    }
-
-    // In real API mode, call the refresh endpoint
-    return this.http.post<LoginResponse>(`${API_URL}/refresh`, {
-      token: localStorage.getItem('auth_token')
-    }).pipe(
-      tap((response) => {
-        if (response.success && response.token) {
-          // Update token
-          const user = this.user() as User;
-          user.token = response.token;
-
-          localStorage.setItem('auth_token', response.token);
-          localStorage.setItem('user', JSON.stringify(user));
-
-          // Update expiration
-          const expirationDate = new Date(new Date().getTime() + TOKEN_EXPIRATION_TIME);
-          localStorage.setItem('token_expiration', expirationDate.toISOString());
-
-          // Setup next auto refresh
-          this.autoRefreshToken(TOKEN_EXPIRATION_TIME);
-
-          this.authState.update(state => ({
-            ...state,
-            user
-          }));
-        }
-      }),
-      catchError(error => {
-        console.error('Error refreshing token:', error);
-        return throwError(() => error);
-      })
-    );
+  /**
+   * Verificar si el usuario está logueado
+   */
+  isLoggedIn(): boolean {
+    return !!this.getToken() && !!this.getUserFromStorage();
   }
 
-  private checkToken(): void {
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user');
-    const expirationDateStr = localStorage.getItem('token_expiration');
+  /**
+   * Verificar si el usuario tiene permiso para una sección específica
+   */
+  canAccessSection(section: string): boolean {
+    const userRoles = this.getUserRoles();
+    const allowedRoles = this.sectionPermissions[section as keyof typeof this.sectionPermissions];
+    
+    if (!allowedRoles) return false;
+    
+    return userRoles.some(role => allowedRoles.includes(role));
+  }
 
-    if (token && userData && expirationDateStr) {
-      try {
-        const user = JSON.parse(userData);
-        const expirationDate = new Date(expirationDateStr);
-
-        // Check if token is expired
-        if (expirationDate > new Date()) {
-          // Token still valid
-          this.authState.update(state => ({
-            ...state,
-            user,
-            isAuthenticated: true
-          }));
-
-          // Setup auto refresh for remaining time
-          const remainingTime = expirationDate.getTime() - new Date().getTime();
-          this.autoRefreshToken(remainingTime);
-        } else {
-          // Token expired, logout user
-          console.log('Token expired, logging out');
-          this.logout();
-        }
-      } catch (e) {
-        console.error('Error parsing stored user data', e);
-        this.logout();
+  /**
+   * Obtener la primera sección permitida para el usuario actual
+   * Útil para redirecciones automáticas según permisos
+   */
+  getFirstAllowedSection(): string {
+    const userRoles = this.getUserRoles();
+    
+    // Definir orden de prioridad para las secciones
+    const sectionOrder = ['CLIENTES', 'CLINICAS', 'COTIZADOR', 'DOCUMENTOS', 'PROSPECTO'];
+    
+    for (const section of sectionOrder) {
+      const allowedRoles = this.sectionPermissions[section as keyof typeof this.sectionPermissions];
+      if (allowedRoles && userRoles.some(role => allowedRoles.includes(role))) {
+        return section;
       }
     }
+    
+    // Si no tiene acceso a ninguna sección específica, regresar DASHBOARD
+    return 'DASHBOARD';
   }
 
+  /**
+   * Obtener la ruta correspondiente a la primera sección permitida
+   */
+  getFirstAllowedRoute(): string {
+    const section = this.getFirstAllowedSection();
+    
+    const routeMap: {[key: string]: string} = {
+      'CLIENTES': '/dashboard/nuevo-prospecto/datos-cliente',
+      'CLINICAS': '/dashboard/nuevo-prospecto/datos-clinica', 
+      'COTIZADOR': '/dashboard/nuevo-prospecto/cotizador',
+      'DOCUMENTOS': '/dashboard/nuevo-prospecto/documentos',
+      'PROSPECTO': '/dashboard/nuevo-prospecto/prospecto',
+      'DASHBOARD': '/dashboard/bandeja'
+    };
+    
+    return routeMap[section] || '/dashboard/bandeja';
+  }
+
+  /**
+   * Obtener usuario actual
+   */
+  getCurrentUser(): User | null {
+    return this.getUserFromStorage();
+  }
+
+  /**
+   * Obtener token del localStorage
+   */
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Guardar token en localStorage
+   */
+  private setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  /**
+   * Guardar usuario en localStorage
+   */
+  private setUser(user: User): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+  }
+
+  /**
+   * Obtener usuario del localStorage
+   */
+  private getUserFromStorage(): User | null {
+    const userData = localStorage.getItem(this.USER_KEY);
+    return userData ? JSON.parse(userData) : null;
+  }
+
+  /**
+   * Métodos legacy para compatibilidad
+   */
+  isAuthenticated(): boolean {
+    return this.isLoggedIn();
+  }
 }

@@ -8,22 +8,27 @@ export const roleGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const toastService = inject(ToastService);
   
-  // Get the required role from route data
-  const requiredRole = route.data['requiredRole'] as string;
+  // Get the required section from route data
+  const requiredSection = route.data['section'] as string;
   
-  if (!authService.isAuthenticated()) {
+  if (!authService.isLoggedIn()) {
     toastService.error('Debe iniciar sesión para acceder a esta página');
     return router.createUrlTree(['/login'], { 
       queryParams: { returnUrl: state.url }
     });
   }
   
-  // If no specific role is required or user has matching role
-  if (!requiredRole || authService.user()?.role === requiredRole) {
+  // If no specific section is required, allow access
+  if (!requiredSection) {
     return true;
   }
   
-  // User doesn't have the required role
+  // Check if user can access the section
+  if (authService.canAccessSection(requiredSection)) {
+    return true;
+  }
+  
+  // User doesn't have permission for this section
   toastService.error('No tiene permisos para acceder a esta página');
   return router.createUrlTree(['/dashboard']);
 };

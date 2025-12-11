@@ -36,7 +36,7 @@ export class LoginComponent {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
 
     // Redirect if already logged in
-    if (this.authService.isAuthenticated()) {
+    if (this.authService.isLoggedIn()) {
       this.router.navigate([this.returnUrl]);
     }
   }  get formControls() {
@@ -65,18 +65,14 @@ export class LoginComponent {
 
     this.authService.login(credentials).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.toastService.success('¡Inicio de sesión exitoso!');
-          this.router.navigate([this.returnUrl]);
-        } else {
-          this.errorMessage = response.message || 'Error de inicio de sesión';
-          this.toastService.error(this.errorMessage);
-        }
+        this.toastService.success('¡Inicio de sesión exitoso!');
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        const errorMsg = err.error?.message || 'Ocurrió un error durante el inicio de sesión. Por favor intente nuevamente.';
+        const errorMsg = err.error?.message || 'Credenciales inválidas. Por favor intente nuevamente.';
         this.errorMessage = errorMsg;
         this.toastService.error(errorMsg);
+        console.error('Login error:', err);
       }
     });
   }

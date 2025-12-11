@@ -4,16 +4,23 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: {
-    id: string;
-    username: string;
-    fullName: string;
-    email: string;
-    role: string;
-  };
   token: string;
-  success: boolean;
-  message?: string;
+  type: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: string[];
+}
+
+// User interface for internal use
+export interface User {
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: string[];
+  fullName: string;
 }
 
 export interface AuthState {

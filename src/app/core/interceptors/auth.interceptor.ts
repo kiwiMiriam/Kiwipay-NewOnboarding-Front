@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -10,12 +10,16 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 import { SKIP_AUTH_TOKEN } from './skip-auth.context';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Si el contexto indica que se debe saltar la autenticación, pasar la request sin modificar
@@ -23,10 +27,11 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(request);
     }
 
-    const token = localStorage.getItem('auth_token');
+    // Obtener token del AuthService
+    const token = this.authService.getToken();
 
-    if (token) {
-      // Clone the request and add the token
+    // No agregar token a requests de login
+    if (token && !request.url.includes('/auth/login')) {
       request = request.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
@@ -37,11 +42,15 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error) => {
         if (error instanceof HttpErrorResponse) {
-          if (error.status === 401) {
-            // Token expired or invalid, redirect to login
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user');
-            this.router.navigate(['/login']);
+          // Manejar errores de autenticación y autorización
+          if (error.status === 401 || error.status === 403) {
+            console.warn('Token expirado o sin permisos, redirigiendo a login');
+            this.authService.logout();
+          }
+          
+          // Manejar errores OPTIONS para evitar "JWT Token has expired"
+          if (error.status === 0 && request.method === 'OPTIONS') {
+            console.warn('Error en preflight OPTIONS request');
           }
         }
         return throwError(() => error);

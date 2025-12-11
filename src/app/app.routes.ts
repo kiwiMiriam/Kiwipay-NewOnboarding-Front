@@ -33,25 +33,35 @@ export const routes: Routes = [
           {
             path: 'datos-cliente',
             loadComponent: () => import('./features/prospectos/nuevo-prospecto/datos-cliente/datos-cliente.component')
-              .then(m => m.DatosClienteComponent)
+              .then(m => m.DatosClienteComponent),
+            canActivate: [roleGuard],
+            data: { section: 'CLIENTES' }
           },
           {
             path: 'datos-clinica',
             loadComponent: () => import('./features/prospectos/nuevo-prospecto/datos-clinica/datos-clinica.component')
-              .then(m => m.DatosClinicaComponent)
+              .then(m => m.DatosClinicaComponent),
+            canActivate: [roleGuard],
+            data: { section: 'CLINICAS' }
           },
           {
             path: 'cotizador',
             loadComponent: () => import('./features/prospectos/nuevo-prospecto/cotizador/cotizador.component')
-              .then(m => m.CotizadorComponent)
+              .then(m => m.CotizadorComponent),
+            canActivate: [roleGuard],
+            data: { section: 'COTIZADOR' }
           },
           {
             path: 'documentos',
-            loadComponent: () => import('./features/prospectos/nuevo-prospecto/documentos/documentos.component')
+            loadComponent: () => import('./features/prospectos/nuevo-prospecto/documentos/documentos.component'),
+            canActivate: [roleGuard],
+            data: { section: 'DOCUMENTOS' }
           },
           {
             path: 'prospecto',
-            loadComponent: () => import('./features/prospectos/nuevo-prospecto/prospecto/prospecto')
+            loadComponent: () => import('./features/prospectos/nuevo-prospecto/prospecto/prospecto'),
+            canActivate: [roleGuard],
+            data: { section: 'PROSPECTO' }
           }
         ]
       },

@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { SidebarMenuComponent } from '../../shared/components/sidebar-menu/sidebar-menu.component';
 import { NavigationTabsComponent } from '../../shared/components/navigation-tabs/navigation-tabs.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -51,7 +52,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private routerSubscription: Subscription | undefined;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    public authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     // Subscribe to router events to determine when to show navigation tabs
