@@ -260,7 +260,14 @@
        flex: 0 0 10%;
       min-width: 100px;
       display: flex;
+      align-items: center;
 
+      .status-text {
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: capitalize;
+        color: colors.$text-primary;
+      }
     }
 
     .accion-column {
