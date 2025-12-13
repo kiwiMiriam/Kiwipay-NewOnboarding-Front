@@ -43,7 +43,7 @@ export enum DocumentoEstado {
             <td>{{ doc.fechaCarga | date: 'shortDate' }}</td>
             <td>{{ doc.fechaRevision ? (doc.fechaRevision | date: 'shortDate') : '-' }}</td>
             <td>{{ doc.comentario || '-' }}</td>
-            <td [ngClass]="doc.estadoRevision?.toLowerCase() || ''">{{ doc.estadoRevision || 'Pendiente' }}</td>
+            <td [ngClass]="doc.estadoRevision ? doc.estadoRevision.toLowerCase() : ''">{{ doc.estadoRevision || 'Pendiente' }}</td>
             <td class="acciones">
               <button (click)="onSubir(doc)" title="Subir archivo">
                  <fa-icon [icon]="faUpload"></fa-icon>

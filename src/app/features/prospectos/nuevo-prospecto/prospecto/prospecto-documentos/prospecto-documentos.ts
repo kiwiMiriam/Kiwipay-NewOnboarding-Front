@@ -7,12 +7,19 @@ import { DocumentType } from '@app/core/models/document.model';
 import { downloadFileFromBlob } from '@src/app/shared/utils/file.utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { GuarantorDocumentsComponent } from '@src/app/shared/components/guarantor-documents/guarantor-documents.component';
+import { GuarantorDocumentService } from '@app/core/services/guarantor-document.service';
 
 @Component({
   selector: 'app-prospecto-documentos',
-  imports: [CommonModule, DocumentTableComponent],
+  imports: [CommonModule, DocumentTableComponent, GuarantorDocumentsComponent],
   template: `
   <div class="section-container">
+    <!-- Nueva sección de Documentos del Aval -->
+    <app-guarantor-documents
+      [clientId]="clientId"
+      [hasGuarantor]="hasGuarantor">
+    </app-guarantor-documents>
     <div class="documentos-section">
       <h2>Documentos del Asociado</h2>
       <app-document-table
@@ -35,6 +42,7 @@ import { takeUntil } from 'rxjs/operators';
         (rechazar)="onRechazarRiesgo($event)">
       </app-document-table>
     </div>
+    
   </div>
   `,
   styleUrls: ['./prospecto-documentos.css'],
@@ -48,11 +56,13 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   documentosRiesgoList: DocumentoData[] = [];
   isLoading = false;
   documentTypes: DocumentType[] = [];
+  hasGuarantor = false;
   private destroy$ = new Subject<void>();
 
   constructor(
     private prospectoApiService: ProspectoApiService,
-    private documentoService: DocumentoService
+    private documentoService: DocumentoService,
+    private guarantorDocumentService: GuarantorDocumentService
   ) {}
 
   ngOnInit(): void {
@@ -62,6 +72,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     // Si hay clientId, cargar documentos desde el backend
     if (this.clientId) {
       this.loadDocumentsFromBackend(this.clientId);
+      this.checkForGuarantor(this.clientId);
     } else {
       this.updateDocumentos();
     }
@@ -72,6 +83,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
       const newClientId = changes['clientId'].currentValue;
       if (newClientId) {
         this.loadDocumentsFromBackend(newClientId);
+        this.checkForGuarantor(newClientId);
       }
     } else if (changes['documentosAsociado'] || changes['documentosRiesgo']) {
       this.updateDocumentos();
@@ -365,5 +377,23 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     if (!tipoId) return 'Sin tipo';
     const tipo = this.documentTypes.find(t => t.id === tipoId);
     return tipo ? tipo.name : tipoId;
+  }
+
+  /**
+   * Verificar si existe un aval para mostrar la sección de documentos del aval
+   */
+  private checkForGuarantor(clientId: number): void {
+    this.guarantorDocumentService.checkGuarantorExists(clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (guarantor) => {
+          this.hasGuarantor = !!guarantor;
+          console.log('Guarantor check result:', this.hasGuarantor);
+        },
+        error: (error) => {
+          console.log('No guarantor found for client:', clientId);
+          this.hasGuarantor = false;
+        }
+      });
   }
 }
