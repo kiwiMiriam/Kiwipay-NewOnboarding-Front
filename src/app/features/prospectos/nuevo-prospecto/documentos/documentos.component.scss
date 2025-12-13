@@ -351,6 +351,16 @@
           &.download-btn:hover {
             color: colors.$primary-900;
           }
+
+          &.approve-btn:hover {
+            color: #28a745;
+            background-color: rgba(40, 167, 69, 0.1);
+          }
+
+          &.reject-btn:hover {
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+          }
         }
       }
     }

@@ -53,6 +53,15 @@ export class DocumentoService {
   deleteDocument(documentId: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/documents/${documentId}`);
   }
+
+  /**
+   * Revisar un documento (aprobar/rechazar)
+   */
+  reviewDocument(documentId: string, reviewStatus: 'APPROVED' | 'REJECTED' | 'PENDING'): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/documents/${documentId}/review`, {
+      reviewStatus
+    });
+  }
 }
 
 

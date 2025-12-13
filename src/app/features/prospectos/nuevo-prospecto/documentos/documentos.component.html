@@ -110,7 +110,9 @@
         </div>
         <div class="column comentario-column">{{ documento.comment || '-' }}</div>
         <div class="column estado-column">
-          <span [class]="obtenerClaseIconoEstado(documento.status)" [title]="obtenerTextoEstado(documento.status)"></span>
+          <span [class]="obtenerClaseIconoEstado(documento.reviewStatus)" [title]="obtenerTextoEstado(documento.reviewStatus)">
+            {{ obtenerTextoEstado(documento.reviewStatus) }}
+          </span>
         </div>
         <div class="column accion-column">
           <button
@@ -120,6 +122,24 @@
           >
             <fa-icon [icon]="faDownload"></fa-icon>
           </button>
+          @if (documento.reviewStatus !== 'APPROVED') {
+            <button
+              class="btn-icon approve-btn"
+              (click)="aprobarDocumento(documento)"
+              title="Aprobar"
+            >
+              <fa-icon [icon]="faCheck"></fa-icon>
+            </button>
+          }
+          @if (documento.reviewStatus !== 'REJECTED') {
+            <button
+              class="btn-icon reject-btn"
+              (click)="rechazarDocumento(documento)"
+              title="Rechazar"
+            >
+              <fa-icon [icon]="faTimes"></fa-icon>
+            </button>
+          }
           <button
             class="btn-icon delete-btn"
             (click)="eliminarDocumento(documento.id)"

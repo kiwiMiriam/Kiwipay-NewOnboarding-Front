@@ -200,7 +200,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Approving non-risk document:', event.documento.id);
-    this.prospectoApiService.reviewDocument(event.documento.id, 'APPROVED')
+    this.documentoService.reviewDocument(event.documento.id, 'APPROVED')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -210,7 +210,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           if (index !== -1) {
             this.documentosAsociadoList[index] = {
               ...this.documentosAsociadoList[index],
-              estadoRevision: 'APPROVED',
+              estadoRevision: 'Aprobado',
               comentario: event.comentario,
               fechaRevision: new Date().toISOString()
             };
@@ -235,7 +235,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Rejecting non-risk document:', event.documento.id);
-    this.prospectoApiService.reviewDocument(event.documento.id, 'REJECTED')
+    this.documentoService.reviewDocument(event.documento.id, 'REJECTED')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -245,7 +245,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           if (index !== -1) {
             this.documentosAsociadoList[index] = {
               ...this.documentosAsociadoList[index],
-              estadoRevision: 'REJECTED',
+              estadoRevision: 'Rechazado',
               comentario: event.comentario,
               fechaRevision: new Date().toISOString()
             };
@@ -307,7 +307,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Approving risk document:', event.documento.id);
-    this.prospectoApiService.reviewDocument(event.documento.id, 'APPROVED')
+    this.documentoService.reviewDocument(event.documento.id, 'APPROVED')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -317,7 +317,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           if (index !== -1) {
             this.documentosRiesgoList[index] = {
               ...this.documentosRiesgoList[index],
-              estadoRevision: 'APPROVED',
+              estadoRevision: 'Aprobado',
               comentario: event.comentario,
               fechaRevision: new Date().toISOString()
             };
@@ -342,7 +342,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Rejecting risk document:', event.documento.id);
-    this.prospectoApiService.reviewDocument(event.documento.id, 'REJECTED')
+    this.documentoService.reviewDocument(event.documento.id, 'REJECTED')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -352,7 +352,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           if (index !== -1) {
             this.documentosRiesgoList[index] = {
               ...this.documentosRiesgoList[index],
-              estadoRevision: 'REJECTED',
+              estadoRevision: 'Rechazado',
               comentario: event.comentario,
               fechaRevision: new Date().toISOString()
             };

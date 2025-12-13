@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { DocumentoService } from '../../../../core/services/documento.service';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
-import { faTrash, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faDownload, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   DocumentType, 
@@ -44,6 +44,8 @@ export default class DocumentosComponent implements OnInit {
 
   faTrash = faTrash;
   faDownload = faDownload;
+  faCheck = faCheck;
+  faTimes = faTimes;
 
   // Constants
   readonly MAX_DOCUMENTOS = 10;
@@ -282,30 +284,96 @@ export default class DocumentosComponent implements OnInit {
   }
 
   obtenerClaseIconoEstado(estado: string): string {
-    switch (estado) {
-      case DocumentStatus.APPROVED:
+    switch (estado?.toUpperCase()) {
+      case 'APPROVED':
         return 'estado-icon aprobado';
-      case DocumentStatus.REJECTED:
+      case 'REJECTED':
         return 'estado-icon rechazado';
-      case DocumentStatus.READY:
-      case DocumentStatus.PENDING:
+      case 'READY':
+      case 'PENDING':
       default:
         return 'estado-icon sin-estado';
     }
   }
 
   obtenerTextoEstado(estado: string): string {
-    switch (estado) {
-      case DocumentStatus.APPROVED:
+    switch (estado?.toUpperCase()) {
+      case 'APPROVED':
         return 'Aprobado';
-      case DocumentStatus.REJECTED:
+      case 'REJECTED':
         return 'Rechazado';
-      case DocumentStatus.READY:
+      case 'READY':
         return 'Listo';
-      case DocumentStatus.PENDING:
+      case 'PENDING':
         return 'Pendiente';
       default:
         return 'Sin estado';
+    }
+  }
+
+  /**
+   * Aprobar un documento
+   */
+  aprobarDocumento(documento: Document): void {
+    if (!documento.id) {
+      console.error('Document ID is required for approval');
+      return;
+    }
+
+    if (confirm('¿Estás seguro de que deseas aprobar este documento?')) {
+      console.log('Approving document:', documento.id);
+      this.documentoService.reviewDocument(documento.id, 'APPROVED').subscribe({
+        next: () => {
+          console.log('Document approved successfully');
+          // Actualizar estado local inmediatamente
+          const index = this.documentos.findIndex(doc => doc.id === documento.id);
+          if (index !== -1) {
+            this.documentos[index] = {
+              ...this.documentos[index],
+              reviewStatus: 'APPROVED'
+            };
+          }
+          // Recargar documentos desde el backend
+          this.loadClientDocuments();
+        },
+        error: (error) => {
+          console.error('Error approving document:', error);
+          this.mensajeError = 'Error al aprobar el documento.';
+        }
+      });
+    }
+  }
+
+  /**
+   * Rechazar un documento
+   */
+  rechazarDocumento(documento: Document): void {
+    if (!documento.id) {
+      console.error('Document ID is required for rejection');
+      return;
+    }
+
+    if (confirm('¿Estás seguro de que deseas rechazar este documento?')) {
+      console.log('Rejecting document:', documento.id);
+      this.documentoService.reviewDocument(documento.id, 'REJECTED').subscribe({
+        next: () => {
+          console.log('Document rejected successfully');
+          // Actualizar estado local inmediatamente
+          const index = this.documentos.findIndex(doc => doc.id === documento.id);
+          if (index !== -1) {
+            this.documentos[index] = {
+              ...this.documentos[index],
+              reviewStatus: 'REJECTED'
+            };
+          }
+          // Recargar documentos desde el backend
+          this.loadClientDocuments();
+        },
+        error: (error) => {
+          console.error('Error rejecting document:', error);
+          this.mensajeError = 'Error al rechazar el documento.';
+        }
+      });
     }
   }
 
