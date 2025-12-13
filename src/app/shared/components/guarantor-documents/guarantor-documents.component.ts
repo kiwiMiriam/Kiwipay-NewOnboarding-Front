@@ -8,6 +8,8 @@ import { takeUntil } from 'rxjs/operators';
 
 import { GuarantorDocumentService } from '../../../core/services/guarantor-document.service';
 import { DocumentoService } from '../../../core/services/documento.service';
+import { DocumentTableComponent } from '../documentTable/documentTable.component';
+import { DocumentoData } from '@app/core/services/prospecto-api.service';
 import { 
   DocumentType, 
   Document, 
@@ -22,9 +24,11 @@ import {
 @Component({
   selector: 'app-guarantor-documents',
   standalone: true,
-  imports: [CommonModule, FormsModule, FontAwesomeModule],
+  imports: [CommonModule, FormsModule, FontAwesomeModule, DocumentTableComponent],
   template: `
-    <div class="documentos-aval-section" *ngIf="hasGuarantor">      
+    <div class="documentos-aval-section" *ngIf="hasGuarantor">
+      <h2>Documentos del Aval</h2>
+      
       <!-- Formulario de subida -->
       <div class="upload-form">
         <div class="form-row">
@@ -71,75 +75,15 @@ import {
         </div>
       </div>
 
-      <!-- Tabla de documentos -->
-      <div class="documents-table">
-        <div class="table-header">
-          <div class="col-tipo">Tipo</div>
-          <div class="col-archivo">Archivo</div>
-          <div class="col-comentario">Comentario</div>
-          <div class="col-estado">Estado</div>
-          <div class="col-acciones">Acciones</div>
-        </div>
-        
-        <div *ngIf="isLoading" class="loading-row">
-          <div class="loading-content">Cargando documentos...</div>
-        </div>
-        
-        <div *ngIf="!isLoading && documents.length === 0" class="empty-row">
-          <div class="empty-content">No hay documentos del aval cargados</div>
-        </div>
-        
-        <div *ngFor="let document of documents; trackBy: trackByDocumentId" class="table-row">
-          <div class="col-tipo">
-            {{ obtenerNombreTipoDocumento(document.documentTypeId) }}
-          </div>
-          
-          <div class="col-archivo">
-            <div class="file-info">
-              <span class="file-name">{{ document.filename }}</span>
-              <span class="file-size">{{ formatFileSize(document.sizeBytes) }}</span>
-            </div>
-          </div>
-          
-          <div class="col-comentario">
-            {{ document.comment || '-' }}
-          </div>
-          
-          <div class="col-estado">
-            <span [class]="getStatusClass(document.status)">
-              {{ getStatusText(document.status) }}
-            </span>
-          </div>
-          
-          <div class="col-acciones">
-            <button class="btn-action btn-download" 
-                    (click)="downloadDocument(document)"
-                    title="Descargar">
-              <fa-icon [icon]="faDownload"></fa-icon>
-            </button>
-            
-            <button class="btn-action btn-delete" 
-                    (click)="deleteDocument(document)"
-                    title="Eliminar">
-              <fa-icon [icon]="faTrashAlt"></fa-icon>
-            </button>
-            
-            <button class="btn-action btn-approve" 
-                    (click)="approveDocument(document)"
-                    *ngIf="document.status !== 'APPROVED'"
-                    title="Aprobar">
-              <fa-icon [icon]="faCheck"></fa-icon>
-            </button>
-            
-            <button class="btn-action btn-reject" 
-                    (click)="rejectDocument(document)"
-                    *ngIf="document.status !== 'REJECTED'"
-                    title="Rechazar">
-              <fa-icon [icon]="faTimes"></fa-icon>
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Tabla de documentos usando DocumentTableComponent -->
+      <app-document-table
+        [documentos]="guarantorDocuments"
+        [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
+        (subir)="onSubirDocumento($event)"
+        (descargar)="onDescargarDocumento($event)"
+        (aprobar)="onAprobarDocumento($event)"
+        (rechazar)="onRechazarDocumento($event)">
+      </app-document-table>
     </div>
   `,
   styles: [`
@@ -242,114 +186,10 @@ import {
       border-radius: 4px;
     }
 
-    .documents-table {
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .table-header {
-      display: flex;
-      background-color: #f1f3f4;
-      font-weight: 600;
-      padding: 15px;
-      border-bottom: 2px solid #dee2e6;
-    }
-
-    .table-row {
-      display: flex;
-      padding: 15px;
-      border-bottom: 1px solid #dee2e6;
-      transition: background-color 0.2s;
-    }
-
-    .table-row:hover {
-      background-color: #f8f9fa;
-    }
-
-    .col-tipo { flex: 2; }
-    .col-archivo { flex: 3; }
-    .col-comentario { flex: 2; }
-    .col-estado { flex: 1; text-align: center; }
-    .col-acciones { flex: 2; text-align: center; }
-
-    .file-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .file-name {
-      font-weight: 500;
-      color: #333;
-    }
-
-    .file-size {
-      font-size: 12px;
-      color: #666;
-      margin-top: 2px;
-    }
-
-    .status-approved {
-      color: #28a745;
-      font-weight: 500;
-    }
-
-    .status-rejected {
-      color: #dc3545;
-      font-weight: 500;
-    }
-
-    .status-pending {
-      color: #ffc107;
-      font-weight: 500;
-    }
-
-    .btn-action {
-      background: none;
-      border: none;
-      padding: 5px;
-      margin: 0 2px;
-      cursor: pointer;
-      color: #6c757d;
-      border-radius: 3px;
-      transition: all 0.2s;
-    }
-
-    .btn-action:hover {
-      background-color: #f8f9fa;
-    }
-
-    .btn-download:hover { color: #007bff; }
-    .btn-delete:hover { color: #dc3545; }
-    .btn-approve:hover { color: #28a745; }
-    .btn-reject:hover { color: #ffc107; }
-
-    .loading-row, .empty-row {
-      padding: 40px 20px;
-      text-align: center;
-      color: #666;
-    }
-
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
         gap: 15px;
-      }
-      
-      .table-header {
-        display: none;
-      }
-      
-      .table-row {
-        flex-direction: column;
-        gap: 10px;
-      }
-      
-      .table-row > div:before {
-        content: attr(data-label) ': ';
-        font-weight: 600;
-        color: #333;
       }
     }
   `]
@@ -368,6 +208,7 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
 
   // Component state
   documents: Document[] = [];
+  guarantorDocuments: DocumentoData[] = [];
   documentTypes: DocumentType[] = [];
   selectedDocumentType = '';
   selectedFile: File | null = null;
@@ -436,12 +277,31 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
   private loadGuarantorDocuments(): void {
     if (!this.clientId) return;
 
+    console.log('Cargando documentos del aval para cliente:', this.clientId);
     this.isLoading = true;
     this.guarantorDocumentService.getGuarantorDocuments(this.clientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (documents) => {
+          console.log('Documentos cargados desde el backend:', documents);
           this.documents = documents;
+          // Convertir Document[] a DocumentoData[] para la tabla
+          this.guarantorDocuments = documents.map(doc => {
+            const mappedDoc = {
+              id: doc.id,
+              nombre: doc.filename,
+              tipo: this.getDocumentTypeName(doc.documentTypeId),
+              documentTypeId: doc.documentTypeId,
+              fechaCarga: doc.uploadedAt ? new Date(doc.uploadedAt) : new Date(),
+              fechaRevision: doc.reviewedAt ? new Date(doc.reviewedAt) : new Date(),
+              comentario: doc.comment || '',
+              estadoRevision: this.mapDocumentStatus(doc.reviewStatus),
+              url: ''
+            };
+            console.log('Documento mapeado:', doc.id, 'reviewStatus:', doc.reviewStatus, '->', mappedDoc.estadoRevision);
+            return mappedDoc;
+          });
+          console.log('Lista final de documentos para la tabla:', this.guarantorDocuments);
           this.isLoading = false;
         },
         error: (error: any) => {
@@ -480,6 +340,26 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
+  private mapDocumentStatus(status: string): string {
+    console.log('Mapeando estado del documento:', status);
+    switch (status?.toUpperCase()) {
+      case 'APPROVED':
+        return 'Aprobado';
+      case 'REJECTED':
+        return 'Rechazado';
+      case 'PENDING':
+        return 'Pendiente';
+      default:
+        console.warn('Estado de documento desconocido:', status);
+        return 'Pendiente';
+    }
+  }
+
+  private getDocumentTypeName(documentTypeId: string): string {
+    const type = this.documentTypes.find(t => t.id === documentTypeId);
+    return type ? type.name : documentTypeId;
+  }
+
   async uploadDocument(): Promise<void> {
     if (!this.clientId || !this.selectedFile || !this.selectedDocumentType) {
       this.errorMessage = 'Por favor, selecciona un tipo de documento y un archivo.';
@@ -505,8 +385,9 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (document) => {
-            this.documents.push(document);
+            console.log('Documento creado exitosamente:', document);
             this.clearForm();
+            this.loadGuarantorDocuments(); // Recargar la lista completa
             this.isUploading = false;
           },
           error: (error: any) => {
@@ -522,12 +403,33 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
     }
   }
 
-  downloadDocument(document: Document): void {
-    this.guarantorDocumentService.getGuarantorDocumentContent(document.id)
+
+
+  obtenerNombreTipoDocumento(tipoId: string | undefined): string {
+    if (!tipoId) return 'Sin tipo';
+    const type = this.documentTypes.find(t => t.id === tipoId);
+    return type ? type.name : tipoId;
+  }
+
+
+
+  // Métodos para la integración con DocumentTableComponent
+  onSubirDocumento(event: { documento: DocumentoData; archivo: File }): void {
+    console.log('Subir documento del aval:', event);
+    // Esta funcionalidad ya está manejada por el formulario de subida
+  }
+
+  onDescargarDocumento(documento: DocumentoData): void {
+    if (!documento.id) {
+      console.error('Document ID is required for download');
+      return;
+    }
+
+    this.guarantorDocumentService.getGuarantorDocumentContent(documento.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (blob: Blob) => {
-          downloadFileFromBlob(blob, document.filename);
+          downloadFileFromBlob(blob, documento.nombre || 'documento');
         },
         error: (error: any) => {
           console.error('Error downloading document:', error);
@@ -536,103 +438,66 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
       });
   }
 
-  deleteDocument(document: Document): void {
-    if (!this.clientId) return;
-    
-    if (confirm('¿Estás seguro de que deseas eliminar este documento del aval?')) {
-      this.guarantorDocumentService.deleteGuarantorDocument(this.clientId, document.id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.documents = this.documents.filter(doc => doc.id !== document.id);
-          },
-          error: (error: any) => {
-            console.error('Error deleting document:', error);
-            this.errorMessage = 'Error al eliminar el documento.';
+  onAprobarDocumento(event: { documento: DocumentoData; comentario: string }): void {
+    if (!event.documento.id) {
+      console.error('Document ID is required for approval');
+      return;
+    }
+
+    console.log('Aprobando documento:', event.documento.id);
+    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, 'APPROVED')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('Documento aprobado exitosamente');
+          // Actualizar estado local inmediatamente
+          const index = this.guarantorDocuments.findIndex(doc => doc.id === event.documento.id);
+          if (index !== -1) {
+            this.guarantorDocuments[index] = {
+              ...this.guarantorDocuments[index],
+              estadoRevision: 'Aprobado',
+              fechaRevision: new Date()
+            };
           }
-        });
-    }
+          // También recargar desde el backend
+          this.loadGuarantorDocuments();
+        },
+        error: (error: any) => {
+          console.error('Error approving document:', error);
+          this.errorMessage = 'Error al aprobar el documento.';
+        }
+      });
   }
 
-  approveDocument(document: Document): void {
-    if (confirm('¿Estás seguro de que deseas aprobar este documento?')) {
-      this.guarantorDocumentService.reviewGuarantorDocument(document.id, 'APPROVED')
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            const index = this.documents.findIndex(doc => doc.id === document.id);
-            if (index >= 0) {
-              this.documents[index] = { ...this.documents[index], status: DocumentStatus.APPROVED };
-            }
-          },
-          error: (error: any) => {
-            console.error('Error approving document:', error);
-            this.errorMessage = 'Error al aprobar el documento.';
+  onRechazarDocumento(event: { documento: DocumentoData; comentario: string }): void {
+    if (!event.documento.id) {
+      console.error('Document ID is required for rejection');
+      return;
+    }
+
+    console.log('Rechazando documento:', event.documento.id);
+    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, 'REJECTED')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('Documento rechazado exitosamente');
+          // Actualizar estado local inmediatamente
+          const index = this.guarantorDocuments.findIndex(doc => doc.id === event.documento.id);
+          if (index !== -1) {
+            this.guarantorDocuments[index] = {
+              ...this.guarantorDocuments[index],
+              estadoRevision: 'Rechazado',
+              fechaRevision: new Date()
+            };
           }
-        });
-    }
-  }
-
-  rejectDocument(document: Document): void {
-    if (confirm('¿Estás seguro de que deseas rechazar este documento?')) {
-      this.guarantorDocumentService.reviewGuarantorDocument(document.id, 'REJECTED')
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            const index = this.documents.findIndex(doc => doc.id === document.id);
-            if (index >= 0) {
-              this.documents[index] = { ...this.documents[index], status: DocumentStatus.REJECTED };
-            }
-          },
-          error: (error: any) => {
-            console.error('Error rejecting document:', error);
-            this.errorMessage = 'Error al rechazar el documento.';
-          }
-        });
-    }
-  }
-
-  obtenerNombreTipoDocumento(typeId: string): string {
-    const type = this.documentTypes.find(t => t.id === typeId);
-    return type ? type.name : typeId;
-  }
-
-  getStatusClass(status: string): string {
-    switch (status) {
-      case DocumentStatus.APPROVED:
-        return 'status-approved';
-      case DocumentStatus.REJECTED:
-        return 'status-rejected';
-      default:
-        return 'status-pending';
-    }
-  }
-
-  getStatusText(status: string): string {
-    switch (status) {
-      case DocumentStatus.APPROVED:
-        return 'Aprobado';
-      case DocumentStatus.REJECTED:
-        return 'Rechazado';
-      case DocumentStatus.PENDING:
-        return 'Pendiente';
-      default:
-        return 'Pendiente';
-    }
-  }
-
-  formatFileSize(bytes: number): string {
-    if (bytes < 1024) {
-      return bytes + ' B';
-    } else if (bytes < 1024 * 1024) {
-      return (bytes / 1024).toFixed(2) + ' KB';
-    } else {
-      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-    }
-  }
-
-  trackByDocumentId(index: number, document: Document): string {
-    return document.id;
+          // También recargar desde el backend
+          this.loadGuarantorDocuments();
+        },
+        error: (error: any) => {
+          console.error('Error rejecting document:', error);
+          this.errorMessage = 'Error al rechazar el documento.';
+        }
+      });
   }
 
   private clearForm(): void {

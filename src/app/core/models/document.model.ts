@@ -12,13 +12,15 @@ export interface DocumentType {
  */
 export interface Document {
   id: string;
+  clientId?: number;
   documentTypeId: string;
   filename: string;
   mimeType: string;
   sizeBytes: number;
   comment?: string;
-  status: DocumentStatus;
+  reviewStatus: string; // Campo correcto del backend
   uploadedAt: string;
+  reviewedAt?: string; // Fecha de revisión del backend
   uploadedBy?: string;
 }
 

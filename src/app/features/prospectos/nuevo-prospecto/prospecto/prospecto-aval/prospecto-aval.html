@@ -138,17 +138,4 @@
       }
     </div>
   </form>
-
-  @if (isAvalistaExpanded) {
-    <div class="documentos-section">
-      <h2>Documentos del Aval</h2>
-      <app-document-table
-        [documentos]="documentosList"
-        (subir)="onDocumentoSubir($event)"
-        (descargar)="onDocumentoDescargar($event)"
-        (aprobar)="onDocumentoAprobar($event)"
-        (rechazar)="onDocumentoRechazar($event)">
-      </app-document-table>
-    </div>
-  }
 </div>
