@@ -1,8 +1,10 @@
 import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
-import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto-api.service';
+import { ProspectoApiService, DocumentoData, ConyugeData } from '@app/core/services/prospecto-api.service';
 import { DocumentoService } from '@app/core/services/documento.service';
+import { ConyugeService } from '@app/core/services/conyuge.service';
 import { DocumentType } from '@app/core/models/document.model';
 import { downloadFileFromBlob } from '@src/app/shared/utils/file.utils';
 import { Subject } from 'rxjs';
@@ -12,7 +14,7 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
 
 @Component({
   selector: 'app-prospecto-documentos',
-  imports: [CommonModule, DocumentTableComponent, GuarantorDocumentsComponent],
+  imports: [CommonModule, ReactiveFormsModule, DocumentTableComponent, GuarantorDocumentsComponent],
   template: `
   <div class="section-container">
     <!-- Nueva sección de Documentos del Aval -->
@@ -20,6 +22,68 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
       [clientId]="clientId"
       [hasGuarantor]="hasGuarantor">
     </app-guarantor-documents>
+    
+    <!-- Sección de Datos del Cónyuge -->
+    <div class="conyuge-section">
+      <div class="section-header">
+        <h2>Datos del Cónyuge</h2>
+        <button class="btn-toggle" (click)="toggleConyugeSection()">
+          {{ isConyugeExpanded ? 'Contraer' : 'Expandir' }}
+        </button>
+      </div>
+      
+      @if (isConyugeExpanded && conyugeForm) {
+        <form [formGroup]="conyugeForm" (ngSubmit)="updateConyuge()">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="conyugueTipoDocumento">Tipo de Documento</label>
+              <select id="conyugueTipoDocumento" formControlName="tipoDocumento">
+                <option value="">Seleccione...</option>
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="PASAPORTE">Pasaporte</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="conyugueNumeroDocumento">Número de Documento</label>
+              <input type="text" id="conyugueNumeroDocumento" formControlName="numeroDocumento">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="conyugueNombres">Nombres</label>
+              <input type="text" id="conyugueNombres" formControlName="nombres">
+            </div>
+            <div class="form-group">
+              <label for="conyugueApellidos">Apellidos</label>
+              <input type="text" id="conyugueApellidos" formControlName="apellidos">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="conyugueCorreo">Correo Electrónico</label>
+              <input type="email" id="conyugueCorreo" formControlName="correo">
+            </div>
+            <div class="form-group">
+              <label for="conyugueTelefono">Teléfono</label>
+              <input type="tel" id="conyugueTelefono" formControlName="telefono">
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingConyuge">
+              {{ isUpdatingConyuge ? 'Actualizando...' : 'Actualizar Datos' }}
+            </button>
+            <button type="button" class="btn-secondary" (click)="resetConyugeForm()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+    
     <div class="documentos-section">
       <h2>Documentos del Asociado</h2>
       <app-document-table
@@ -56,13 +120,24 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   isLoading = false;
   documentTypes: DocumentType[] = [];
   hasGuarantor = false;
+  
+  // Propiedades para el cónyuge
+  conyugeForm?: FormGroup;
+  isConyugeExpanded = false;
+  isUpdatingConyuge = false;
+  currentConyuge?: ConyugeData;
+  
   private destroy$ = new Subject<void>();
 
   constructor(
     private prospectoApiService: ProspectoApiService,
     private documentoService: DocumentoService,
-    private guarantorDocumentService: GuarantorDocumentService
-  ) {}
+    private guarantorDocumentService: GuarantorDocumentService,
+    private formBuilder: FormBuilder,
+    private conyugeService: ConyugeService
+  ) {
+    this.initializeConyugeForm();
+  }
 
   ngOnInit(): void {
     // Cargar tipos de documentos
@@ -379,5 +454,130 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           this.hasGuarantor = false;
         }
       });
+  }
+
+  /**
+   * Inicializar formulario del cónyuge
+   */
+  private initializeConyugeForm(): void {
+    this.conyugeForm = this.formBuilder.group({
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      nombres: [''],
+      apellidos: [''],
+      correo: [''],
+      telefono: ['']
+    });
+  }
+
+  /**
+   * Toggle sección del cónyuge
+   */
+  toggleConyugeSection(): void {
+    this.isConyugeExpanded = !this.isConyugeExpanded;
+    if (this.isConyugeExpanded && this.clientId) {
+      this.loadConyugeData();
+    }
+  }
+
+  /**
+   * Cargar datos del cónyuge
+   */
+  private loadConyugeData(): void {
+    if (!this.clientId) return;
+    
+    this.conyugeService.getConyugeByClientId(this.clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (conyuge) => {
+          this.currentConyuge = conyuge || undefined;
+          if (conyuge && this.conyugeForm) {
+            this.conyugeForm.patchValue({
+              tipoDocumento: conyuge.tipoDocumento || conyuge.documentType || '',
+              numeroDocumento: conyuge.numeroDocumento || conyuge.documentNumber || '',
+              nombres: conyuge.nombres || conyuge.firstNames || '',
+              apellidos: conyuge.apellidos || conyuge.lastNames || '',
+              correo: conyuge.correo || conyuge.email || '',
+              telefono: conyuge.telefono || conyuge.phone || ''
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error loading cónyuge data:', error);
+          this.currentConyuge = undefined;
+        }
+      });
+  }
+
+  /**
+   * Actualizar datos del cónyuge
+   */
+  updateConyuge(): void {
+    if (!this.clientId || !this.conyugeForm || this.conyugeForm.invalid) {
+      return;
+    }
+
+    this.isUpdatingConyuge = true;
+    const formData = this.conyugeForm.value;
+    
+    const conyugeData: ConyugeData = {
+      id: this.currentConyuge?.id,
+      clientId: this.clientId,
+      tipoDocumento: formData.tipoDocumento,
+      numeroDocumento: formData.numeroDocumento,
+      nombres: formData.nombres,
+      apellidos: formData.apellidos,
+      correo: formData.correo,
+      telefono: formData.telefono,
+      // Campos para backend compatibility
+      documentType: formData.tipoDocumento,
+      documentNumber: formData.numeroDocumento,
+      firstNames: formData.nombres,
+      lastNames: formData.apellidos,
+      email: formData.correo,
+      phone: formData.telefono
+    };
+
+    const operation = this.currentConyuge ? 
+      this.conyugeService.actualizarConyuge(this.clientId, conyugeData) :
+      this.conyugeService.crearConyuge(this.clientId, conyugeData);
+
+    operation
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resultado) => {
+          console.log('Cónyuge actualizado exitosamente:', resultado);
+          this.currentConyuge = resultado;
+          this.isUpdatingConyuge = false;
+          alert(this.currentConyuge ? 'Datos del cónyuge actualizados correctamente' : 'Datos del cónyuge creados correctamente');
+        },
+        error: (error) => {
+          console.error('Error updating cónyuge:', error);
+          this.isUpdatingConyuge = false;
+          alert('Error al actualizar los datos del cónyuge');
+        }
+      });
+  }
+
+  /**
+   * Reset formulario del cónyuge
+   */
+  resetConyugeForm(): void {
+    if (this.conyugeForm) {
+      if (this.currentConyuge) {
+        // Si existe cónyuge, restaurar datos originales
+        this.conyugeForm.patchValue({
+          tipoDocumento: this.currentConyuge.tipoDocumento || this.currentConyuge.documentType || '',
+          numeroDocumento: this.currentConyuge.numeroDocumento || this.currentConyuge.documentNumber || '',
+          nombres: this.currentConyuge.nombres || this.currentConyuge.firstNames || '',
+          apellidos: this.currentConyuge.apellidos || this.currentConyuge.lastNames || '',
+          correo: this.currentConyuge.correo || this.currentConyuge.email || '',
+          telefono: this.currentConyuge.telefono || this.currentConyuge.phone || ''
+        });
+      } else {
+        // Si no existe cónyuge, limpiar formulario
+        this.conyugeForm.reset();
+      }
+    }
   }
 }
