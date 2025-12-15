@@ -25,7 +25,6 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
       <app-document-table
         [documentos]="documentosAsociadoList"
         [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
-        (subir)="onSubirAsociado($event)"
         (descargar)="onDescargarAsociado($event)"
         (aprobar)="onAprobarAsociado($event)"
         (rechazar)="onRechazarAsociado($event)">
@@ -153,21 +152,6 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   private updateDocumentos(): void {
     this.documentosAsociadoList = this.documentosAsociado ? [...this.documentosAsociado] : [];
     this.documentosRiesgoList = this.documentosRiesgo ? [...this.documentosRiesgo] : [];
-  }
-
-  // Métodos para documentos del asociado
-  onSubirAsociado(event: { documento: DocumentoData; archivo: File }): void {
-    console.log('Subir archivo asociado:', event);
-    // Aquí se implementaría la lógica para subir el archivo
-    // Por ahora solo actualizamos el nombre del documento
-    const index = this.documentosAsociadoList.findIndex(d => d.id === event.documento.id);
-    if (index !== -1) {
-      this.documentosAsociadoList[index] = {
-        ...this.documentosAsociadoList[index],
-        nombre: event.archivo.name,
-        fechaCarga: new Date()
-      };
-    }
   }
 
   onDescargarAsociado(doc: DocumentoData): void {

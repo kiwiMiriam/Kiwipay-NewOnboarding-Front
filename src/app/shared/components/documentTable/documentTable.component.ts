@@ -66,36 +66,7 @@ export enum DocumentoEstado {
       </tbody>
     </table>
   </div>
-
-  <!-- Modal para subir archivo -->
-  <div class="modal-overlay" *ngIf="mostrarModalSubir" (click)="cerrarModalSubir()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <h3>Subir Archivo</h3>
-      <div class="form-group">
-        <label for="archivoSubir">Seleccionar archivo</label>
-        <input
-          type="file"
-          id="archivoSubir"
-          #fileInput
-          (change)="onArchivoSeleccionado($event)"
-          accept=".pdf,.jpg,.jpeg,.png"
-          class="file-input"
-          placeholder="Seleccionar archivo 1"/>
-          <!--
-        <p class="file-name hidden-input" *ngIf="archivoSeleccionado">{{ archivoSeleccionado.name }}</p> -->
-      </div>
-      <div class="modal-actions">
-        <button class="btn-secondary" (click)="cerrarModalSubir()">Cancelar</button>
-        <button
-          class="btn-primary"
-          (click)="confirmarSubirArchivo()"
-          [disabled]="!archivoSeleccionado">
-          Aceptar
-        </button>
-      </div>
-    </div>
-  </div>
-
+  
   <!-- Modal para aprobar -->
   <div class="modal-overlay" *ngIf="mostrarModalAprobar" (click)="cerrarModalAprobar()">
     <div class="modal-content" (click)="$event.stopPropagation()">
