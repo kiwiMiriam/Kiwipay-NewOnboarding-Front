@@ -96,6 +96,7 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
     </div>
     <div class="documentos-section">
       <h2>Ficha de riesgo del Asociado</h2>
+      <p>Haz clic en el icono de subida para cargar el documento</p>
       <app-document-table
         [documentos]="documentosRiesgoList"
         [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
@@ -121,7 +122,6 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   documentTypes: DocumentType[] = [];
   hasGuarantor = false;
   
-  // Propiedades para el cónyuge
   conyugeForm?: FormGroup;
   isConyugeExpanded = false;
   isUpdatingConyuge = false;
@@ -140,10 +140,8 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Cargar tipos de documentos
     this.loadDocumentTypes();
-    
-    // Si hay clientId, cargar documentos desde el backend
+  
     if (this.clientId) {
       this.loadDocumentsFromBackend(this.clientId);
       this.checkForGuarantor(this.clientId);

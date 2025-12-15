@@ -74,8 +74,6 @@ import {
           {{ errorMessage }}
         </div>
       </div>
-
-      <!-- Tabla de documentos usando DocumentTableComponent -->
       <app-document-table
         [documentos]="guarantorDocuments"
         [obtenerNombreTipoDocumento]="obtenerNombreTipoDocumento.bind(this)"
@@ -88,8 +86,6 @@ import {
   `,
   styles: [`
     .documentos-aval-section {
-      margin: 20px 0;
-      padding: 20px;
       background: #f8f9fa;
       border-radius: 8px;
     }
