@@ -152,7 +152,8 @@ export interface QuoteData {
 }
 
 export interface AvalistaData {
-  id?: number;
+  id?: number | string;
+  guarantorId?: string;
   clientId?: number;
   documentType?: string;
   documentNumber?: string;
@@ -420,7 +421,8 @@ export class ProspectoApiService {
       map((data) => {
         if (!data) return null;
         return {
-          id: data.id,
+          id: data.guarantorId,
+          guarantorId: data.guarantorId,
           clientId: data.clientId,
           documentType: data.documentType,
           documentNumber: data.documentNumber,
@@ -472,7 +474,8 @@ export class ProspectoApiService {
       map((response) => {
         console.log('Guarantor update response:', response);
         return {
-          id: response.id,
+          id: response.guarantorId,
+          guarantorId: response.guarantorId,
           clientId: response.clientId,
           documentType: response.documentType,
           documentNumber: response.documentNumber,

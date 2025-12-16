@@ -137,5 +137,79 @@
       </div>
       }
     </div>
-  </form>
-</div>
+
+    <!-- INFORMACIÓN CÓNYUGE DEL AVAL (Solo si existe el aval) -->
+    @if (hasGuarantor && spouseForm) {
+      <div class="expandable-section">
+        <div class="section-toggle" (click)="toggleConyugeSection()">
+          <div class="section-header">
+            <h4>Información del Cónyuge (opcional)</h4>
+          </div>
+          <span class="toggle-icon">{{ isConyugeExpanded ? '▼' : '►' }}</span>
+        </div>
+
+        @if (isConyugeExpanded) {
+          <div class="expanded-content">
+            <form [formGroup]="spouseForm" (ngSubmit)="submitSpouseForm()">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="conyugeTipoDocumento">Tipo de Documento</label>
+                  <select id="conyugeTipoDocumento" formControlName="tipoDocumento">
+                    <option value="">Seleccione...</option>
+                    <option value="DNI">DNI</option>
+                    <option value="CE">Carnet de Extranjería</option>
+                    <option value="PASAPORTE">Pasaporte</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="conyugeNumeroDocumento">Número de Documento</label>
+                  <input type="text" id="conyugeNumeroDocumento" formControlName="numeroDocumento" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="conyugeNombres">Nombres</label>
+                  <input type="text" id="conyugeNombres" formControlName="nombres" />
+                </div>
+
+                <div class="form-group">
+                  <label for="conyugeApellidos">Apellidos</label>
+                  <input type="text" id="conyugeApellidos" formControlName="apellidos" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="conyugeCorreo">Correo Electrónico</label>
+                  <input type="email" id="conyugeCorreo" formControlName="correo" />
+                </div>
+
+                <div class="form-group">
+                  <label for="conyugeTelefono">Teléfono</label>
+                  <input type="tel" id="conyugeTelefono" formControlName="telefono" />
+                </div>
+              </div>
+
+              <div class="form-buttons">
+                <button type="submit" class="btn-primary" [disabled]="isLoadingSpouse">
+                  @if (isLoadingSpouse) { 
+                    Procesando... 
+                  } @else { 
+                    @if (spouseEditMode) { 
+                      Actualizar Información 
+                    } @else { 
+                      Registrar Cónyuge 
+                    } 
+                  }
+                </button>
+                <button type="button" class="btn-secondary" (click)="resetSpouseForm()" [disabled]="isLoadingSpouse">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+      </div>
+    }

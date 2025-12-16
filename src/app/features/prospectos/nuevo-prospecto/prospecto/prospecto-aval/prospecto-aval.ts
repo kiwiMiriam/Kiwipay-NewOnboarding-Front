@@ -17,6 +17,13 @@ import {
 import {
   DocumentoEstado,
 } from '@src/app/shared/components/documentTable/documentTable.component';
+import {
+  GuarantorSpouseService,
+  GuarantorSpouseData,
+  CreateGuarantorSpouseRequest,
+  UpdateGuarantorSpouseRequest
+} from '@app/core/services/guarantor-spouse.service';
+import { GuarantorDocumentService } from '@app/core/services/guarantor-document.service';
 
 @Component({
   selector: 'app-prospecto-aval',
@@ -40,6 +47,15 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
 
   // Control de secciones expandibles
   public isAvalistaExpanded = false;
+  public isConyugeExpanded = false;
+
+  // Guarantor and spouse data
+  public guarantorId?: string;
+  public hasGuarantor = false;
+  public guarantorSpouse?: GuarantorSpouseData;
+  public spouseEditMode = false;
+  public isLoadingSpouse = false;
+  public spouseForm?: FormGroup;
 
   // Location data
   public departamentos: Department[] = [];
@@ -56,9 +72,12 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
   constructor(
     private fb: FormBuilder,
     private locationService: LocationService,
-    private prospectoApiService: ProspectoApiService
+    private prospectoApiService: ProspectoApiService,
+    private guarantorSpouseService: GuarantorSpouseService,
+    private guarantorDocumentService: GuarantorDocumentService
   ) {
     this.initForm();
+    this.initSpouseForm();
   }
 
   // Manejadores de eventos para la tabla de documentos
@@ -173,9 +192,10 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
   public ngOnInit(): void {
     this.loadDepartments();
     
-    // Si hay clientId, cargar aval desde el backend
+    // Si hay clientId, cargar aval desde el backend y verificar cónyuge
     if (this.clientId) {
       this.loadGuarantorFromBackend(this.clientId);
+      this.checkGuarantorExists(); // Verificar si existe aval para mostrar formulario de cónyuge
     } else if (this.initialData) {
       this.isAvalistaExpanded = true;
       this.editMode = true;
@@ -217,11 +237,22 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
             console.log('Guarantor found:', guarantor);
             this.editMode = true;
             this.isAvalistaExpanded = true;
+            this.hasGuarantor = true;
+            // Asegurar que obtenemos el ID correcto del aval
+            this.guarantorId = guarantor.guarantorId?.toString() || guarantor.id?.toString();
+            console.log('Guarantor ID set from loadGuarantorFromBackend:', this.guarantorId);
+            console.log('Full guarantor response:', guarantor);
             this.loadInitialData(guarantor);
+            // Cargar cónyuge si existe y tenemos el guarantorId
+            if (this.guarantorId) {
+              this.loadGuarantorSpouse();
+            }
           } else {
             console.log('No guarantor found for this client');
             this.editMode = false;
             this.isAvalistaExpanded = false;
+            this.hasGuarantor = false;
+            this.guarantorId = undefined;
           }
         },
         error: (error) => {
@@ -469,6 +500,12 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
           this.isLoading = false;
           console.log('Guarantor saved successfully:', response);
           
+          // Asegurar que capturamos el guarantorId de la respuesta
+          this.guarantorId = response.guarantorId?.toString() || response.id?.toString();
+          this.hasGuarantor = true;
+          console.log('Guarantor ID captured from response:', this.guarantorId);
+          console.log('Full response:', response);
+          
           if (this.editMode) {
             this.dataUpdated.emit(response);
             alert('Aval actualizado exitosamente');
@@ -503,5 +540,173 @@ export class ProspectoAval implements OnInit, OnDestroy, OnChanges {
           alert(`Error al ${this.editMode ? 'actualizar' : 'registrar'} el aval`);
         }
       });
+  }
+
+  // ===== MÉTODOS PARA CÓNYUGE DEL AVAL =====
+
+  private initSpouseForm(): void {
+    this.spouseForm = this.fb.group({
+      tipoDocumento: [''],
+      numeroDocumento: [''],
+      nombres: [''],
+      apellidos: [''],
+      correo: [''],
+      telefono: ['']
+    });
+  }
+
+  public toggleConyugeSection(): void {
+    this.isConyugeExpanded = !this.isConyugeExpanded;
+  }
+
+  private checkGuarantorExists(): void {
+    if (!this.clientId) return;
+
+    this.guarantorDocumentService.checkGuarantorExists(this.clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (guarantor) => {
+          console.log('Guarantor found:', guarantor);
+          this.hasGuarantor = true;
+          // Asegurar que obtenemos el ID del aval de la respuesta
+          this.guarantorId = guarantor.guarantorId?.toString() || guarantor.id?.toString();
+          console.log('Guarantor ID set to:', this.guarantorId);
+          console.log('Full guarantor response:', guarantor);
+          
+          if (this.guarantorId) {
+            this.loadGuarantorSpouse();
+          } else {
+            console.error('Guarantor ID not found in response');
+          }
+        },
+        error: (error) => {
+          console.log('No guarantor found:', error);
+          this.hasGuarantor = false;
+          this.guarantorId = undefined;
+        }
+      });
+  }
+
+  private loadGuarantorSpouse(): void {
+    if (!this.guarantorId) return;
+
+    this.isLoadingSpouse = true;
+    this.guarantorSpouseService.getGuarantorSpouse(this.guarantorId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (spouse) => {
+          console.log('Spouse found:', spouse);
+          this.guarantorSpouse = spouse;
+          this.spouseEditMode = true;
+          this.patchSpouseForm(spouse);
+          this.isLoadingSpouse = false;
+        },
+        error: (error) => {
+          console.log('No spouse found:', error);
+          this.guarantorSpouse = undefined;
+          this.spouseEditMode = false;
+          this.isLoadingSpouse = false;
+        }
+      });
+  }
+
+  private patchSpouseForm(spouse: GuarantorSpouseData): void {
+    if (!this.spouseForm) return;
+
+    this.spouseForm.patchValue({
+      tipoDocumento: spouse.documentType || '',
+      numeroDocumento: spouse.documentNumber || '',
+      nombres: spouse.firstNames || '',
+      apellidos: spouse.lastNames || '',
+      correo: spouse.email || '',
+      telefono: spouse.phone || ''
+    });
+  }
+
+  public submitSpouseForm(): void {
+    if (!this.spouseForm) {
+      console.error('Spouse form not available');
+      alert('Error: Formulario no disponible');
+      return;
+    }
+
+    if (!this.guarantorId) {
+      console.error('Guarantor ID not available. Current guarantorId:', this.guarantorId);
+      console.error('Has guarantor:', this.hasGuarantor);
+      alert('Error: No se puede guardar el cónyuge porque no se encontró un aval asociado');
+      return;
+    }
+
+    console.log('Submitting spouse form with guarantorId:', this.guarantorId);
+    const formValue = this.spouseForm.value;
+
+    if (this.spouseEditMode) {
+      // Actualizar cónyuge existente
+      const updateData: UpdateGuarantorSpouseRequest = {
+        documentType: formValue.tipoDocumento || undefined,
+        documentNumber: formValue.numeroDocumento || undefined,
+        firstNames: formValue.nombres || undefined,
+        lastNames: formValue.apellidos || undefined,
+        email: formValue.correo || undefined,
+        phone: formValue.telefono || undefined
+      };
+
+      this.isLoadingSpouse = true;
+      this.guarantorSpouseService.updateGuarantorSpouse(this.guarantorId, updateData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            console.log('Spouse updated successfully:', response);
+            this.guarantorSpouse = response;
+            this.isLoadingSpouse = false;
+            alert('Información del cónyuge actualizada exitosamente');
+          },
+          error: (error) => {
+            console.error('Error updating spouse:', error);
+            this.isLoadingSpouse = false;
+            alert('Error al actualizar la información del cónyuge');
+          }
+        });
+    } else {
+      // Crear nuevo cónyuge
+      const createData: CreateGuarantorSpouseRequest = {
+        documentType: formValue.tipoDocumento || '',
+        documentNumber: formValue.numeroDocumento || '',
+        firstNames: formValue.nombres || '',
+        lastNames: formValue.apellidos || '',
+        email: formValue.correo || undefined,
+        phone: formValue.telefono || undefined
+      };
+
+      this.isLoadingSpouse = true;
+      this.guarantorSpouseService.createGuarantorSpouse(this.guarantorId, createData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            console.log('Spouse created successfully:', response);
+            this.guarantorSpouse = response;
+            this.spouseEditMode = true;
+            this.isLoadingSpouse = false;
+            alert('Cónyuge registrado exitosamente');
+          },
+          error: (error) => {
+            console.error('Error creating spouse:', error);
+            this.isLoadingSpouse = false;
+            alert('Error al registrar el cónyuge');
+          }
+        });
+    }
+  }
+
+  public resetSpouseForm(): void {
+    if (!this.spouseForm) return;
+
+    if (this.spouseEditMode && this.guarantorSpouse) {
+      // Restaurar valores originales
+      this.patchSpouseForm(this.guarantorSpouse);
+    } else {
+      // Limpiar formulario
+      this.spouseForm.reset();
+    }
   }
 }
