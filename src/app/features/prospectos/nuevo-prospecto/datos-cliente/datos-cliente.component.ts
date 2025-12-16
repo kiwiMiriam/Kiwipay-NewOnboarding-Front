@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProspectosService, Prospecto } from '../../../../core/services/prospectos.service';
 import { NavigationService } from '../../../../core/services/navigation.service';
 import { LocationService } from '@src/app/core/services/location.service';
+import { ToastService } from '@src/app/shared/components/toast/toast.service';
 import { ProspectoApiService, ClienteData, PacienteData, ConyugeData } from '../../../../core/services/prospecto-api.service';
 import { PacientesService } from '../../../../core/services/pacientes.service';
 import { ConyugeService } from '../../../../core/services/conyuge.service';
@@ -51,7 +52,8 @@ export class DatosClienteComponent implements OnInit {
     private navigationService: NavigationService,
     private locationService: LocationService,
     private pacientesService: PacientesService,
-    private conyugeService: ConyugeService
+    private conyugeService: ConyugeService,
+    private toastService: ToastService
   ) {
     this.initForm();
   }
@@ -84,11 +86,6 @@ export class DatosClienteComponent implements OnInit {
           this.clientForm.patchValue(prospecto);
           
           // Cargar suffersCondition si existe
-          console.log('[DATOS-CLIENTE] Loading suffersCondition:', {
-            value: prospecto.suffersCondition,
-            isDefined: prospecto.suffersCondition !== undefined,
-            prospecto: prospecto
-          });
           if (prospecto.suffersCondition !== undefined) {
             this.clientForm.patchValue({ suffersCondition: prospecto.suffersCondition });
           }
@@ -254,6 +251,20 @@ export class DatosClienteComponent implements OnInit {
     this.isConyugueExpanded = !this.isConyugueExpanded;
   }
 
+  // Manejo del cambio de suffersCondition
+  onSuffersConditionChange(value: boolean): void {
+    const previousValue = this.clientForm.get('suffersCondition')?.value;
+    this.clientForm.patchValue({ suffersCondition: value });
+    
+    // Mostrar mensaje de confirmación solo si cambió el valor
+    if (previousValue !== value) {
+      const mensaje = value 
+        ? '✓ Registrado: Cliente SÍ sufre de padecimientos' 
+        : '✓ Registrado: Cliente NO sufre de padecimientos';
+      this.toastService.show(mensaje, 'success');
+    }
+  }
+
   onSubmit(): void {
     this.submitted = true;
 
@@ -287,12 +298,6 @@ export class DatosClienteComponent implements OnInit {
         line1: formData.direccion
       }
     };
-
-    console.log('[DATOS-CLIENTE] suffersCondition value:', {
-      fromForm: formData.suffersCondition,
-      inClienteData: clienteData.suffersCondition,
-      fullClienteData: clienteData
-    });
 
     // Verificar si hay datos de paciente para guardar
     const pacienteData = formData.paciente;
@@ -337,7 +342,7 @@ export class DatosClienteComponent implements OnInit {
         const checkCompletion = () => {
           completedOperations++;
           if (completedOperations === pendingOperations) {
-            alert('Datos actualizados exitosamente');
+            this.toastService.success('Datos actualizados exitosamente');
             this.volverABandeja();
           }
         };
@@ -354,13 +359,13 @@ export class DatosClienteComponent implements OnInit {
         
         // Si no hay operaciones adicionales
         if (pendingOperations === 0) {
-          alert('Cliente actualizado exitosamente');
+          this.toastService.success('Cliente actualizado exitosamente');
           this.volverABandeja();
         }
       },
       error: (err) => {
         console.error('Error actualizando cliente:', err);
-        alert('Error al actualizar cliente: ' + (err.error?.message || err.message));
+        this.toastService.error('Error al actualizar cliente: ' + (err.error?.message || err.message));
       }
     });
   }
@@ -399,7 +404,7 @@ export class DatosClienteComponent implements OnInit {
         const checkCompletion = () => {
           completedOperations++;
           if (completedOperations === pendingOperations) {
-            alert('Todos los datos creados exitosamente');
+            this.toastService.success('Todos los datos creados exitosamente');
           }
         };
         
@@ -415,12 +420,12 @@ export class DatosClienteComponent implements OnInit {
         
         // Si no hay operaciones adicionales
         if (pendingOperations === 0) {
-          alert('Cliente creado exitosamente');
+          this.toastService.success('Cliente creado exitosamente');
         }
       },
       error: (err) => {
         console.error('Error creando cliente:', err);
-        alert('Error al crear cliente: ' + (err.error?.message || err.message));
+        this.toastService.error('Error al crear cliente: ' + (err.error?.message || err.message));
       }
     });
   }

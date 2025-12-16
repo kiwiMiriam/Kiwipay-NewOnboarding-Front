@@ -119,21 +119,29 @@
 
         <div class="form-row">
           <div class="form-group full-width">
-            <label>¿El cliente/titular sufre de algún padecimiento?</label>
+            <label class="question-label">
+              ¿El cliente/titular sufre de algún padecimiento?
+            </label>
             <div class="toggle-buttons">
               <button 
                 type="button" 
-                class="toggle-btn" 
+                class="toggle-btn yes-btn" 
                 [class.active]="clientForm.get('suffersCondition')?.value === true"
-                (click)="clientForm.patchValue({suffersCondition: true})">
-                Sí
+                (click)="onSuffersConditionChange(true)"
+                title="Sí, tiene padecimientos">
+                <span class="btn-icon">✓</span>
+                <span class="btn-text">Sí</span>
+                <span class="btn-status" *ngIf="clientForm.get('suffersCondition')?.value === true">(Seleccionado)</span>
               </button>
               <button 
                 type="button" 
-                class="toggle-btn" 
+                class="toggle-btn no-btn" 
                 [class.active]="clientForm.get('suffersCondition')?.value === false"
-                (click)="clientForm.patchValue({suffersCondition: false})">
-                No
+                (click)="onSuffersConditionChange(false)"
+                title="No tiene padecimientos">
+                <span class="btn-icon">✗</span>
+                <span class="btn-text">No</span>
+                <span class="btn-status" *ngIf="clientForm.get('suffersCondition')?.value === false">(Seleccionado)</span>
               </button>
             </div>
           </div>

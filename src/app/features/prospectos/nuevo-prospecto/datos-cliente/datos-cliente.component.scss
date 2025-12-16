@@ -114,6 +114,13 @@
       label {
         margin-bottom: 0.5rem;
         font-weight: 500;
+
+        &.question-label {
+          font-size: 1rem;
+          color: colors.$primary-800;
+          margin-bottom: 0.75rem;
+          font-weight: 600;
+        }
       }
 
       input, select {
@@ -241,36 +248,111 @@
 
     .toggle-buttons {
       display: flex;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
+      gap: 1rem;
+      margin-top: 0.75rem;
 
       .toggle-btn {
         flex: 1;
-        padding: 0.75rem 1.5rem;
-        border: 2px solid colors.$neutral-300;
-        background-color: white;
-        color: colors.$text-primary;
-        border-radius: 6px;
-        font-weight: 500;
+        padding: 1.25rem 2rem;
+        border: 2px solid #dee2e6;
+        background-color: #ffffff;
+        color: #6c757d;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.063rem;
         cursor: pointer;
-        @include mixins.transition(all);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
 
-        &:hover {
-          border-color: colors.$primary-700;
-          background-color: colors.$neutral-50;
+        .btn-icon {
+          font-size: 1.75rem;
+          font-weight: bold;
+          opacity: 0.5;
+          transition: all 0.3s ease;
         }
 
-        &.active {
-          border-color: colors.$primary-900;
-          background-color: colors.$primary-900;
-          color: colors.$text-on-primary;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .btn-text {
+          font-size: 1.063rem;
+          transition: all 0.3s ease;
+        }
+
+        .btn-status {
+          font-size: 0.75rem;
+          font-weight: 500;
+          opacity: 0.9;
+          margin-top: 0.25rem;
+          animation: fadeIn 0.3s ease;
+        }
+
+        &:hover:not(.active) {
+          border-color: #adb5bd;
+          background-color: #f8f9fa;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        &.yes-btn.active {
+          border-color: #28a745;
+          background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+          transform: scale(1.02);
+
+          .btn-icon {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
+
+        &.no-btn.active {
+          border-color: #dc3545;
+          background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+          transform: scale(1.02);
+
+          .btn-icon {
+            opacity: 1;
+            transform: scale(1.2);
+          }
         }
 
         @media (max-width: 575.98px) {
-          padding: 0.5rem 1rem;
-          font-size: 0.9rem;
+          padding: 1rem 1.5rem;
+          font-size: 0.938rem;
+
+          .btn-icon {
+            font-size: 1.5rem;
+          }
+
+          .btn-text {
+            font-size: 0.938rem;
+          }
+
+          .btn-status {
+            font-size: 0.688rem;
+          }
         }
+      }
+
+      @media (max-width: 575.98px) {
+        gap: 0.75rem;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 0.9;
+        transform: translateY(0);
       }
     }
 
