@@ -118,6 +118,28 @@
         </div>
 
         <div class="form-row">
+          <div class="form-group full-width">
+            <label>¿El cliente/titular sufre de algún padecimiento?</label>
+            <div class="toggle-buttons">
+              <button 
+                type="button" 
+                class="toggle-btn" 
+                [class.active]="clientForm.get('suffersCondition')?.value === true"
+                (click)="clientForm.patchValue({suffersCondition: true})">
+                Sí
+              </button>
+              <button 
+                type="button" 
+                class="toggle-btn" 
+                [class.active]="clientForm.get('suffersCondition')?.value === false"
+                (click)="clientForm.patchValue({suffersCondition: false})">
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label for="departamento">Departamento *</label>
             <select id="departamento" formControlName="departamento" (change)="onDepartamentoChange()">

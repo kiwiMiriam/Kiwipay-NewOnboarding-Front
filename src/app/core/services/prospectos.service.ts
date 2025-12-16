@@ -28,6 +28,7 @@ export interface Prospecto {
   provincia?: string;
   distrito?: string;
   direccion?: string;
+  suffersCondition?: boolean;
   // Paciente info
   paciente?: {
     tipoDocumento?: string;
@@ -100,6 +101,7 @@ export class ProspectosService {
           provincia: c.address?.provinceId ?? '',
           distrito: c.address?.districtId ?? '',
           direccion: c.address?.line1 ?? '',
+          suffersCondition: c.suffersCondition ?? false,
           paciente: undefined,
           avalista: undefined,
           conyugue: undefined

@@ -239,6 +239,41 @@
       }
     }
 
+    .toggle-buttons {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+
+      .toggle-btn {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid colors.$neutral-300;
+        background-color: white;
+        color: colors.$text-primary;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        @include mixins.transition(all);
+
+        &:hover {
+          border-color: colors.$primary-700;
+          background-color: colors.$neutral-50;
+        }
+
+        &.active {
+          border-color: colors.$primary-900;
+          background-color: colors.$primary-900;
+          color: colors.$text-on-primary;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 575.98px) {
+          padding: 0.5rem 1rem;
+          font-size: 0.9rem;
+        }
+      }
+    }
+
     @media (max-width: 575.98px) {
       flex-direction: column-reverse;
       gap: 1rem;

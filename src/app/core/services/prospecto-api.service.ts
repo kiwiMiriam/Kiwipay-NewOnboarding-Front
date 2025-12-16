@@ -25,6 +25,7 @@ export interface ClienteData {
   birthDate?: string;
   email?: string;
   phone?: string;
+  suffersCondition?: boolean;
   address?: {
     departmentId?: string;
     provinceId?: string;
@@ -265,10 +266,19 @@ export class ProspectoApiService {
   }
 
   createClient(data: ClienteData): Observable<any> {
+    console.log('[CREATE CLIENT] Sending data:', {
+      suffersCondition: data.suffersCondition,
+      fullData: data
+    });
     return this.http.post(`http://localhost:8080/api/v1/clients`, data);
   }
 
   updateClient(id: number, data: ClienteData): Observable<any> {
+    console.log('[UPDATE CLIENT] Sending data:', {
+      clientId: id,
+      suffersCondition: data.suffersCondition,
+      fullData: data
+    });
     return this.http.put(`http://localhost:8080/api/v1/clients/${id}`, data);
   }
 

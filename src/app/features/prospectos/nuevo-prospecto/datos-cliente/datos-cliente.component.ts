@@ -83,6 +83,16 @@ export class DatosClienteComponent implements OnInit {
 
           this.clientForm.patchValue(prospecto);
           
+          // Cargar suffersCondition si existe
+          console.log('[DATOS-CLIENTE] Loading suffersCondition:', {
+            value: prospecto.suffersCondition,
+            isDefined: prospecto.suffersCondition !== undefined,
+            prospecto: prospecto
+          });
+          if (prospecto.suffersCondition !== undefined) {
+            this.clientForm.patchValue({ suffersCondition: prospecto.suffersCondition });
+          }
+          
           // Cargar pacientes existentes del backend
           if (this.clientId) {
             this.loadExistingPacientes();
@@ -144,6 +154,7 @@ export class DatosClienteComponent implements OnInit {
       provincia: ['', Validators.required],
       distrito: ['', Validators.required],
       direccion: ['', Validators.required],
+      suffersCondition: [false],
 
       // INFORMACIÓN PACIENTE (opcional)
       paciente: this.fb.group({
@@ -268,6 +279,7 @@ export class DatosClienteComponent implements OnInit {
       gender: formData.sexo,
       email: formData.correo,
       phone: formData.telefono,
+      suffersCondition: formData.suffersCondition,
       address: {
         departmentId: formData.departamento,
         provinceId: formData.provincia,
@@ -275,6 +287,12 @@ export class DatosClienteComponent implements OnInit {
         line1: formData.direccion
       }
     };
+
+    console.log('[DATOS-CLIENTE] suffersCondition value:', {
+      fromForm: formData.suffersCondition,
+      inClienteData: clienteData.suffersCondition,
+      fullClienteData: clienteData
+    });
 
     // Verificar si hay datos de paciente para guardar
     const pacienteData = formData.paciente;
