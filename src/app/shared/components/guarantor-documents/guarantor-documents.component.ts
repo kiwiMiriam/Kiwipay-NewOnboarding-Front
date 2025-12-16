@@ -441,21 +441,23 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
     }
 
     console.log('Aprobando documento:', event.documento.id);
-    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, 'APPROVED')
+    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, {
+      reviewStatus: 'APPROVED',
+      comment: event.comentario
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           console.log('Documento aprobado exitosamente');
-          // Actualizar estado local inmediatamente
           const index = this.guarantorDocuments.findIndex(doc => doc.id === event.documento.id);
           if (index !== -1) {
             this.guarantorDocuments[index] = {
               ...this.guarantorDocuments[index],
               estadoRevision: 'Aprobado',
+              comentario: event.comentario,
               fechaRevision: new Date()
             };
           }
-          // También recargar desde el backend
           this.loadGuarantorDocuments();
         },
         error: (error: any) => {
@@ -472,21 +474,23 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
     }
 
     console.log('Rechazando documento:', event.documento.id);
-    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, 'REJECTED')
+    this.guarantorDocumentService.reviewGuarantorDocument(event.documento.id, {
+      reviewStatus: 'REJECTED',
+      comment: event.comentario
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           console.log('Documento rechazado exitosamente');
-          // Actualizar estado local inmediatamente
           const index = this.guarantorDocuments.findIndex(doc => doc.id === event.documento.id);
           if (index !== -1) {
             this.guarantorDocuments[index] = {
               ...this.guarantorDocuments[index],
               estadoRevision: 'Rechazado',
+              comentario: event.comentario,
               fechaRevision: new Date()
             };
           }
-          // También recargar desde el backend
           this.loadGuarantorDocuments();
         },
         error: (error: any) => {

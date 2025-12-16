@@ -62,12 +62,18 @@ export class DocumentoService {
   }
 
   /**
-   * Revisar un documento (aprobar/rechazar)
+   * Revisar un documento (aprobar/rechazar) y actualizar comentario
    */
-  reviewDocument(documentId: string, reviewStatus: 'APPROVED' | 'REJECTED' | 'PENDING'): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/documents/${documentId}/review`, {
-      reviewStatus
-    });
+  reviewDocument(
+    documentId: string,
+    reviewStatus: 'APPROVED' | 'REJECTED' | 'PENDING',
+    comment?: string
+  ): Observable<void> {
+    const body: any = { reviewStatus };
+    if (comment !== undefined) {
+      body.comment = comment;
+    }
+    return this.http.patch<void>(`${this.baseUrl}/documents/${documentId}/review`, body);
   }
 }
 

@@ -308,7 +308,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Approving non-risk document:', event.documento.id);
-    this.documentoService.reviewDocument(event.documento.id, 'APPROVED')
+    this.documentoService.reviewDocument(event.documento.id, 'APPROVED', event.comentario)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -343,7 +343,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Rejecting non-risk document:', event.documento.id);
-    this.documentoService.reviewDocument(event.documento.id, 'REJECTED')
+    this.documentoService.reviewDocument(event.documento.id, 'REJECTED', event.comentario)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -466,7 +466,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Approving risk document:', event.documento.id);
-    this.documentoService.reviewDocument(event.documento.id, 'APPROVED')
+    this.documentoService.reviewDocument(event.documento.id, 'APPROVED', event.comentario)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -495,7 +495,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     }
 
     console.log('Rejecting risk document:', event.documento.id);
-    this.documentoService.reviewDocument(event.documento.id, 'REJECTED')
+    this.documentoService.reviewDocument(event.documento.id, 'REJECTED', event.comentario)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {

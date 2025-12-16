@@ -57,9 +57,7 @@ export class GuarantorDocumentService {
   /**
    * Aprobar o rechazar un documento del aval
    */
-  reviewGuarantorDocument(documentId: string, reviewStatus: 'APPROVED' | 'REJECTED' | 'PENDING'): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/guarantor-documents/${documentId}/review`, {
-      reviewStatus
-    });
+  reviewGuarantorDocument(documentId: string, data: { reviewStatus: 'APPROVED' | 'REJECTED' | 'PENDING'; comment?: string }): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/guarantor-documents/${documentId}/review`, data);
   }
 }
