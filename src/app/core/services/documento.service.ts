@@ -39,6 +39,13 @@ export class DocumentoService {
   }
 
   /**
+   * Subir un documento usando FormData
+   */
+  uploadDocument(clientId: number, formData: FormData): Observable<Document> {
+    return this.http.post<Document>(`${this.baseUrl}/clients/${clientId}/documents`, formData);
+  }
+
+  /**
    * Obtener el contenido de un documento como Blob (binario)
    */
   getDocumentContent(documentId: string): Observable<Blob> {

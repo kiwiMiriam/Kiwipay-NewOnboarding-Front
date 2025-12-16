@@ -86,6 +86,36 @@ export enum DocumentoEstado {
     </div>
   </div>
 
+  <!-- Modal para subir archivo -->
+  <div class="modal-overlay" *ngIf="mostrarModalSubir" (click)="cerrarModalSubir()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Subir Archivo</h3>
+      <div class="form-group">
+        <label for="fileInput">Seleccionar archivo</label>
+        <input
+          #fileInput
+          type="file"
+          id="fileInput"
+          accept=".pdf,.jpg,.jpeg,.png"
+          (change)="onArchivoSeleccionado($event)"
+          class="file-input">
+      </div>
+      <div *ngIf="archivoSeleccionado" class="file-info">
+        <p><strong>Archivo seleccionado:</strong> {{ archivoSeleccionado.name }}</p>
+        <p><strong>Tamaño:</strong> {{ (archivoSeleccionado.size / 1024 / 1024).toFixed(2) }} MB</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cerrarModalSubir()">Cancelar</button>
+        <button 
+          class="btn-primary" 
+          (click)="confirmarSubirArchivo()"
+          [disabled]="!archivoSeleccionado">
+          Subir Archivo
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal para rechazar -->
   <div class="modal-overlay" *ngIf="mostrarModalRechazar" (click)="cerrarModalRechazar()">
     <div class="modal-content" (click)="$event.stopPropagation()">
@@ -146,6 +176,8 @@ export class DocumentTableComponent {
     }
   }
 
+
+
   protected onAprobar(doc: DocumentoData): void {
     this.resetState();
     this.documentoSeleccionado = doc;
@@ -188,13 +220,16 @@ export class DocumentTableComponent {
         this.archivoSeleccionado = file;
       } else {
         this.archivoSeleccionado = null;
+        target.value = ''; // Limpiar el input
         if (!isValidFileType) {
-          console.error('Tipo de archivo no válido. Solo se permiten archivos PDF, JPG, JPEG y PNG.');
+          alert('Tipo de archivo no válido. Solo se permiten archivos PDF, JPG, JPEG y PNG.');
         }
         if (!isValidFileSize) {
-          console.error('El archivo excede el tamaño máximo permitido de 5MB.');
+          alert('El archivo excede el tamaño máximo permitido de 5MB.');
         }
       }
+    } else {
+      this.archivoSeleccionado = null;
     }
   }
 

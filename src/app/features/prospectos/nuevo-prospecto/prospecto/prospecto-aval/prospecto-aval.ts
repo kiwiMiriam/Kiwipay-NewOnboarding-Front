@@ -16,13 +16,12 @@ import {
 } from '@app/core/services/prospecto-api.service';
 import {
   DocumentoEstado,
-  DocumentTableComponent,
 } from '@src/app/shared/components/documentTable/documentTable.component';
 
 @Component({
   selector: 'app-prospecto-aval',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DocumentTableComponent],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './prospecto-aval.html',
   styleUrls: ['../prospecto.scss'],
 })
