@@ -253,16 +253,7 @@ export class DatosClienteComponent implements OnInit {
 
   // Manejo del cambio de suffersCondition
   onSuffersConditionChange(value: boolean): void {
-    const previousValue = this.clientForm.get('suffersCondition')?.value;
     this.clientForm.patchValue({ suffersCondition: value });
-    
-    // Mostrar mensaje de confirmación solo si cambió el valor
-    if (previousValue !== value) {
-      const mensaje = value 
-        ? '✓ Registrado: Cliente SÍ sufre de padecimientos' 
-        : '✓ Registrado: Cliente NO sufre de padecimientos';
-      this.toastService.show(mensaje, 'success');
-    }
   }
 
   onSubmit(): void {
