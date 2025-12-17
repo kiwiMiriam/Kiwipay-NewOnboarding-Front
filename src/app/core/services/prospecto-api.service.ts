@@ -118,6 +118,19 @@ export interface ConyugeData {
   telefono?: string;
 }
 
+export interface GuarantorSpouseData {
+  id?: number;
+  guarantorId?: string;
+  documentType?: string;
+  documentNumber?: string;
+  firstNames?: string;
+  lastNames?: string;
+  email?: string;
+  phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface MedicalCategory {
   id: string;
   name: string;
@@ -490,6 +503,49 @@ export class ProspectoApiService {
           address: response.address,
           createdAt: response.createdAt
         };
+      })
+    );
+  }
+
+  // Obtener cónyuge del aval (GET /api/v1/guarantors/{guarantorId}/spouse)
+  getGuarantorSpouse(guarantorId: string | number): Observable<GuarantorSpouseData | null> {
+    const url = `http://localhost:8080/api/v1/guarantors/${guarantorId}/spouse`;
+    console.log('=== GUARANTOR SPOUSE SERVICE ===');
+    console.log('Calling URL:', url);
+    console.log('Guarantor ID:', guarantorId);
+    
+    return this.http.get<any>(url).pipe(
+      map((data) => {
+        console.log('Raw API response for guarantor spouse:', data);
+        if (!data) return null;
+        const mappedData = {
+          id: data.id,
+          guarantorId: data.guarantorId,
+          documentType: data.documentType,
+          documentNumber: data.documentNumber,
+          firstNames: data.firstNames,
+          lastNames: data.lastNames,
+          email: data.email,
+          phone: data.phone,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt
+        };
+        console.log('Mapped guarantor spouse data:', mappedData);
+        return mappedData;
+      }),
+      catchError((error) => {
+        console.error('=== GUARANTOR SPOUSE API ERROR ===');
+        console.error('URL:', url);
+        console.error('Guarantor ID:', guarantorId);
+        console.error('Error status:', error.status);
+        console.error('Error message:', error.message);
+        console.error('Full error:', error);
+        
+        if (error.status === 404) {
+          console.log('No spouse found for guarantor (404):', guarantorId);
+          return of(null);
+        }
+        throw error;
       })
     );
   }
