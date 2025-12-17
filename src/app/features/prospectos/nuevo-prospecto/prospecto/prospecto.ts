@@ -4,11 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ProspectoTitular } from './prospecto-titular/prospecto-titular';
 import { ProspectoInformacion } from './prospecto-informacion/prospecto-informacion';
 import { ProspectoDocumentos } from './prospecto-documentos/prospecto-documentos';
-import { ProspectoPaciente } from './prospecto-paciente/prospecto-paciente';
-import { ProspectoAval } from './prospecto-aval/prospecto-aval';
 import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, ClienteData } from '@app/core/services/prospecto-api.service';
 
 @Component({
@@ -16,11 +13,8 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
   imports: [
     CommonModule,
     FormsModule,
-    ProspectoTitular,
     ProspectoInformacion,
     ProspectoDocumentos,
-    ProspectoPaciente,
-    ProspectoAval,
   ],
   template: `
     <section class="section-container">
@@ -29,27 +23,6 @@ import { ProspectoApiService, ProspectoRiesgoData, CreateProspectRiesgoRequest, 
           <p>Cargando datos del prospecto...</p>
         </div>
       } @else {
-        <app-prospecto-titular
-          [initialData]="prospectoData?.titular"
-          (dataSaved)="onTitularSaved($event)"
-          (dataUpdated)="onTitularUpdated($event)">
-        </app-prospecto-titular>
-
-        <app-prospecto-paciente
-          [clientId]="getClientId()"
-          [initialData]="prospectoData?.paciente"
-          (dataSaved)="onPacienteSaved($event)"
-          (dataUpdated)="onPacienteUpdated($event)">
-        </app-prospecto-paciente>
-
-        <app-prospecto-aval
-          [clientId]="getClientId()"
-          [initialData]="prospectoData?.avalista"
-          [documentos]="documentosAsociado"
-          (dataSaved)="onAvalistaSaved($event)"
-          (dataUpdated)="onAvalistaUpdated($event)">
-        </app-prospecto-aval>
-
         <app-prospecto-documentos
           [clientId]="getClientId()"
           [documentosAsociado]="prospectoData?.documentos"

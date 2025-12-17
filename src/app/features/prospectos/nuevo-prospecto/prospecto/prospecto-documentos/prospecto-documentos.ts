@@ -17,16 +17,10 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
   imports: [CommonModule, ReactiveFormsModule, DocumentTableComponent, GuarantorDocumentsComponent],
   template: `
   <div class="section-container">
-    <!-- Nueva sección de Documentos del Aval -->
-    <app-guarantor-documents
-      [clientId]="clientId"
-      [hasGuarantor]="hasGuarantor">
-    </app-guarantor-documents>
-    
     <!-- Sección de Datos del Cónyuge -->
     <div class="conyuge-section">
       <div class="section-header">
-        <h2>Datos del Cónyuge</h2>
+        <h2>Datos del Cónyuge del titular</h2>
         <button class="btn-toggle" (click)="toggleConyugeSection()">
           {{ isConyugeExpanded ? 'Contraer' : 'Expandir' }}
         </button>
@@ -83,6 +77,11 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
         </form>
       }
     </div>
+    <!-- Nueva sección de Documentos del Aval -->
+    <app-guarantor-documents
+      [clientId]="clientId"
+      [hasGuarantor]="hasGuarantor">
+    </app-guarantor-documents>
     
     <div class="documentos-section">
       <h2>Documentos del Asociado</h2>

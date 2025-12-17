@@ -78,6 +78,93 @@
     </div>
   </div>
 
+  <!-- COMPONENTES MOVIDOS DESDE RIESGO -->
+  <app-prospecto-titular
+    [initialData]="prospectoData?.titular"
+    (dataSaved)="onTitularSaved($event)"
+    (dataUpdated)="onTitularUpdated($event)">
+  </app-prospecto-titular>
+
+  <app-prospecto-paciente
+    [clientId]="getClientId()"
+    [initialData]="prospectoData?.paciente"
+    (dataSaved)="onPacienteSaved($event)"
+    (dataUpdated)="onPacienteUpdated($event)">
+  </app-prospecto-paciente>
+
+  <app-prospecto-aval
+    [clientId]="getClientId()"
+    [initialData]="prospectoData?.avalista"
+    [documentos]="documentosAsociado"
+    (dataSaved)="onAvalistaSaved($event)"
+    (dataUpdated)="onAvalistaUpdated($event)">
+  </app-prospecto-aval>
+
+  <!-- Formulario del Cónyuge del Titular -->
+  <div class="section-container">
+    <div class="expandable-section">
+      <div class="section-toggle" (click)="toggleConyugeTitularSection()">
+        <div class="section-header">
+          <h4>Información del Cónyuge del Titular</h4>
+        </div>
+        <span class="toggle-icon">{{ isConyugeTitularExpanded ? '▼' : '►' }}</span>
+      </div>
+      
+      @if (isConyugeTitularExpanded && conyugeTitularForm) {
+        <div class="expanded-content">
+          <form [formGroup]="conyugeTitularForm" (ngSubmit)="updateConyugeTitular()">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="conyugeTitularTipoDocumento">Tipo de Documento</label>
+                <select id="conyugeTitularTipoDocumento" formControlName="tipoDocumento">
+                  <option value="">Seleccione...</option>
+                  <option value="DNI">DNI</option>
+                  <option value="CE">Carnet de Extranjería</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="conyugeTitularNumeroDocumento">Número de Documento</label>
+                <input type="text" id="conyugeTitularNumeroDocumento" formControlName="numeroDocumento">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="conyugeTitularNombres">Nombres</label>
+                <input type="text" id="conyugeTitularNombres" formControlName="nombres">
+              </div>
+              <div class="form-group">
+                <label for="conyugeTitularApellidos">Apellidos</label>
+                <input type="text" id="conyugeTitularApellidos" formControlName="apellidos">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="conyugeTitularCorreo">Correo Electrónico</label>
+                <input type="email" id="conyugeTitularCorreo" formControlName="correo">
+              </div>
+              <div class="form-group">
+                <label for="conyugeTitularTelefono">Teléfono</label>
+                <input type="tel" id="conyugeTitularTelefono" formControlName="telefono">
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="isUpdatingConyugeTitular">
+                {{ isUpdatingConyugeTitular ? 'Actualizando...' : 'Actualizar Datos' }}
+              </button>
+              <button type="button" class="btn-secondary" (click)="resetConyugeTitularForm()">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  </div>
+
   <!-- Modal para aprobación/rechazo -->
   @if (mostrarModalAccion && documentoSeleccionado) {
     <app-modal-accion
