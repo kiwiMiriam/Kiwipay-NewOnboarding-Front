@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DocumentoLocal } from '../../documentos/documentos.component';
+import { Document } from '../../../../../core/models/document.model';
 
 @Component({
   selector: 'app-modal-estado',
@@ -13,7 +13,7 @@ import { DocumentoLocal } from '../../documentos/documentos.component';
 })
 export class ModalEstadoComponent implements OnChanges {
   @Input() mostrarModal = false;
-  @Input() documento: DocumentoLocal | null = null;
+  @Input() documento: Document | null = null;
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<{
     estadoAprobacion: 'sin-estado' | 'aprobado' | 'rechazado',
@@ -25,8 +25,11 @@ export class ModalEstadoComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['documento'] && this.documento) {
-      this.estadoAprobacionTemp = this.documento.estadoAprobacion;
-      this.comentarioAprobacionTemp = this.documento.comentario || '';
+      // Mapear el estado del documento del backend al estado del modal
+      const reviewStatus = this.documento.reviewStatus?.toUpperCase();
+      this.estadoAprobacionTemp = reviewStatus === 'APPROVED' ? 'aprobado' : 
+                                 reviewStatus === 'REJECTED' ? 'rechazado' : 'sin-estado';
+      this.comentarioAprobacionTemp = this.documento.comment || '';
     }
   }
 

@@ -14,7 +14,9 @@ export class NavigationService {
     'datos-cliente': '/dashboard/nuevo-prospecto/datos-cliente',
     'datos-clinica': '/dashboard/nuevo-prospecto/datos-clinica',
     'cotizador': '/dashboard/nuevo-prospecto/cotizador',
-    'documento': '/dashboard/nuevo-prospecto/documentos'
+    'documento': '/dashboard/nuevo-prospecto/documentos',
+    'adv': '/dashboard/nuevo-prospecto/adv-documentos',
+    'riesgo': '/dashboard/nuevo-prospecto/prospecto'
   };
 
   // Subject to track the currently active tab
@@ -62,7 +64,7 @@ export class NavigationService {
    * Navigate to the next tab in the sequence
    */
   navigateNext(currentTabId: string): void {
-    const tabOrder = ['datos-cliente', 'datos-clinica', 'cotizador', 'documento'];
+    const tabOrder = ['datos-cliente', 'datos-clinica', 'cotizador', 'documento', 'adv', 'riesgo'];
     const currentIndex = tabOrder.indexOf(currentTabId);
     console.log('Current Tab ID:', currentTabId, 'Index:', currentIndex);
 
@@ -79,7 +81,7 @@ export class NavigationService {
    * Navigate to the previous tab in the sequence
    */
   navigateBack(currentTabId: string): void {
-    const tabOrder = ['datos-cliente', 'datos-clinica', 'cotizador', 'documento'];
+    const tabOrder = ['datos-cliente', 'datos-clinica', 'cotizador', 'documento', 'adv', 'riesgo'];
     const currentIndex = tabOrder.indexOf(currentTabId);
 
     if (currentIndex !== -1 && currentIndex > 0) {

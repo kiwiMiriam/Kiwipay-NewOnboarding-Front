@@ -1,7 +1,7 @@
 <div class="documentos-container">
-  <h2 class="section-title">Documentos</h2>
+  <h2 class="section-title">Gestión de Documentos</h2>
   <p class="section-description">
-    Carga documentos relacionados con el prospecto. Formatos permitidos: PDF, JPG, JPEG, PNG.
+    Carga, descarga y elimina documentos relacionados con el prospecto. Formatos permitidos: PDF, JPG, JPEG, PNG.
     (Máximo {{ MAX_DOCUMENTOS }} documentos)
   </p>
 
@@ -80,7 +80,6 @@
       <div class="column tipo-column">Tipo de Documento</div>
       <div class="column archivo-column">Archivo</div>
       <div class="column comentario-column">Comentario</div>
-      <div class="column estado-column">Estado</div>
       <div class="column accion-column">Acciones</div>
     </div>
     @if (isLoading) {
@@ -109,11 +108,6 @@
           </div>
         </div>
         <div class="column comentario-column">{{ documento.comment || '-' }}</div>
-        <div class="column estado-column">
-          <span class="status-text">
-            {{ obtenerTextoEstado(documento.reviewStatus) }}
-          </span>
-        </div>
         <div class="column accion-column">
           <button
             class="btn-icon download-btn"
@@ -121,20 +115,6 @@
             title="Descargar"
           >
             <fa-icon [icon]="faDownload"></fa-icon>
-          </button>
-          <button
-            class="btn-icon approve-btn"
-            (click)="aprobarDocumento(documento)"
-            title="Aprobar"
-          >
-            <fa-icon [icon]="faCheck"></fa-icon>
-          </button>
-          <button
-            class="btn-icon reject-btn"
-            (click)="rechazarDocumento(documento)"
-            title="Rechazar"
-          >
-            <fa-icon [icon]="faTimes"></fa-icon>
           </button>
           <button
             class="btn-icon delete-btn"

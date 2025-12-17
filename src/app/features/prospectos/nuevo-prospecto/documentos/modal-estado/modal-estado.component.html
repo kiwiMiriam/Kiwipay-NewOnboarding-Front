@@ -1,0 +1,71 @@
+@if (mostrarModal) {
+  <div class="modal-overlay" (click)="cerrarModalEstado()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Revisar Documento</h3>
+        <button class="close-btn" (click)="cerrarModalEstado()">×</button>
+      </div>
+
+      <div class="modal-body">
+        @if (documento) {
+          <div class="documento-info">
+            <h4>{{ documento.filename }}</h4>
+            <p class="documento-tipo">Tipo: {{ documento.documentTypeId }}</p>
+          </div>
+
+          <div class="form-group">
+            <label>Estado de Aprobación</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  name="estado" 
+                  value="sin-estado" 
+                  [(ngModel)]="estadoAprobacionTemp"
+                >
+                <span class="radio-label sin-estado">Sin Estado</span>
+              </label>
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  name="estado" 
+                  value="aprobado" 
+                  [(ngModel)]="estadoAprobacionTemp"
+                >
+                <span class="radio-label aprobado">Aprobado</span>
+              </label>
+              <label class="radio-option">
+                <input 
+                  type="radio" 
+                  name="estado" 
+                  value="rechazado" 
+                  [(ngModel)]="estadoAprobacionTemp"
+                >
+                <span class="radio-label rechazado">Rechazado</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="comentarioModal">Comentario</label>
+            <textarea 
+              id="comentarioModal"
+              [(ngModel)]="comentarioAprobacionTemp"
+              rows="4"
+              placeholder="Agrega un comentario sobre la revisión del documento..."
+            ></textarea>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalEstado()">
+          Cancelar
+        </button>
+        <button class="btn-primary" (click)="guardarEstadoDocumento()">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+}

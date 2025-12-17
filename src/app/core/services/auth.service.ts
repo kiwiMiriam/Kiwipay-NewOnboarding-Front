@@ -28,6 +28,7 @@ export class AuthService {
     CLINICAS: ['SUPERADMIN', 'COMERCIAL'],
     COTIZADOR: ['SUPERADMIN', 'COMERCIAL'],
     DOCUMENTOS: ['SUPERADMIN', 'ADV', 'COMERCIAL'],
+    ADV: ['SUPERADMIN', 'ADV'],
     PROSPECTO: ['SUPERADMIN', 'RIESGOS']
   };
 
@@ -140,7 +141,7 @@ export class AuthService {
     const userRoles = this.getUserRoles();
     
     // Definir orden de prioridad para las secciones
-    const sectionOrder = ['CLIENTES', 'CLINICAS', 'COTIZADOR', 'DOCUMENTOS', 'PROSPECTO'];
+    const sectionOrder = ['CLIENTES', 'CLINICAS', 'COTIZADOR', 'DOCUMENTOS', 'ADV', 'PROSPECTO'];
     
     for (const section of sectionOrder) {
       const allowedRoles = this.sectionPermissions[section as keyof typeof this.sectionPermissions];
@@ -164,6 +165,7 @@ export class AuthService {
       'CLINICAS': '/dashboard/nuevo-prospecto/datos-clinica', 
       'COTIZADOR': '/dashboard/nuevo-prospecto/cotizador',
       'DOCUMENTOS': '/dashboard/nuevo-prospecto/documentos',
+      'ADV': '/dashboard/nuevo-prospecto/adv-documentos',
       'PROSPECTO': '/dashboard/nuevo-prospecto/prospecto',
       'DASHBOARD': '/dashboard/bandeja'
     };

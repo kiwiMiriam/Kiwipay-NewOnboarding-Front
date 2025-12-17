@@ -65,6 +65,8 @@ export class NavigationTabsComponent implements OnInit, OnDestroy {
       'clinica': 'CLINICAS', 
       'cotizador': 'COTIZADOR',
       'documento': 'DOCUMENTOS',
+      'adv': 'ADV',
+      'riesgo': 'PROSPECTO',
       'prospecto': 'PROSPECTO'
     };
 

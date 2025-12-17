@@ -1,0 +1,97 @@
+<div class="adv-documentos-container">
+  <h2 class="section-title">ADV - Revisión de Documentos</h2>
+  <p class="section-description">
+    Aprueba o rechaza los documentos del prospecto. Puedes agregar comentarios durante la revisión.
+  </p>
+
+  @if (mensajeError) {
+    <div class="error-message">
+      <span class="icon-warning"></span> {{ mensajeError }}
+    </div>
+  }
+
+  <!-- Tabla de documentos para revisión -->
+  <div class="documentos-table-container">
+    <div class="table-header">
+      <div class="column tipo-column">Tipo de Documento</div>
+      <div class="column archivo-column">Archivo</div>
+      <div class="column comentario-column">Comentario</div>
+      <div class="column estado-column">Estado</div>
+      <div class="column accion-column">Acciones ADV</div>
+    </div>
+    
+    @if (isLoading) {
+      <div class="empty-state">
+        <p>Cargando documentos...</p>
+      </div>
+    }
+    
+    @if (!isLoading && documentos.length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon"></div>
+        <p>No hay documentos para revisar</p>
+        <small>Los documentos aparecerán aquí una vez que sean subidos en la sección de Documentos</small>
+      </div>
+    }
+
+    <div class="table-body">
+      @for (documento of documentos; track documento.id) {
+        <div class="table-row">
+          <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.documentTypeId) }}</div>
+          <div class="column archivo-column">
+            <div class="file-info">
+              <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.mimeType)"></span>
+              <div class="file-details">
+                <span class="file-name">{{ documento.filename }}</span>
+                <span class="file-size">{{ formatearTamanoArchivo(documento.sizeBytes) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="column comentario-column">
+            <span class="comment-text">{{ documento.comment || '-' }}</span>
+          </div>
+          <div class="column estado-column">
+            <span [class]="'status-badge ' + obtenerClaseIconoEstado(documento.reviewStatus)">
+              {{ obtenerTextoEstado(documento.reviewStatus) }}
+            </span>
+          </div>
+          <div class="column accion-column">
+            <button
+              class="btn-icon approve-btn"
+              (click)="abrirModalAprobacion(documento)"
+              title="Aprobar documento"
+              [disabled]="documento.reviewStatus === 'APPROVED'"
+            >
+              <fa-icon [icon]="faCheck"></fa-icon>
+            </button>
+            <button
+              class="btn-icon reject-btn"
+              (click)="abrirModalRechazo(documento)"
+              title="Rechazar documento"
+              [disabled]="documento.reviewStatus === 'REJECTED'"
+            >
+              <fa-icon [icon]="faTimes"></fa-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Modal para aprobación/rechazo -->
+  @if (mostrarModalAccion && documentoSeleccionado) {
+    <app-modal-accion
+      [mostrarModal]="mostrarModalAccion"
+      [documento]="documentoSeleccionado"
+      [accion]="accionSeleccionada"
+      (cerrar)="cerrarModalAccion()"
+      (confirmar)="confirmarAccion($event)"
+    ></app-modal-accion>
+  }
+
+  <!-- Botones de navegación -->
+  <div class="navigation-buttons">
+    <button class="btn-secondary" (click)="navigateBack()">Anterior</button>
+    <button class="btn-primary" (click)="navigateNext()">Siguiente</button>
+  </div>
+</div>

@@ -58,6 +58,12 @@ export const routes: Routes = [
             data: { section: 'DOCUMENTOS' }
           },
           {
+            path: 'adv-documentos',
+            loadComponent: () => import('./features/prospectos/nuevo-prospecto/documentos/adv-documentos.component'),
+            canActivate: [roleGuard],
+            data: { section: 'ADV' }
+          },
+          {
             path: 'prospecto',
             loadComponent: () => import('./features/prospectos/nuevo-prospecto/prospecto/prospecto'),
             canActivate: [roleGuard],

@@ -1,0 +1,38 @@
+@if (mostrarModal) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ tituloModal }}</h3>
+        <button class="close-btn" (click)="cerrarModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        @if (documento) {
+          <div class="documento-info">
+            <h4>{{ documento.filename }}</h4>
+            <p class="documento-tipo">Tipo: {{ documento.documentTypeId }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="comentarioModal">Comentario (opcional)</label>
+            <textarea 
+              id="comentarioModal"
+              [(ngModel)]="comentario"
+              rows="4"
+              placeholder="Agrega un comentario sobre la revisión del documento..."
+            ></textarea>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button [class]="'btn-primary ' + colorBoton" (click)="confirmarAccion()">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+}
