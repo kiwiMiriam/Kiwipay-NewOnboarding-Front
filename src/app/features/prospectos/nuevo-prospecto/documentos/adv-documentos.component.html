@@ -4,6 +4,30 @@
     Aprueba o rechaza los documentos del prospecto. Puedes agregar comentarios durante la revisión.
   </p>
 
+  <!-- Estado del Cliente y Botones de ADV -->
+  @if (clientStatus) {
+    <div class="client-status-section">
+      <h3>Estado del Cliente: <span class="status-text">{{ getStatusDisplayText() }}</span></h3>
+      
+      <!-- Botones de ADV -->
+      <div class="adv-actions">
+        <button 
+          class="btn-primary" 
+          (click)="aprobarPorADV()"
+          [disabled]="!isActionAllowed('APROBADO_POR_ADV') || isExecutingAction">
+          {{ isExecutingAction ? 'Procesando...' : 'Aprobar por ADV' }}
+        </button>
+        
+        <button 
+          class="btn-warning" 
+          (click)="observarPorADV()"
+          [disabled]="!isActionAllowed('OBSERVADO_POR_ADV') || isExecutingAction">
+          {{ isExecutingAction ? 'Procesando...' : 'Observar por ADV' }}
+        </button>
+      </div>
+    </div>
+  }
+
   @if (mensajeError) {
     <div class="error-message">
       <span class="icon-warning"></span> {{ mensajeError }}

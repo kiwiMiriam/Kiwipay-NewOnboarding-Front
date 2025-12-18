@@ -71,6 +71,11 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
   isUpdatingConyugeTitular = false;
   currentConyugeTitular?: ConyugeData;
   
+  // Control de estado del cliente
+  clientStatus: string = '';
+  allowedActions: string[] = [];
+  isExecutingAction = false;
+  
   private destroy$ = new Subject<void>();
   accionSeleccionada: 'aprobar' | 'rechazar' = 'aprobar';
 
@@ -97,6 +102,7 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
       if (this.prospectoId) {
         this.editMode = true;
         this.clientId = Number(this.prospectoId);
+        this.loadClientData();
         this.loadClientDocuments();
         // Cargar datos después de tener clientId
         setTimeout(() => {
@@ -109,6 +115,34 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Cargar datos del cliente para obtener estado y acciones permitidas
+   */
+  private loadClientData(): void {
+    if (!this.clientId) return;
+    
+    console.log('=== CARGANDO DATOS DEL CLIENTE ADV ===');
+    console.log('Client ID:', this.clientId);
+    
+    this.prospectoApiService.getClientById(this.clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (client) => {
+          console.log('Datos del cliente cargados (ADV):', client);
+          this.clientStatus = client.status || '';
+          this.allowedActions = client.allowedActions || [];
+          
+          console.log('Estado del cliente (ADV):', this.clientStatus);
+          console.log('Acciones permitidas (ADV):', this.allowedActions);
+        },
+        error: (error) => {
+          console.error('Error cargando datos del cliente (ADV):', error);
+          this.clientStatus = '';
+          this.allowedActions = [];
+        }
+      });
   }
 
   /**
@@ -281,6 +315,92 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
         this.mensajeError = 'No se pudieron cargar los tipos de documentos.';
       }
     });
+  }
+
+  /**
+   * Refrescar datos del cliente después de una acción
+   */
+  private refreshClientData(): void {
+    if (this.clientId) {
+      this.loadClientData();
+    }
+  }
+
+  /**
+   * Verificar si una acción está permitida
+   */
+  isActionAllowed(action: string): boolean {
+    return this.allowedActions.includes(action);
+  }
+
+  /**
+   * Obtener texto del estado para mostrar en UI
+   */
+  getStatusDisplayText(): string {
+    return this.prospectoApiService.mapStatusToDisplayText(this.clientStatus);
+  }
+
+  /**
+   * Acción ADV: Aprobar por ADV
+   */
+  aprobarPorADV(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    if (confirm('¿Confirmar aprobación por ADV?')) {
+      this.isExecutingAction = true;
+      
+      this.prospectoApiService.aprobarPorADV(this.clientId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Cliente aprobado por ADV exitosamente');
+            alert('Cliente aprobado por ADV');
+            // Refrescar datos del cliente
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error aprobando por ADV:', error);
+            alert('Error al aprobar por ADV');
+            this.isExecutingAction = false;
+          }
+        });
+    }
+  }
+
+  /**
+   * Acción ADV: Observar por ADV
+   */
+  observarPorADV(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    const reason = prompt('Ingrese el motivo de la observación:');
+    if (reason && reason.trim()) {
+      this.isExecutingAction = true;
+      
+      this.prospectoApiService.observarPorADV(this.clientId, reason.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Cliente observado por ADV exitosamente');
+            alert('Cliente observado por ADV');
+            // Refrescar datos del cliente
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error observando por ADV:', error);
+            alert('Error al observar por ADV');
+            this.isExecutingAction = false;
+          }
+        });
+    }
   }
 
   /**

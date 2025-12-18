@@ -6,7 +6,8 @@ import { HttpClient } from '@angular/common/http';
 export interface Prospecto {
   id: string;
   contrato: string;
-  estado: string;
+  status: string; // Estado oficial del backend
+  allowedActions: string[]; // Acciones permitidas del backend
   documento: string;
   asociado: string;
   programa: string;
@@ -82,8 +83,9 @@ export class ProspectosService {
         const mapped = clients.map(c => ({
           id: c.id?.toString() ?? '',
           contrato: '', // No viene del backend - se mantiene vacío
-          estado: '',   // No viene del backend - se mantiene vacío
-          documento: `${c.documentType ?? ''}-${c.documentNumber ?? ''}`,
+          status: c.status ?? 'MANUAL', // Estado oficial del backend
+          allowedActions: c.allowedActions ?? [], // Acciones permitidas del backend
+          documento: c.documentNumber ?? '',
           asociado: `${c.firstNames ?? ''} ${c.lastNames ?? ''}`.trim() || '', // Concatenamos nombres y apellidos
           programa: '', // No viene del backend - se mantiene vacío
           grupo: '',    // No viene del backend - se mantiene vacío

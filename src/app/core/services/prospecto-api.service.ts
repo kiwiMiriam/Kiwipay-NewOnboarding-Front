@@ -33,6 +33,9 @@ export interface ClienteData {
     line1?: string;
   };
   createdAt?: string;
+  // Campos de estado del prospecto
+  status?: string;
+  allowedActions?: string[];
   // Campos adicionales para compatibilidad con el frontend
   tipoDocumento?: string;
   numeroDocumento?: string;
@@ -889,6 +892,116 @@ export class ProspectoApiService {
     return this.http.put<QuoteData>(`${this.API_URL}/quotes/${quoteId}`, quoteData).pipe(
       catchError(error => {
         console.error('[UPDATE QUOTE] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // ========== ACCIONES DE ESTADO DEL PROSPECTO ==========
+
+  /**
+   * Mapear el estado del backend a texto visible para el usuario
+   */
+  mapStatusToDisplayText(status: string): string {
+    const statusMap: { [key: string]: string } = {
+      'MANUAL': 'Manual',
+      'DOCUMENTOS_COMPLETADOS': 'Documentos completados',
+      'APROBADO_POR_ADV': 'Aprobado por ADV',
+      'OBSERVADO_POR_ADV': 'Observado por ADV',
+      'APROBADO_POR_RIESGOS': 'Aprobado por Riesgos',
+      'RECHAZO_POR_RIESGOS': 'Rechazado por Riesgos',
+      'OBSERVADO_POR_RIESGOS': 'Observado por Riesgos',
+      'CREDITO_PRE_APROBADO': 'Crédito pre aprobado',
+      'CREDITO_RECHAZADO': 'Crédito rechazado'
+    };
+    return statusMap[status] || status;
+  }
+
+  // ========== ACCIONES COMERCIAL ==========
+
+  /**
+   * Acción: Documentos completados (COMERCIAL)
+   */
+  marcarDocumentosCompletados(clientId: number): Observable<any> {
+    console.log(`[COMERCIAL] Marcando documentos completados para cliente ${clientId}`);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/documentos-completados`, {}).pipe(
+      catchError(error => {
+        console.error('[DOCUMENTOS COMPLETADOS] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // ========== ACCIONES ADV ==========
+
+  /**
+   * Acción: Aprobar por ADV
+   */
+  aprobarPorADV(clientId: number): Observable<any> {
+    console.log(`[ADV] Aprobando cliente ${clientId}`);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/aprobado-por-adv`, {}).pipe(
+      catchError(error => {
+        console.error('[APROBAR ADV] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Acción: Observar por ADV
+   */
+  observarPorADV(clientId: number, reason: string): Observable<any> {
+    console.log(`[ADV] Observando cliente ${clientId} con motivo:`, reason);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/observado-por-adv`, {
+      reason: reason
+    }).pipe(
+      catchError(error => {
+        console.error('[OBSERVAR ADV] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // ========== ACCIONES RIESGOS ==========
+
+  /**
+   * Acción: Aprobar por Riesgos
+   */
+  aprobarPorRiesgos(clientId: number): Observable<any> {
+    console.log(`[RIESGOS] Aprobando crédito para cliente ${clientId}`);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/aprobado-por-riesgos`, {}).pipe(
+      catchError(error => {
+        console.error('[APROBAR RIESGOS] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Acción: Rechazar por Riesgos
+   */
+  rechazarPorRiesgos(clientId: number, reason: string): Observable<any> {
+    console.log(`[RIESGOS] Rechazando crédito para cliente ${clientId} con motivo:`, reason);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/rechazado-por-riesgos`, {
+      reason: reason
+    }).pipe(
+      catchError(error => {
+        console.error('[RECHAZAR RIESGOS] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Acción: Observar por Riesgos
+   */
+  observarPorRiesgos(clientId: number, reason: string): Observable<any> {
+    console.log(`[RIESGOS] Observando crédito para cliente ${clientId} con motivo:`, reason);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/observado-por-riesgos`, {
+      reason: reason
+    }).pipe(
+      catchError(error => {
+        console.error('[OBSERVAR RIESGOS] Error:', error);
         return throwError(() => error);
       })
     );

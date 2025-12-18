@@ -103,11 +103,9 @@ import { AuthService } from '../../core/services/auth.service';
               <tr *ngFor="let prospecto of prospectos">
                 <td data-label="Contrato">{{ prospecto.contrato || '-' }}</td>
                 <td data-label="Estado">
-                  <span class="estado-badge" 
-                        [class.estado-pendiente]="prospecto.estado === 'Pendiente'"
-                        [class.estado-en-proceso]="prospecto.estado === 'En Proceso'"
-                        [class.estado-completado]="prospecto.estado === 'Completado'">
-                    {{ prospecto.estado || 'Sin Estado' }}
+                  <span class="estado-badge"
+                        [class]="'estado-badge ' + getStatusClass(prospecto.status)">
+                    {{ mapStatusToDisplayText(prospecto.status) }}
                   </span>
                 </td>
                 <td data-label="Documento">{{ prospecto.documento || '-' }}</td>
@@ -278,19 +276,54 @@ import { AuthService } from '../../core/services/auth.service';
       white-space: nowrap;
     }
 
-    .estado-pendiente {
-      background-color: #fef3c7;
-      color: #92400e;
+    .estado-manual {
+      background-color: #f1f5f9;
+      color: #475569;
     }
 
-    .estado-en-proceso {
+    .estado-documentos-completados {
       background-color: #e0f2fe;
       color: #0369a1;
     }
 
-    .estado-completado {
+    .estado-aprobado-adv {
+      background-color: #cffafe;
+      color: #0891b2;
+    }
+
+    .estado-observado-adv {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .estado-aprobado-riesgos {
       background-color: #dcfce7;
       color: #166534;
+    }
+
+    .estado-rechazado-riesgos {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+
+    .estado-observado-riesgos {
+      background-color: #fef3c7;
+      color: #d97706;
+    }
+
+    .estado-credito-pre-aprobado {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .estado-credito-rechazado {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+
+    .estado-desconocido {
+      background-color: #f8fafc;
+      color: #64748b;
     }
 
     /* Responsive Design */
@@ -456,6 +489,41 @@ export class BandejaComponent implements OnInit {
     this.loadProspectos();
   }
 
+  /**
+   * Mapear el estado del backend a texto visible para el usuario
+   */
+  mapStatusToDisplayText(status: string): string {
+    return this.prospectoApiService.mapStatusToDisplayText(status);
+  }
+
+  /**
+   * Obtener clase CSS para el estado
+   */
+  getStatusClass(status: string): string {
+    switch(status) {
+      case 'MANUAL':
+        return 'estado-manual';
+      case 'DOCUMENTOS_COMPLETADOS':
+        return 'estado-documentos-completados';
+      case 'APROBADO_POR_ADV':
+        return 'estado-aprobado-adv';
+      case 'OBSERVADO_POR_ADV':
+        return 'estado-observado-adv';
+      case 'APROBADO_POR_RIESGOS':
+        return 'estado-aprobado-riesgos';
+      case 'RECHAZO_POR_RIESGOS':
+        return 'estado-rechazado-riesgos';
+      case 'OBSERVADO_POR_RIESGOS':
+        return 'estado-observado-riesgos';
+      case 'CREDITO_PRE_APROBADO':
+        return 'estado-credito-pre-aprobado';
+      case 'CREDITO_RECHAZADO':
+        return 'estado-credito-rechazado';
+      default:
+        return 'estado-desconocido';
+    }
+  }
+
   loadProspectos(filter?: ProspectoFilter) {
     this.loading = true;
     // Primero cargar datos del backend
@@ -482,6 +550,14 @@ export class BandejaComponent implements OnInit {
   limpiarFiltros() {
     this.filterForm.reset();
     this.loadProspectos();
+  }
+
+  /**
+   * Refrescar un prospecto específico después de una acción
+   */
+  refreshProspecto(prospectoId: string) {
+    // Recargar toda la lista para obtener estados actualizados
+    this.loadProspectos(this.filterForm.value);
   }
 
   nuevoProspecto() {

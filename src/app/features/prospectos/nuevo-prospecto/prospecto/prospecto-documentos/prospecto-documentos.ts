@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DocumentoEstado, DocumentTableComponent } from "@src/app/shared/components/documentTable/documentTable.component";
-import { ProspectoApiService, DocumentoData } from '@app/core/services/prospecto-api.service';
+import { ProspectoApiService, DocumentoData, ClienteData } from '@app/core/services/prospecto-api.service';
 import { DocumentoService } from '@app/core/services/documento.service';
 import { DocumentType, CreateDocumentRequest } from '@app/core/models/document.model';
 import { downloadFileFromBlob, fileToBase64 } from '@src/app/shared/utils/file.utils';
@@ -15,6 +15,29 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
   imports: [CommonModule, DocumentTableComponent, GuarantorDocumentsComponent],
   template: `
   <div class="section-container">
+    <!-- Estado del Cliente y Controles -->
+    @if (clientStatus) {
+      <div class="client-status-section">
+        <h3>Estado del Cliente: <span class="status-text">{{ getStatusDisplayText() }}</span></h3>
+        
+        <!-- Botón COMERCIAL: Documentos completados -->
+        <button 
+          class="btn-primary" 
+          (click)="marcarDocumentosCompletados()"
+          [disabled]="!isActionAllowed('DOCUMENTOS_COMPLETADOS') || isLoading">
+          {{ isLoading ? 'Procesando...' : 'Marcar Documentos Completados' }}
+        </button>
+        
+        <!-- Mensaje de bloqueo de documentos -->
+        @if (!canUploadDocuments) {
+          <div class="upload-blocked-message">
+            <span class="warning-icon">⚠️</span>
+            <span>No se pueden subir documentos en el estado actual</span>
+          </div>
+        }
+      </div>
+    }
+
     <!-- Nueva sección de Documentos del Aval -->
     <app-guarantor-documents
       [clientId]="clientId"
@@ -60,6 +83,12 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   documentTypes: DocumentType[] = [];
   hasGuarantor = false;
   
+  // Control de estado del cliente
+  clientData?: ClienteData;
+  clientStatus: string = '';
+  allowedActions: string[] = [];
+  canUploadDocuments: boolean = true;
+  
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -72,6 +101,7 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
     this.loadDocumentTypes();
   
     if (this.clientId) {
+      this.loadClientData(this.clientId);
       this.loadDocumentsFromBackend(this.clientId);
       this.checkForGuarantor(this.clientId);
     } else {
@@ -99,6 +129,101 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Cargar datos del cliente para obtener estado y acciones permitidas
+   */
+  private loadClientData(clientId: number): void {
+    console.log('=== CARGANDO DATOS DEL CLIENTE ===');
+    console.log('Client ID:', clientId);
+    
+    this.prospectoApiService.getClientById(clientId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (client: ClienteData) => {
+          console.log('Datos del cliente cargados:', client);
+          this.clientData = client;
+          this.clientStatus = client.status || '';
+          this.allowedActions = client.allowedActions || [];
+          
+          // Verificar si se pueden subir documentos según allowedActions
+          this.canUploadDocuments = this.canUploadDocumentsByActions(this.allowedActions);
+          
+          console.log('Estado del cliente:', this.clientStatus);
+          console.log('Acciones permitidas:', this.allowedActions);
+          console.log('Puede subir documentos:', this.canUploadDocuments);
+        },
+        error: (error) => {
+          console.error('Error cargando datos del cliente:', error);
+          this.clientStatus = '';
+          this.allowedActions = [];
+          this.canUploadDocuments = true; // En caso de error, permitir por defecto
+        }
+      });
+  }
+
+  /**
+   * Refrescar datos del cliente después de una acción
+   */
+  private refreshClientData(): void {
+    if (this.clientId) {
+      this.loadClientData(this.clientId);
+    }
+  }
+
+  /**
+   * Verificar si una acción está permitida
+   */
+  isActionAllowed(action: string): boolean {
+    return this.allowedActions.includes(action);
+  }
+
+  /**
+   * Obtener texto del estado para mostrar en UI
+   */
+  getStatusDisplayText(): string {
+    return this.prospectoApiService.mapStatusToDisplayText(this.clientStatus);
+  }
+
+  /**
+   * Verificar si se pueden subir documentos según allowedActions
+   */
+  private canUploadDocumentsByActions(allowedActions: string[]): boolean {
+    // PERMITIR subida solo cuando allowedActions contiene DOCUMENTOS_COMPLETADOS
+    // BLOQUEAR en cualquier otro caso
+    return allowedActions.includes('DOCUMENTOS_COMPLETADOS');
+  }
+
+  /**
+   * Acción COMERCIAL: Marcar documentos completados
+   */
+  marcarDocumentosCompletados(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    if (confirm('¿Confirmar que todos los documentos están completados?')) {
+      this.isLoading = true;
+      
+      this.prospectoApiService.marcarDocumentosCompletados(this.clientId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Documentos marcados como completados exitosamente');
+            alert('Documentos marcados como completados');
+            // Refrescar datos del cliente
+            this.refreshClientData();
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error marcando documentos completados:', error);
+            alert('Error al marcar documentos como completados');
+            this.isLoading = false;
+          }
+        });
+    }
   }
 
   /**
@@ -165,6 +290,12 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   async onSubirAsociado(event: { documento: DocumentoData; archivo: File }): Promise<void> {
     if (!this.clientId) {
       console.error('Client ID is required for upload');
+      return;
+    }
+
+    // Verificar si se pueden subir documentos según allowedActions
+    if (!this.canUploadDocuments) {
+      alert('No se pueden subir documentos. Acciones no permitidas por el sistema.');
       return;
     }
 
@@ -303,6 +434,12 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   async onSubirRiesgo(event: { documento: DocumentoData; archivo: File }): Promise<void> {
     if (!this.clientId) {
       console.error('Client ID is required for upload');
+      return;
+    }
+
+    // Verificar si se pueden subir documentos según allowedActions
+    if (!this.canUploadDocuments) {
+      alert('No se pueden subir documentos. Acciones no permitidas por el sistema.');
       return;
     }
 
