@@ -133,9 +133,14 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
           console.log('Datos del cliente cargados (ADV):', client);
           this.clientStatus = client.status || '';
           this.allowedActions = client.allowedActions || [];
-          
           console.log('Estado del cliente (ADV):', this.clientStatus);
           console.log('Acciones permitidas (ADV):', this.allowedActions);
+          // Log especial para validar habilitación de botones ADV
+          if (this.clientStatus === 'DOCUMENTOS_COMPLETADOS') {
+            console.log('✅ El estado del cliente es DOCUMENTOS_COMPLETADOS. Los botones de ADV deben estar habilitados si allowedActions lo permite.');
+          } else {
+            console.log('⛔ El estado del cliente NO es DOCUMENTOS_COMPLETADOS. Los botones de ADV deben estar deshabilitados.');
+          }
         },
         error: (error) => {
           console.error('Error cargando datos del cliente (ADV):', error);
@@ -757,6 +762,13 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
         this.conyugeTitularForm.reset();
       }
     }
+  }
+
+  /**
+   * Habilita forzosamente los botones de ADV si el estado es DOCUMENTOS_COMPLETADOS o OBSERVADO_POR_RIESGOS
+   */
+  isAdvActionsEnabled() {
+    return this.clientStatus === 'DOCUMENTOS_COMPLETADOS' || this.clientStatus === 'OBSERVADO_POR_RIESGOS';
   }
 
   navigateBack(): void {

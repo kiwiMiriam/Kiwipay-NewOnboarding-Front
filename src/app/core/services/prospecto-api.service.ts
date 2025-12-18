@@ -922,9 +922,9 @@ export class ProspectoApiService {
   /**
    * Acción: Documentos completados (COMERCIAL)
    */
-  marcarDocumentosCompletados(clientId: number): Observable<any> {
+  marcarDocumentosCompletados(clientId: number, reason: string): Observable<any> {
     console.log(`[COMERCIAL] Marcando documentos completados para cliente ${clientId}`);
-    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/documentos-completados`, {}).pipe(
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/documentos-completados`, { reason }).pipe(
       catchError(error => {
         console.error('[DOCUMENTOS COMPLETADOS] Error:', error);
         return throwError(() => error);

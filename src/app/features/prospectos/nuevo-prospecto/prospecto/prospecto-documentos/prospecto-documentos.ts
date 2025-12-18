@@ -15,30 +15,36 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
   imports: [CommonModule, DocumentTableComponent, GuarantorDocumentsComponent],
   template: `
   <div class="section-container">
-    <!-- Estado del Cliente y Controles -->
+    <!-- Estado del Cliente y Botones de RIESGOS -->
     @if (clientStatus) {
       <div class="client-status-section">
         <h3>Estado del Cliente: <span class="status-text">{{ getStatusDisplayText() }}</span></h3>
         
-        <!-- Botón COMERCIAL: Documentos completados -->
-        <button 
-          class="btn-primary" 
-          (click)="marcarDocumentosCompletados()"
-          [disabled]="!isActionAllowed('DOCUMENTOS_COMPLETADOS') || isLoading">
-          {{ isLoading ? 'Procesando...' : 'Marcar Documentos Completados' }}
-        </button>
-        
-        <!-- Mensaje de bloqueo de documentos -->
-        @if (!canUploadDocuments) {
-          <div class="upload-blocked-message">
-            <span class="warning-icon">⚠️</span>
-            <span>No se pueden subir documentos en el estado actual</span>
-          </div>
-        }
+        <!-- Botones de RIESGOS -->
+        <div class="riesgos-actions">
+          <button 
+            class="btn-success" 
+            (click)="aprobarCredito()"
+            [disabled]="!isRiesgosActionsEnabled() || isExecutingAction">
+            {{ isExecutingAction ? 'Procesando...' : 'Aprobar Crédito' }}
+          </button>
+          
+          <button 
+            class="btn-danger" 
+            (click)="rechazarCredito()"
+            [disabled]="!isRiesgosActionsEnabled() || isExecutingAction">
+            {{ isExecutingAction ? 'Procesando...' : 'Rechazar Crédito' }}
+          </button>
+          
+          <button 
+            class="btn-warning" 
+            (click)="observarCredito()"
+            [disabled]="!isRiesgosActionsEnabled() || isExecutingAction">
+            {{ isExecutingAction ? 'Procesando...' : 'Observar Crédito' }}
+          </button>
+        </div>
       </div>
     }
-
-    <!-- Nueva sección de Documentos del Aval -->
     <app-guarantor-documents
       [clientId]="clientId"
       [hasGuarantor]="hasGuarantor">
@@ -52,7 +58,8 @@ import { GuarantorDocumentService } from '@app/core/services/guarantor-document.
         (subir)="onSubirAsociado($event)"
         (descargar)="onDescargarAsociado($event)"
         (aprobar)="onAprobarAsociado($event)"
-        (rechazar)="onRechazarAsociado($event)">
+        (rechazar)="onRechazarAsociado($event)"
+        [canUploadDocuments]="canUploadDocuments">
       </app-document-table>
     </div>
     <div class="documentos-section">
@@ -82,7 +89,8 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   isLoading = false;
   documentTypes: DocumentType[] = [];
   hasGuarantor = false;
-  
+  isExecutingAction = false;
+
   // Control de estado del cliente
   clientData?: ClienteData;
   clientStatus: string = '';
@@ -132,12 +140,107 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Acción RIESGOS: Aprobar Crédito
+   */
+  aprobarCredito(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    if (confirm('¿Confirmar aprobación del crédito?')) {
+      this.isExecutingAction = true;
+      
+      this.prospectoApiService.aprobarPorRiesgos(this.clientId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Crédito aprobado por RIESGOS exitosamente');
+            alert('Crédito aprobado exitosamente');
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error aprobando crédito:', error);
+            alert('Error al aprobar crédito');
+            this.isExecutingAction = false;
+          }
+        });
+    }
+  }
+
+  /**
+   * Acción RIESGOS: Rechazar Crédito
+   */
+  rechazarCredito(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    const reason = prompt('Ingrese el motivo del rechazo (obligatorio):');
+    if (reason && reason.trim()) {
+      this.isExecutingAction = true;
+      
+      this.prospectoApiService.rechazarPorRiesgos(this.clientId, reason.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Crédito rechazado por RIESGOS exitosamente');
+            alert('Crédito rechazado');
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error rechazando crédito:', error);
+            alert('Error al rechazar crédito');
+            this.isExecutingAction = false;
+          }
+        });
+    } else {
+      alert('El motivo del rechazo es obligatorio');
+    }
+  }
+
+  /**
+   * Acción RIESGOS: Observar Crédito
+   */
+  observarCredito(): void {
+    if (!this.clientId) {
+      console.error('Client ID faltante');
+      return;
+    }
+
+    const reason = prompt('Ingrese el motivo de la observación (obligatorio):');
+    if (reason && reason.trim()) {
+      this.isExecutingAction = true;
+      
+      this.prospectoApiService.observarPorRiesgos(this.clientId, reason.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Crédito observado por RIESGOS exitosamente');
+            alert('Crédito observado');
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error observando crédito:', error);
+            alert('Error al observar crédito');
+            this.isExecutingAction = false;
+          }
+        });
+    } else {
+      alert('El motivo de la observación es obligatorio');
+    }
+  }
+
+  /**
    * Cargar datos del cliente para obtener estado y acciones permitidas
    */
   private loadClientData(clientId: number): void {
     console.log('=== CARGANDO DATOS DEL CLIENTE ===');
     console.log('Client ID:', clientId);
-    
     this.prospectoApiService.getClientById(clientId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -146,10 +249,8 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
           this.clientData = client;
           this.clientStatus = client.status || '';
           this.allowedActions = client.allowedActions || [];
-          
-          // Verificar si se pueden subir documentos según allowedActions
-          this.canUploadDocuments = this.canUploadDocumentsByActions(this.allowedActions);
-          
+          // SOLO permitir carga si status es MANUAL u OBSERVADO_POR_ADV
+          this.canUploadDocuments = this.clientStatus === 'MANUAL' || this.clientStatus === 'OBSERVADO_POR_ADV';
           console.log('Estado del cliente:', this.clientStatus);
           console.log('Acciones permitidas:', this.allowedActions);
           console.log('Puede subir documentos:', this.canUploadDocuments);
@@ -187,13 +288,13 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Verificar si se pueden subir documentos según allowedActions
+   * Habilita forzosamente los botones de RIESGOS solo si el estado es APROBADO_POR_ADV
    */
-  private canUploadDocumentsByActions(allowedActions: string[]): boolean {
-    // PERMITIR subida solo cuando allowedActions contiene DOCUMENTOS_COMPLETADOS
-    // BLOQUEAR en cualquier otro caso
-    return allowedActions.includes('DOCUMENTOS_COMPLETADOS');
+  isRiesgosActionsEnabled() {
+    return this.clientStatus === 'APROBADO_POR_ADV';
   }
+
+  // Eliminada la función canUploadDocumentsByActions: la lógica de bloqueo ahora depende solo de status
 
   /**
    * Acción COMERCIAL: Marcar documentos completados
@@ -204,10 +305,10 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    if (confirm('¿Confirmar que todos los documentos están completados?')) {
+    const reason = prompt('Ingrese el motivo para marcar los documentos como completados (obligatorio):');
+    if (reason && reason.trim()) {
       this.isLoading = true;
-      
-      this.prospectoApiService.marcarDocumentosCompletados(this.clientId)
+      this.prospectoApiService.marcarDocumentosCompletados(this.clientId, reason.trim())
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -223,6 +324,8 @@ export class ProspectoDocumentos implements OnInit, OnChanges, OnDestroy {
             this.isLoading = false;
           }
         });
+    } else {
+      alert('Debe ingresar un motivo para completar la acción.');
     }
   }
 

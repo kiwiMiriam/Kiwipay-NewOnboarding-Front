@@ -11,37 +11,7 @@ import { takeUntil } from 'rxjs/operators';
   imports: [CommonModule, FormsModule],
   template: `
   <div class="section-container">
-    <!-- Estado del Cliente y Botones de RIESGOS -->
-    @if (clientStatus) {
-      <div class="client-status-section">
-        <h3>Estado del Cliente: <span class="status-text">{{ getStatusDisplayText() }}</span></h3>
-        
-        <!-- Botones de RIESGOS -->
-        <div class="riesgos-actions">
-          <button 
-            class="btn-success" 
-            (click)="aprobarCredito()"
-            [disabled]="!isActionAllowed('APROBADO_POR_RIESGOS') || isExecutingAction">
-            {{ isExecutingAction ? 'Procesando...' : 'Aprobar Crédito' }}
-          </button>
-          
-          <button 
-            class="btn-danger" 
-            (click)="rechazarCredito()"
-            [disabled]="!isActionAllowed('RECHAZO_POR_RIESGOS') || isExecutingAction">
-            {{ isExecutingAction ? 'Procesando...' : 'Rechazar Crédito' }}
-          </button>
-          
-          <button 
-            class="btn-warning" 
-            (click)="observarCredito()"
-            [disabled]="!isActionAllowed('OBSERVADO_POR_RIESGOS') || isExecutingAction">
-            {{ isExecutingAction ? 'Procesando...' : 'Observar Crédito' }}
-          </button>
-        </div>
-      </div>
-    }
-
+    
     <div class="info-container">
       <h3>Información del Titular</h3>
       <table>
@@ -149,7 +119,6 @@ export class ProspectoInformacion implements OnInit, OnDestroy {
       this.loadClinicalData();
     }
     
-    // Inicializar información del préstamo con campos hardcodeados
     this.initializeLoanData();
   }
 
@@ -195,114 +164,12 @@ export class ProspectoInformacion implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Verificar si una acción está permitida
-   */
   isActionAllowed(action: string): boolean {
     return this.allowedActions.includes(action);
   }
 
-  /**
-   * Obtener texto del estado para mostrar en UI
-   */
   getStatusDisplayText(): string {
     return this.prospectoApiService.mapStatusToDisplayText(this.clientStatus);
-  }
-
-  /**
-   * Acción RIESGOS: Aprobar Crédito
-   */
-  aprobarCredito(): void {
-    if (!this.clientId) {
-      console.error('Client ID faltante');
-      return;
-    }
-
-    if (confirm('¿Confirmar aprobación del crédito?')) {
-      this.isExecutingAction = true;
-      
-      this.prospectoApiService.aprobarPorRiesgos(this.clientId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            console.log('Crédito aprobado por RIESGOS exitosamente');
-            alert('Crédito aprobado exitosamente');
-            this.refreshClientData();
-            this.isExecutingAction = false;
-          },
-          error: (error) => {
-            console.error('Error aprobando crédito:', error);
-            alert('Error al aprobar crédito');
-            this.isExecutingAction = false;
-          }
-        });
-    }
-  }
-
-  /**
-   * Acción RIESGOS: Rechazar Crédito
-   */
-  rechazarCredito(): void {
-    if (!this.clientId) {
-      console.error('Client ID faltante');
-      return;
-    }
-
-    const reason = prompt('Ingrese el motivo del rechazo (obligatorio):');
-    if (reason && reason.trim()) {
-      this.isExecutingAction = true;
-      
-      this.prospectoApiService.rechazarPorRiesgos(this.clientId, reason.trim())
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            console.log('Crédito rechazado por RIESGOS exitosamente');
-            alert('Crédito rechazado');
-            this.refreshClientData();
-            this.isExecutingAction = false;
-          },
-          error: (error) => {
-            console.error('Error rechazando crédito:', error);
-            alert('Error al rechazar crédito');
-            this.isExecutingAction = false;
-          }
-        });
-    } else {
-      alert('El motivo del rechazo es obligatorio');
-    }
-  }
-
-  /**
-   * Acción RIESGOS: Observar Crédito
-   */
-  observarCredito(): void {
-    if (!this.clientId) {
-      console.error('Client ID faltante');
-      return;
-    }
-
-    const reason = prompt('Ingrese el motivo de la observación (obligatorio):');
-    if (reason && reason.trim()) {
-      this.isExecutingAction = true;
-      
-      this.prospectoApiService.observarPorRiesgos(this.clientId, reason.trim())
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            console.log('Crédito observado por RIESGOS exitosamente');
-            alert('Crédito observado');
-            this.refreshClientData();
-            this.isExecutingAction = false;
-          },
-          error: (error) => {
-            console.error('Error observando crédito:', error);
-            alert('Error al observar crédito');
-            this.isExecutingAction = false;
-          }
-        });
-    } else {
-      alert('El motivo de la observación es obligatorio');
-    }
   }
 
   /**

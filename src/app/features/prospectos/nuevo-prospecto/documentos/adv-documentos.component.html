@@ -14,14 +14,14 @@
         <button 
           class="btn-primary" 
           (click)="aprobarPorADV()"
-          [disabled]="!isActionAllowed('APROBADO_POR_ADV') || isExecutingAction">
+          [disabled]="!isAdvActionsEnabled() || isExecutingAction">
           {{ isExecutingAction ? 'Procesando...' : 'Aprobar por ADV' }}
         </button>
         
         <button 
           class="btn-warning" 
           (click)="observarPorADV()"
-          [disabled]="!isActionAllowed('OBSERVADO_POR_ADV') || isExecutingAction">
+          [disabled]="!isAdvActionsEnabled() || isExecutingAction">
           {{ isExecutingAction ? 'Procesando...' : 'Observar por ADV' }}
         </button>
       </div>

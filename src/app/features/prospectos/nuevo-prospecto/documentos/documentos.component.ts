@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ProspectoApiService } from '../../../../core/services/prospecto-api.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -41,6 +42,9 @@ export interface DocumentoLocal {
   styleUrls: ['./documentos.component.scss']
 })
 export default class DocumentosComponent implements OnInit {
+  // Estado del cliente para mostrar en la UI
+  clientStatus: string = '';
+  isExecutingAction: boolean = false;
 
   faTrash = faTrash;
   faDownload = faDownload;
@@ -72,13 +76,13 @@ export default class DocumentosComponent implements OnInit {
     private router: Router,
     private navigationService: NavigationService,
     private documentoService: DocumentoService,
-    private prospectosService: ProspectosService
+    private prospectosService: ProspectosService,
+    private prospectoApiService: ProspectoApiService
   ) {}
 
   ngOnInit(): void {
     // Cargar tipos de documentos
     this.loadDocumentTypes();
-    
     // Obtener clientId de la ruta o del servicio de prospectos
     this.route.queryParams.subscribe(params => {
       this.prospectoId = params['id'];
@@ -86,8 +90,69 @@ export default class DocumentosComponent implements OnInit {
         this.editMode = true;
         this.clientId = Number(this.prospectoId);
         this.loadClientDocuments();
+        this.loadClientStatus();
       }
     });
+  }
+
+  /**
+   * Cargar el estado del cliente para mostrar en la UI
+   */
+  private loadClientStatus(): void {
+    if (!this.clientId) return;
+    this.prospectoApiService.getClientById(this.clientId).subscribe({
+      next: (client) => {
+        this.clientStatus = client.status || '';
+      },
+      error: (error) => {
+        console.error('Error al cargar estado del cliente:', error);
+        this.clientStatus = '';
+      }
+    });
+  }
+
+  /**
+   * Mostrar el texto del estado del cliente
+   */
+  getStatusDisplayText(): string {
+    return this.prospectoApiService.mapStatusToDisplayText
+      ? this.prospectoApiService.mapStatusToDisplayText(this.clientStatus)
+      : this.clientStatus;
+  }
+
+  /**
+   * Acción: Documentos completados (COMERCIAL)
+   * Habilita el botón si el estado es DOCUMENTOS_COMPLETADOS o OBSERVADO_POR_RIESGOS
+   */
+  marcarDocumentosCompletados(): void {
+    if (!this.clientId) {
+      alert('No se ha identificado el cliente.');
+      return;
+    }
+    const reason = prompt('Ingrese el motivo para marcar los documentos como completados (obligatorio):');
+    if (reason && reason.trim()) {
+      this.isExecutingAction = true;
+      this.prospectoApiService.marcarDocumentosCompletados(this.clientId, reason.trim()).subscribe({
+        next: () => {
+          alert('Documentos marcados como completados');
+          this.loadClientStatus();
+          this.isExecutingAction = false;
+        },
+        error: (error) => {
+          alert('Error al marcar documentos como completados');
+          this.isExecutingAction = false;
+        }
+      });
+    } else {
+      alert('Debe ingresar un motivo para completar la acción.');
+    }
+  }
+
+  /**
+   * Habilita el botón de Documentos Completados si el estado es DOCUMENTOS_COMPLETADOS o OBSERVADO_POR_RIESGOS
+   */
+  isDocumentosCompletadosEnabled() {
+    return this.clientStatus === 'DOCUMENTOS_COMPLETADOS' || this.clientStatus === 'OBSERVADO_POR_RIESGOS' || this.clientStatus === 'OBSERVADO_POR_ADV';
   }
 
   /**
@@ -188,16 +253,19 @@ export default class DocumentosComponent implements OnInit {
       // Hacer POST al backend
       this.documentoService.createDocument(this.clientId, request).subscribe({
         next: (document) => {
-          // Agregar el documento a la lista
           this.documentos.push(document);
-          
-          // Limpiar el formulario
           this.limpiarFormulario();
           this.isUploadingDocument = false;
         },
         error: (error) => {
           console.error('Error al subir documento:', error);
-          this.mensajeError = 'Error al subir el documento. Por favor, intenta nuevamente.';
+          if (error.status === 500) {
+            this.mensajeError = 'Error interno del servidor al subir el documento. Verifica el estado del cliente o contacta a soporte.';
+          } else if (error.status === 404) {
+            this.mensajeError = 'No se encontró el recurso para subir el documento.';
+          } else {
+            this.mensajeError = 'Error al subir el documento. Por favor, intenta nuevamente.';
+          }
           this.isUploadingDocument = false;
         }
       });
@@ -230,13 +298,21 @@ export default class DocumentosComponent implements OnInit {
     if (!id) return;
 
     if (confirm('¿Estás seguro de que deseas eliminar este documento?')) {
-      this.documentoService.deleteDocument(id).subscribe({
+      if (!this.clientId) {
+        this.mensajeError = 'No se ha identificado el cliente.';
+        return;
+      }
+      this.documentoService.deleteDocument(this.clientId, id).subscribe({
         next: () => {
           this.documentos = this.documentos.filter(doc => doc.id !== id);
         },
         error: (error) => {
           console.error('Error al eliminar documento:', error);
-          this.mensajeError = 'Error al eliminar el documento.';
+          if (error.status === 404) {
+            this.mensajeError = 'El documento no existe o ya fue eliminado.';
+          } else {
+            this.mensajeError = 'Error al eliminar el documento.';
+          }
         }
       });
     }
@@ -288,7 +364,9 @@ export default class DocumentosComponent implements OnInit {
       case 'REJECTED':
         return 'estado-icon rechazado';
       case 'READY':
+        return 'estado-icon listo';
       case 'PENDING':
+        return 'estado-icon pendiente';
       default:
         return 'estado-icon sin-estado';
     }
@@ -308,8 +386,6 @@ export default class DocumentosComponent implements OnInit {
         return 'Sin estado';
     }
   }
-
-  // Métodos de aprobación/rechazo removidos - ahora están en el componente ADV
 
   navigateBack(): void {
     this.navigationService.navigateToTab('cotizador');

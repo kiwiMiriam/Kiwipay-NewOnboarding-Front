@@ -45,9 +45,9 @@ export enum DocumentoEstado {
             <td>{{ doc.comentario || '-' }}</td>
             <td [ngClass]="doc.estadoRevision ? doc.estadoRevision.toLowerCase() : ''">{{ doc.estadoRevision || 'Pendiente' }}</td>
             <td class="acciones">
-              <button (click)="onSubir(doc)" title="Subir archivo">
-                 <fa-icon [icon]="faUpload"></fa-icon>
-              </button>
+                <button (click)="onSubir(doc)" title="Subir archivo" [disabled]="!canUploadDocuments">
+                  <fa-icon [icon]="faUpload"></fa-icon>
+                </button>
               <button
                 (click)="onDescargar(doc)"
                 [disabled]="!doc.id"
@@ -140,6 +140,7 @@ export enum DocumentoEstado {
 export class DocumentTableComponent {
   @Input() documentos: DocumentoData[] = [];
   @Input() obtenerNombreTipoDocumento?: (tipoId: string | undefined) => string;
+  @Input() canUploadDocuments: boolean = true;
   @Output() private readonly subir = new EventEmitter<{ documento: DocumentoData; archivo: File }>();
   @Output() private readonly descargar = new EventEmitter<DocumentoData>();
   @Output() private readonly aprobar = new EventEmitter<{ documento: DocumentoData; comentario: string }>();

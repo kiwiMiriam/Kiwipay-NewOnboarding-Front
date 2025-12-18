@@ -80,6 +80,7 @@
       <div class="column tipo-column">Tipo de Documento</div>
       <div class="column archivo-column">Archivo</div>
       <div class="column comentario-column">Comentario</div>
+      <div class="column estado-column">Estado</div>
       <div class="column accion-column">Acciones</div>
     </div>
     @if (isLoading) {
@@ -97,37 +98,60 @@
     <div class="table-body">
       @for (documento of documentos; track documento.id) {
         <div class="table-row">
-        <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.documentTypeId) }}</div>
-        <div class="column archivo-column">
-          <div class="file-info">
-            <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.mimeType)"></span>
-            <div class="file-details">
-              <span class="file-name">{{ documento.filename }}</span>
-              <span class="file-size">{{ formatearTamanoArchivo(documento.sizeBytes) }}</span>
+          <div class="column tipo-column">{{ obtenerNombreTipoDocumento(documento.documentTypeId) }}</div>
+          <div class="column archivo-column">
+            <div class="file-info">
+              <span [class]="'icon-file ' + obtenerClaseIconoArchivo(documento.mimeType)"></span>
+              <div class="file-details">
+                <span class="file-name">{{ documento.filename }}</span>
+                <span class="file-size">{{ formatearTamanoArchivo(documento.sizeBytes) }}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="column comentario-column">{{ documento.comment || '-' }}</div>
-        <div class="column accion-column">
-          <button
-            class="btn-icon download-btn"
-            (click)="descargarDocumento(documento)"
-            title="Descargar"
-          >
-            <fa-icon [icon]="faDownload"></fa-icon>
-          </button>
-          <button
-            class="btn-icon delete-btn"
-            (click)="eliminarDocumento(documento.id)"
-            title="Eliminar"
-          >
-            <fa-icon [icon]="faTrash"></fa-icon>
-          </button>
-        </div>
+          <div class="column comentario-column">{{ documento.comment || '-' }}</div>
+          <div class="column estado-column">
+            <span [class]="obtenerClaseIconoEstado(documento.reviewStatus)"></span>
+            {{ obtenerTextoEstado(documento.reviewStatus) }}
+          </div>
+          <div class="column accion-column">
+            <button
+              class="btn-icon download-btn"
+              (click)="descargarDocumento(documento)"
+              title="Descargar"
+            >
+              <fa-icon [icon]="faDownload"></fa-icon>
+            </button>
+            <button
+              class="btn-icon delete-btn"
+              (click)="eliminarDocumento(documento.id)"
+              title="Eliminar"
+            >
+              <fa-icon [icon]="faTrash"></fa-icon>
+            </button>
+          </div>
         </div>
       }
     </div>
   </div>
+
+  <!-- Estado del Cliente y Botones de COMERCIAL -->
+    @if (clientStatus) {
+      <div class="client-status-section">
+        <h3>Estado del Cliente: <span class="status-text">{{ getStatusDisplayText() }}</span></h3>
+        
+        <!-- Botones de RIESGOS  (Documentos completados) -->
+        <div class="comercial-actions">
+          <button
+            class="btn-primary"
+            (click)="marcarDocumentosCompletados()"
+            [disabled]="!isDocumentosCompletadosEnabled() || isExecutingAction"
+          >
+            {{ isExecutingAction ? 'Procesando...' : 'Documentos Completados' }}
+          </button>
+          
+        </div>
+      </div>
+    }
 
   <!-- Botones de navegación -->
   <div class="navigation-buttons">

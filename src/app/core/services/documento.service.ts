@@ -57,8 +57,8 @@ export class DocumentoService {
   /**
    * Eliminar un documento
    */
-  deleteDocument(documentId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/documents/${documentId}`);
+  deleteDocument(clientId: number, documentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/clients/${clientId}/documents/${documentId}`);
   }
 
   /**
