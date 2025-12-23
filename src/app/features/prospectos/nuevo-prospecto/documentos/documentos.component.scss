@@ -373,6 +373,108 @@
     }
   }
 
+  // Client status section and ADV actions
+  .client-status-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: colors.$neutral-50;
+    border-radius: 8px;
+    border-left: 4px solid colors.$primary-900;
+
+    h3 {
+      margin: 0 0 1rem 0;
+      color: colors.$text-primary;
+      font-weight: 600;
+
+      .status-text {
+        color: colors.$primary-900;
+        font-weight: 700;
+      }
+    }
+
+    .comercial-actions {
+      margin-bottom: 1.5rem;
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        @include mixins.transition(all);
+        
+        &.btn-primary {
+          background-color: colors.$primary-900;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background-color: colors.$primary-700;
+          }
+
+          &:disabled {
+            background-color: colors.$neutral-300;
+            color: colors.$text-secondary;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+
+    .adv-section {
+      border-top: 1px solid colors.$neutral-200;
+      padding-top: 1.5rem;
+
+      h4 {
+        margin: 0 0 1rem 0;
+        color: colors.$text-primary;
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      .adv-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+
+        button {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 4px;
+          font-weight: 500;
+          cursor: pointer;
+          @include mixins.transition(all);
+          
+          &.btn-primary {
+            background-color: colors.$primary-900;
+            color: white;
+
+            &:hover:not(:disabled) {
+              background-color: colors.$primary-700;
+              transform: translateY(-1px);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            &:disabled,
+            &.disabled {
+              background-color: colors.$neutral-300;
+              color: colors.$text-secondary;
+              cursor: not-allowed;
+              opacity: 0.6;
+            }
+          }
+        }
+      }
+
+      .status-requirement {
+        font-size: 0.875rem;
+        color: colors.$text-secondary;
+        font-style: italic;
+        margin: 0;
+        padding: 0.5rem 0;
+      }
+    }
+  }
+
   .navigation-buttons {
     display: flex;
     justify-content: space-between;

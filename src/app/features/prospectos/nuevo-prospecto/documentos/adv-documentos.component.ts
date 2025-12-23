@@ -409,6 +409,50 @@ export default class AdvDocumentosComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Acción ADV: Firma de contrato
+   * Solo habilitado cuando el estado es APROBADO_POR_RIESGOS
+   */
+  firmarContrato(): void {
+    if (!this.clientId) {
+      alert('No se ha identificado el cliente.');
+      return;
+    }
+    
+    if (!this.isFirmaContratoEnabled()) {
+      alert('La firma de contrato solo está disponible cuando el cliente está "Aprobado por Riesgos".');
+      return;
+    }
+
+    const confirmacion = confirm('¿Está seguro de que desea proceder con la firma de contrato?');
+    if (confirmacion) {
+      this.isExecutingAction = true;
+      this.prospectoApiService.firmarContrato(this.clientId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            console.log('Contrato firmado exitosamente');
+            alert('Contrato firmado exitosamente');
+            this.refreshClientData();
+            this.isExecutingAction = false;
+          },
+          error: (error) => {
+            console.error('Error al firmar contrato:', error);
+            alert('Error al firmar el contrato');
+            this.isExecutingAction = false;
+          }
+        });
+    }
+  }
+
+  /**
+   * Verifica si el botón de firma de contrato debe estar habilitado
+   * Solo habilitado cuando el estado es APROBADO_POR_RIESGOS
+   */
+  isFirmaContratoEnabled(): boolean {
+    return this.clientStatus === 'APROBADO_POR_RIESGOS';
+  }
+
+  /**
    * Cargar los documentos existentes del cliente
    */
   private loadClientDocuments(): void {

@@ -150,6 +150,24 @@
           </button>
           
         </div>
+
+        <!-- Sección ADV -->
+        <div class="adv-section">
+          <h4>Acciones de ADV</h4>
+          <div class="adv-actions">
+            <button
+              class="btn-primary"
+              (click)="firmarContrato()"
+              [disabled]="!isFirmaContratoEnabled() || isExecutingAction"
+              [class.disabled]="!isFirmaContratoEnabled()"
+            >
+              {{ isExecutingAction ? 'Procesando...' : 'Firma de contrato' }}
+            </button>
+          </div>
+          @if (!isFirmaContratoEnabled()) {
+            <p class="status-requirement">Disponible solo cuando el estado sea "Aprobado por Riesgos"</p>
+          }
+        </div>
       </div>
     }
 

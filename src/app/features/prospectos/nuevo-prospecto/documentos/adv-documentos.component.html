@@ -24,7 +24,19 @@
           [disabled]="!isAdvActionsEnabled() || isExecutingAction">
           {{ isExecutingAction ? 'Procesando...' : 'Observar por ADV' }}
         </button>
+        
+        <button 
+          class="btn-primary" 
+          (click)="firmarContrato()"
+          [disabled]="!isFirmaContratoEnabled() || isExecutingAction"
+          [class.disabled]="!isFirmaContratoEnabled()">
+          {{ isExecutingAction ? 'Procesando...' : 'Firma de contrato' }}
+        </button>
       </div>
+      
+      @if (!isFirmaContratoEnabled()) {
+        <p class="status-requirement">El botón "Firma de contrato" solo está disponible cuando el estado sea "Aprobado por Riesgos"</p>
+      }
     </div>
   }
 

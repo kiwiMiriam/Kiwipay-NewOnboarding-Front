@@ -293,10 +293,20 @@
         color: colors.$text-on-primary;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
-        &:hover {
+        &:hover:not(:disabled):not(.disabled) {
           background-color: colors.$primary-700;
           transform: translateY(-1px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        &:disabled,
+        &.disabled {
+          background-color: colors.$neutral-300;
+          color: colors.$text-secondary;
+          cursor: not-allowed;
+          opacity: 0.6;
+          transform: none;
+          box-shadow: none;
         }
       }
 
@@ -479,6 +489,15 @@
         }
       }
     }
+  }
+
+  // Mensaje de requisito para el botón firma de contrato
+  .status-requirement {
+    font-size: 0.875rem;
+    color: colors.$text-secondary;
+    font-style: italic;
+    margin: 0.5rem 0 0 0;
+    padding: 0.5rem 0;
   }
 
   // Animación para el contenido expandible

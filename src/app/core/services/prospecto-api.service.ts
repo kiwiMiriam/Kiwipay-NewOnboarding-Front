@@ -962,6 +962,19 @@ export class ProspectoApiService {
     );
   }
 
+  /**
+   * Acción: Firma de contrato (ADV)
+   */
+  firmarContrato(clientId: number): Observable<any> {
+    console.log(`[ADV] Firmando contrato para cliente ${clientId}`);
+    return this.http.post(`http://localhost:8080/api/v1/clients/${clientId}/firma-contrato`, {}).pipe(
+      catchError(error => {
+        console.error('[FIRMA CONTRATO] Error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   // ========== ACCIONES RIESGOS ==========
 
   /**
