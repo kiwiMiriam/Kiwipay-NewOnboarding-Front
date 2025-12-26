@@ -10,14 +10,14 @@ import { GuarantorDocumentService } from '../../../core/services/guarantor-docum
 import { DocumentoService } from '../../../core/services/documento.service';
 import { DocumentTableComponent } from '../documentTable/documentTable.component';
 import { DocumentoData } from '@app/core/services/prospecto-api.service';
-import { 
-  DocumentType, 
-  Document, 
+import {
+  DocumentType,
+  Document,
   CreateDocumentRequest,
-  DocumentStatus 
+  DocumentStatus
 } from '../../../core/models/document.model';
-import { 
-  fileToBase64, 
+import {
+  fileToBase64,
   downloadFileFromBlob
 } from '../../utils/file.utils';
 
@@ -26,6 +26,78 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, FontAwesomeModule, DocumentTableComponent],
   template: `
+  <!--  resultados experian-->
+        <div class="expandable-section">
+          <div class="section-toggle">
+            <div class="section-header" (click)="toggleModelo()">
+              <h4>Resultados del modelo</h4>
+              <span class="toggle-icon">{{ isModeloExpanded ? '▼' : '►' }}</span>
+            </div>
+            @if( isModeloExpanded) {
+            <div class="expanded-content" (click)="$event.stopPropagation()">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="tasaExperian">Tasa Experian</label>
+                  <input type="number" id="tasaExperian" [(ngModel)]="tasaExperian" step="0.01" (click)="$event.stopPropagation()" />
+                  @if (tasaExperian !== null && tasaExperian < 0) {
+                  <div class="error-message">La tasa debe ser mayor o igual a 0</div>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="nuevaTasa">Nueva Tasa</label>
+                  <input type="number" id="nuevaTasa" [(ngModel)]="nuevaTasa" step="0.01" (click)="$event.stopPropagation()" />
+                  @if (nuevaTasa !== null && nuevaTasa < 0) {
+                  <div class="error-message">La tasa debe ser mayor o igual a 0</div>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="tasaAdicional">Tasa Adicional</label>
+                  <input type="number" id="tasaAdicional" [(ngModel)]="tasaAdicional" step="0.01" (click)="$event.stopPropagation()" />
+                  @if (tasaAdicional !== null && tasaAdicional < 0) {
+                  <div class="error-message">La tasa debe ser mayor o igual a 0</div>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="tasaFinal">Tasa Final</label>
+                  <input type="number" id="tasaFinal" [(ngModel)]="tasaFinal" step="0.01" (click)="$event.stopPropagation()" />
+                  @if (tasaFinal !== null && tasaFinal < 0) {
+                  <div class="error-message">La tasa debe ser mayor o igual a 0</div>
+                  }
+                </div>
+              </div>
+              <div class="info-message" (click)="$event.stopPropagation()">
+                <p>*La tasa final sera decidida por el equipo de Riesgos, en caso la tasa sea mayor al 100% el cliente debe rechazarse manualmente.*</p>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        <div class="expandable-section">
+          <div class="section-toggle">
+            <div class="section-header" (click)="toggleModelo()">
+              <h4>Información de Contrato</h4>
+              <span class="toggle-icon">{{ isModeloExpanded ? '▼' : '►' }}</span>
+            </div>
+            @if( isModeloExpanded) {
+            <div class="expanded-content" (click)="$event.stopPropagation()">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="plazo">Plazo</label>
+                  <input type="number" id="plazo" [(ngModel)]="plazo" (click)="$event.stopPropagation()" />
+                </div>
+                <div class="form-group">
+                  <label for="monto">Monto</label>
+                  <input type="number" id="monto" [(ngModel)]="monto" (click)="$event.stopPropagation()" />
+                </div>
+                <div class="form-group">
+                  <label for="tasa">Tasa del préstamo</label>
+                  <input type="number" id="tasa" [(ngModel)]="tasa" (click)="$event.stopPropagation()" />
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
     <div class="documentos-aval-section" *ngIf="hasGuarantor">
       <h2>Documentos del Aval</h2>
       
@@ -182,6 +254,63 @@ import {
       border-radius: 4px;
     }
 
+    .expandable-section {
+      margin-bottom: 20px;
+    }
+
+    .section-toggle {
+      cursor: pointer;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+
+    .section-header:hover {
+      background-color: #e9ecef;
+    }
+
+    .section-header h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .toggle-icon {
+      font-size: 1rem;
+      color: #666;
+      transition: transform 0.3s;
+    }
+
+    .expanded-content {
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      margin-top: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .info-message {
+      background-color: #d1ecf1;
+      border: 1px solid #bee5eb;
+      border-radius: 4px;
+      padding: 12px;
+      margin-top: 15px;
+    }
+
+    .info-message p {
+      margin: 0;
+      color: #0c5460;
+      font-size: 14px;
+    }
+
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
@@ -213,12 +342,24 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
   isLoading = false;
   isUploading = false;
 
+  // Resultados del modelo properties
+  isModeloExpanded = false;
+  tasaExperian: number | null = null;
+  nuevaTasa: number | null = null;
+  tasaAdicional: number | null = null;
+  tasaFinal: number | null = null;
+
+  // Información de Contrato properties
+  plazo: number | null = null;
+  monto: number | null = null;
+  tasa: number | null = null;
+
   private destroy$ = new Subject<void>();
 
   constructor(
     private guarantorDocumentService: GuarantorDocumentService,
     private documentoService: DocumentoService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadDocumentTypes();
@@ -238,6 +379,10 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  toggleModelo(): void {
+    this.isModeloExpanded = !this.isModeloExpanded;
   }
 
   private loadDocumentTypes(): void {
@@ -311,10 +456,10 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
   onFileSelected(event: Event): void {
     const target = event.target as HTMLInputElement;
     const files = target.files;
-    
+
     if (files && files.length > 0) {
       const file = files[0];
-      
+
       // Validate file type
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
       if (!allowedTypes.includes(file.type)) {
@@ -322,7 +467,7 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
         this.selectedFile = null;
         return;
       }
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
@@ -330,7 +475,7 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
         this.selectedFile = null;
         return;
       }
-      
+
       this.selectedFile = file;
       this.errorMessage = '';
     }
@@ -505,7 +650,7 @@ export class GuarantorDocumentsComponent implements OnInit, OnChanges, OnDestroy
     this.selectedFile = null;
     this.comment = '';
     this.errorMessage = '';
-    
+
     // Clear file input
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
